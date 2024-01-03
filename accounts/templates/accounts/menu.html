@@ -25,8 +25,8 @@
   }
 </style>
 <link type="text/css" rel="stylesheet" href="https://cdn02.jotfor.ms/themes/CSS/5e6b428acc8c4e222d1beb91.css?v=3.3.48620&themeRevisionID=5f30e2a790832f3e96009402" />
-<link type="text/css" rel="stylesheet" href="https://cdn03.jotfor.ms/css/styles/payment/payment_styles.css?3.3.48620" />
-<link type="text/css" rel="stylesheet" href="https://cdn01.jotfor.ms/css/styles/payment/payment_feature.css?3.3.48620" />
+<link type="text/css" rel="stylesheet" href="{% static 'css/payment_styles.css' %}" />
+<link type="text/css" rel="stylesheet" href="{% static 'css/payment_feature.css' %}" />
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
 
@@ -747,12 +747,12 @@
     .form-header-group.header-small h3 {
       font-size: 24px;
       line-height: 28px;
-      padding-left: 20px;
+      padding-left: 50px;
     }
 
     .form-header-group.header-small .form-subHeader {
       font-size: 14px;
-      padding-left: 20px;
+      padding-left: 50px;
     }
   }
 
@@ -768,6 +768,10 @@
     }
   }
   @media screen and (max-width: 480px) {
+    .form-product-item-detail{
+      flex-direction: row !important;
+    }
+
     .form-all{
       margin: 0;
     }
@@ -855,13 +859,13 @@ div.swiper-button-next, div.swiper-button-prev {
                 
                 <input type="text" name="productSearch-input" class="form-textbox " id="productSearch-input" size="15" placeholder="Search" autoComplete="on" />
               </div>
-              <div data-wrapper-react="true" class="items">
+              
                 <span class="form-product-category-item item turkish" category="2001">
                   <b>Turkish</b>
                   <span class="selected-items-icon"></span>
                 </span>
                 
-
+              <div data-wrapper-react="true" class="items">
                 <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item turkish form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
                   <div data-wrapper-react="true" class="form-product-item-detail new_ui">
                     <div class="p_col">
@@ -1125,10 +1129,13 @@ div.swiper-button-next, div.swiper-button-prev {
                   </div>
                 </span>
                 <div class="p_item_separator last_p_seperator"></div>
-                <span class="item espresso form-product-category-item  " category="2002">
-                  <b>Espresso</b>
-                  <span class="selected-items-icon"></span>
-                </span>
+                
+              </div>
+              <span class="item espresso form-product-category-item  " category="2002">
+                <b>Espresso</b>
+                <span class="selected-items-icon"></span>
+              </span>
+              <div data-wrapper-react="true" class="items">
                 <span class="item espresso form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2002" active-category="2002" pid="1004" aria-labelledby="label_22">
                   <div data-wrapper-react="true" class="form-product-item-detail new_ui">
                     <div class="p_col">
