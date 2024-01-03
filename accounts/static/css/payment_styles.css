@@ -2593,6 +2593,7 @@ span.sq-card-message{
     display: flex;
     flex-wrap: wrap;
     width: 100%;
+    justify-content: space-between;
     align-items: stretch;
   }
   .payment_footer.new_ui .total_area:nth-child(1) {
