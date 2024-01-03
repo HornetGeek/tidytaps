@@ -66,6 +66,7 @@ class Order(models.Model):
         choices=[('cash', 'cash'), ('payment' , 'payment')],
         default='cash'
     )
+    
 
     def __str__(self):
         return self.status
