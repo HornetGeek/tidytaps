@@ -778,6 +778,12 @@
     .item{
       width: calc(50.333% - 8px) !important;
     }
+    .header-logo{
+  max-width: 200px;
+    }
+    .header-text{
+      max-width: 200px;
+    }
     
   }
 
@@ -789,6 +795,7 @@
 
 
 
+
 div.swiper-button-next, div.swiper-button-prev {
   top: 50%
 }
@@ -797,6 +804,7 @@ div.swiper-button-next, div.swiper-button-prev {
   height: 80%;
   width: 100%;
 }
+
   /* Injected CSS Code */
 </style>
 <form class="jotform-form" id="itemlist" action="/orders" method="post" autocomplete="on"> {% csrf_token %} <div role="main" class="form-all">
@@ -809,7 +817,7 @@ div.swiper-button-next, div.swiper-button-prev {
               <div id="subHeader_1" class="form-subHeader">with Digital menu</div>
             </div>
             <div class="header-logo">
-              <img src="https://scontent.fcai19-8.fna.fbcdn.net/v/t39.30808-6/360141795_669559791862924_7016378191826284718_n.png?_nc_cat=105&ccb=1-7&_nc_sid=efb6e6&_nc_ohc=L6zf1b1hST4AX8UBqaI&_nc_oc=AQn1fOEyJ0vtX67KydI_T1qsglFboH2IOpZdZLgRdYNtm4zMMZ9x3Wjwuw-cn55hIBg&_nc_ht=scontent.fcai19-8.fna&oh=00_AfDTT7W3qIA95qjh5ursfGf8fASsnKMka1wdNj4r8iDnAw&oe=6598302B" alt="You Can Order Now" width="340" class="header-logo-right" />
+              <img src="{% static 'img/ecuador_logo.png' %}" alt="You Can Order Now" width="340" class="header-logo-right" />
             </div>
           </div>
         </div>
