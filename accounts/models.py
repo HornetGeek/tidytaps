@@ -64,7 +64,8 @@ class Order(models.Model):
     pay = models.CharField(
         max_length=50,
         choices=[('cash', 'cash'), ('payment' , 'payment')],
-        default='cash'
+        default='cash',
+        null=True
     )
     
 

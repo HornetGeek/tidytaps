@@ -16,11 +16,13 @@
             <div class="col-auto my-auto">
               <div class="h-100">
                 <h5 class="mb-1">
-                  Sayo Kravits
+                  {{username}}
                 </h5>
+                <!--
                 <p class="mb-0 font-weight-bold text-sm">
                   Public Relations
                 </p>
+                 -->
               </div>
             </div>
             <div class="col-lg-4 col-md-6 my-sm-auto ms-sm-auto me-sm-0 mx-auto mt-3">
@@ -48,53 +50,68 @@
                 <div class="card-header pb-0">
                     <div class="d-flex align-items-center">
                     <p class="mb-0">Edit Profile</p>
-                    <button class="btn btn-primary btn-sm ms-auto">Settings</button>
+                    
                     </div>
                 </div>
+
                 <div class="card-body">
+                  <form action="/profile" method="POST"> 
+                    {% csrf_token %}
                     <p class="text-uppercase text-sm">User Information</p>
                     <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Username</label>
-                        <input class="form-control" type="text" value="lucky.jesse">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Email address</label>
-                        <input class="form-control" type="email" value="jesse@example.com">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">First name</label>
-                        <input class="form-control" type="text" value="Jesse">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                        <label for="example-text-input" class="form-control-label">Last name</label>
-                        <input class="form-control" type="text" value="Lucky">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                      <label for="example-text-input" class="form-control-label">Password</label>
-                      <input class="form-control" type="password">
+                      <div class="col-md-6">
+                          <div class="form-group">
+                          <label for="example-text-input" class="form-control-label">Username</label>
+                          <input class="form-control" name="username" type="text" value="{{username}}">
+                          </div>
                       </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                    <label for="example-text-input" class="form-control-label">New password</label>
-                    <input class="form-control" type="password">
+                      <div class="col-md-6">
+                          <div class="form-group">
+                          <label for="example-text-input" class="form-control-label">Email address</label>
+                          <input class="form-control" name="email" type="email" value="{{email}}">
+                          </div>
+                      </div>
+                      <div class="col-md-6">
+                          <div class="form-group">
+                          <label for="example-text-input" class="form-control-label">First name</label>
+                          <input class="form-control" name="firstName" type="text" value="{{firstName}}">
+                          </div>
+                      </div>
+                      <div class="col-md-6">
+                          <div class="form-group">
+                          <label for="example-text-input" class="form-control-label">Last name</label>
+                          <input class="form-control" name="lastName" type="text" value="{{lastName}}">
+                          </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="example-text-input" class="form-control-label">Password</label>
+                          <input class="form-control" required name="oldPassword" type="password">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                        <label for="example-text-input" class="form-control-label">New password</label>
+                        <input class="form-control" required name="password" type="password">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                        <label for="example-text-input" class="form-control-label">New password</label>
+                        <input class="form-control" required name="password2" type="password">
+                        </div>
+                      </div>
+                        </div>
+                        <hr class="horizontal dark">
+                        <div class="container-fluid">
+                          <div class="row">
+                            <div class="col-12 text-center mt-5">
+                              <button class="btn btn-primary btn-sm ms-auto center">Save</button>
+                            </div>
+                          </div>
+                        </div>
                     </div>
-                  </div>
-                    </div>
-                    <hr class="horizontal dark">
-
-                    
-                    
+                  </form>
                 </div>
                 </div>
             </div>

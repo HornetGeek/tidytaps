@@ -265,6 +265,30 @@ def edit_menu(request):
 
 @login_required(login_url='loginUser')
 def profile(request):
+    current_user = request.user
     username = request.user.username
 
-    return render(request, 'accounts/profile.html', {"username":username})
+    if request.method == 'POST':
+        user_to_update = User.objects.get(username=username)
+        user_to_update.username = request.POST.get('username')
+        user_to_update.first_name = request.POST.get('firstName')
+        user_to_update.last_name = request.POST.get('lastName')
+        user_to_update.email = request.POST.get('email')
+        password = request.POST.get('passowrd')
+        print(password)
+        if request.POST.get('passowrd') == request.POST.get('passowrd2'):
+            print("inside password")
+            user_to_update.set_password()
+        else:
+            return "<p> password doesn't match </p>"
+
+        user_to_update.save()
+  
+
+    context = {
+        "username":username,
+        "email": current_user.email,
+        "firstName":current_user.first_name,
+        "lastName":current_user.last_name
+    }
+    return render(request, 'accounts/profile.html', context=context)
