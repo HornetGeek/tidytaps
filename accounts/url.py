@@ -1,21 +1,26 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
-    path('login/', MyObtainTokenPairView.as_view(), name='token_obtain_pair'),
     path('', login_view, name='login'),
     path('loginUser',login_user, name='loginUser'),
     path('clients', clients, name='clients'),
+    path('editMenu', editMenu, name='editMenu'),
+    path('categoryEdit', categoryEdit, name='categoryEdit'),
+    path('categoryDelete', categoryDelete, name='categoryDelete'),
+    path('itemEdit', itemEdit, name='itemEdit'),
+    path('item', item, name='item'),
+    path('itemDelete', itemDelete, name='itemDelete'),
     path('payment', payment, name='payment'),
     path('orders', order, name='orders'),
     path('profile', profile, name='profile'),
     path('index/', index, name='dashboard'),
-    path('editMenu', edit_menu, name='editMenu'),
+    path('edit_Menu', edit_menu, name='edit_Menu'),
+    path('category',category, name='category'),
     path('thanks', thanks, name='thanks'),
     path('menu', menu,name="menu"),
     path('logout/', logout_view, name="logout"),
-    path('login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('register/', RegisterView.as_view(), name='auth_register'),
+    re_path(r'^menu/(?P<uuid>[0-9a-f-]+)$', listMenu, name='listMenu'),
 ]

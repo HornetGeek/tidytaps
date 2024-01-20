@@ -1,4 +1,3 @@
-from .serializers import *
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.decorators import login_required
@@ -20,20 +19,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
 
-class MyObtainTokenPairView(TokenObtainPairView):
-
-    permission_classes = (AllowAny,)
-    serializer_class = MyTokenObtainPairSerializer
-
-
-    def get(self, request):
-        print("weweweweewew")
-        return redirect('register')
-
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
-    serializer_class = RegisterSerializer
 
 def login_view(request):
     return render(request, 'accounts/sign-in.html')
@@ -64,6 +49,8 @@ def logout_view(request):
     return render(request, "accounts/sign-in.html", {
                 "message": "Logged Out"
             })
+
+
 
 @login_required(login_url='loginUser')
 def clients(request):
@@ -250,18 +237,244 @@ def payment(request):
     return render(request, 'accounts/payment.html', context=context)
 
 
+@login_required(login_url='loginUser')
+def category(request):
+    username = request.user.username
+    account = Account.objects.get(user=request.user)
+    menu = Menu.objects.get(account=account)
+    name = request.POST.get('name')
+    category = Category(account=account,menu=menu,name=name)
+
+    if request.method == 'POST':
+        
+        category.save()
+
+    return redirect('edit_Menu')
+
+
 def thanks(request):
     return render(request, 'accounts/thanks.html')
 
 @login_required(login_url='loginUser')
 def edit_menu(request):
     username = request.user.username
+    account = Account.objects.get(user=request.user)
+    print("logging accound id ")
+    print(account.id)
+    try:
+        menu = Menu.objects.get(account=account)
+        categories = menu.category_menu.all()
+        print(categories)
+    except Exception as e:
+        menu = []
+        categories = []
+        print(e)
+        pass
+
+    try:
+        items = account.MenuItem_account.all()
+        print(items)
+    except Exception as e:
+        items = []
+        print(e)
+
+    try:
+        modifiers = Modifier.objects.filter(account=account, menuitem__in=items)
+        print(modifiers)
+    except Exception as e:
+        modifiers = []
+        print(e)
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '')
+        logo = request.FILES['logo']
+        menu = Menu.objects.filter(account=account)
+
+        if menu.exists():
+            context={
+                "username":username,
+                "activemenu":"active", 
+                "categories":categories,
+                "items":items,
+                'error_message': "You have already menu",
+                "menu":menu
+            }
+            return render(request, 'accounts/editMenu.html', context=context)
+            print("menu is exists")
+        else:
+            menu = Menu.objects.create(account=account,logo=logo, title=title)
+    
+
     context={
         "username":username,
-        "activemenu":"active"
+        "activemenu":"active",
+        "categories":categories,
+        "items":items,
+        "menu":menu,
+        "modifiers":modifiers
+        
     }
     return render(request, 'accounts/editMenu.html', context=context)
 
+
+@login_required(login_url='loginUser')
+def editMenu(request):
+    username = request.user.username
+    account = Account.objects.get(user=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '')
+        
+
+        menu = Menu.objects.get(account=account)
+
+        menu.title = title
+
+        if "logo" in request.FILES:
+            logo = request.FILES['logo']
+        
+            menu.logo = logo
+
+        menu.save()
+
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def categoryEdit(request):
+
+    username = request.user.username
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        category_id = request.POST.get('id')
+        print(category_id)
+
+        category = Category.objects.get(id=str(category_id))
+
+        category.name = name
+
+        category.save()
+    return redirect('edit_Menu')
+    
+
+@login_required(login_url='loginUser')
+def categoryDelete(request):
+    username = request.user.username
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        category_id = request.POST.get('id')
+        print(category_id)
+
+        category = Category.objects.get(id=str(category_id))
+
+        category.delete()
+
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def item(request):
+    account = Account.objects.get(user=request.user)
+
+    menu = Menu.objects.get(account=account)
+    
+    if request.method == 'POST':
+            
+        name = request.POST.get('name')
+        price = request.POST.get('price')
+        desc = request.POST.get('desc')
+        pic = request.FILES['pic']
+        category_name = request.POST.get('category')
+        print(menu)
+        category = Category.objects.get(menu=menu,name=category_name)
+        print(category)
+        try :
+            menuItems = MenuItem.objects.get(category=category)
+        except Exception as e:
+            menuItems = []
+        Item = MenuItem(account=account,category=category, item=name, price=price, desc=desc, picture=pic )
+        Item.save()
+        print(menu.category_menu.all())
+        print(menu.title)
+
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def itemEdit(request):
+    account = Account.objects.get(user=request.user)
+
+    if request.method == 'POST':
+            
+        name = request.POST.get('name')
+        price = request.POST.get('price')
+        desc = request.POST.get('desc')
+        itemId = request.POST.get('id')
+        category_name = request.POST.get('category')
+        menu = Menu.objects.get(account=account)
+        category = Category.objects.get(menu=menu,name=category_name)
+        
+
+        try :
+            menuItems = MenuItem.objects.get(id=itemId)
+        except Exception as e:
+            menuItems = []
+
+        menuItems.item = name
+        menuItems.category = category
+        menuItems.price = price
+        menuItems.desc = desc
+        if 'pic' in request.FILES:
+            pic = request.FILES['pic']
+            menuItems.picture = pic
+
+        menuItems.save()
+
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def itemDelete(request):
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        itemId = request.POST.get('id')
+        menuItem = MenuItem.objects.get(id=str(itemId))
+
+        menuItem.delete()
+
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def modifiers(request):
+    account = Account.objects.get(user=request.user)
+    menu = Menu.objects.get(account=account)
+
+    categories = menu.category_menu.all()
+    menuitems = MenuItem.objects.get(account=account, category__in=menu.category_menu.all())
+    modifiers = Modifier.objects.get(account=account, menuitem=menuitems)
+    
+    return redirect('edit_Menu')
+
+
+def listMenu(request, uuid):
+    
+    print(uuid)
+    account = Account.objects.get(id=uuid)
+    print(account)
+    menu = Menu.objects.get(account=account)
+  
+    menuTitle = menu.title
+   
+    logo = menu.logo
+    
+    categories = menu.category_menu.all()
+    menuitems = MenuItem.objects.filter(account=account, category__in=menu.category_menu.all())
+    print(menuitems)
+
+    context = {
+        "menuTitle": menuTitle,
+        "logo" : str(str(logo).split("static")[1]),
+        "categories": categories,
+        "items":menuitems
+    }
+    return render(request, 'accounts/menu.html', context=context)
 
 @login_required(login_url='loginUser')
 def profile(request):
