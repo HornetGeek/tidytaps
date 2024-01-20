@@ -31,7 +31,10 @@
 <link type="text/css" rel="stylesheet" href="{% static 'css/payment_feature.css' %}" />
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
-
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 <style type="text/css" id="form-designer-style">
   /* Injected CSS Code */
   /*PREFERENCES STYLE*/
@@ -872,147 +875,149 @@ div.swiper-button-next, div.swiper-button-prev {
                 <input type="text" name="productSearch-input" class="form-textbox " id="productSearch-input" size="15" placeholder="Search" autoComplete="on" />
               </div>
               {% for category in categories %}
-              <span class="form-product-category-item item {{category.name}}" category="2001">
-                <b>{{category.name}}</b>
-                <span class="selected-items-icon"></span>
-              </span>
-              {% for item in items %}
-              
-              {% if item.category.name == category.name %}
+                <span class="form-product-category-item item {{category.name}}" category="2001">
+                  <b>{{category.name}}</b>
+                  <span class="selected-items-icon"></span>
+                </span>
+                {% for item in items %}
+                
+                  {% if item.category.name == category.name %}
 
-                <div data-wrapper-react="true" class="items">
-                  <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item {{category.name}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
-                    <div data-wrapper-react="true" class="form-product-item-detail new_ui">
-                      <div class="p_col">
-                        <div class="p_checkbox">
-                          <input type="checkbox" class="form-checkbox  form-product-input" id="input_22_1000" name="item" data-inputname="Turkish-Coffee" value="Turkish-Coffee" readonly="" aria-label="Select Product: Crispy Onion Rings" />
-                          <div class="checked"></div>
-                          <div class="select_border"></div>
-                        </div>
-                      </div>
-                      <div class="p_image">
-                        <div class="image_area form-product-image-with-options">
-                          <div style="position:absolute;width:100%;height:100%">
-                            {% with pic=item.picture|stringformat:"s" %}
-                                {% with picture=pic|split_static %}
-                                    <img loading="lazy" role="img" aria-label="Crispy Onion Rings" alt="Crispy Onion Rings Product Image" style="width:100%;height:100%;object-fit:cover" src="{% static '' %}{{ picture.1 }}" />
+                    <div data-wrapper-react="true" class="items">
+                      <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item {{category.name}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
+                        <div data-wrapper-react="true" class="form-product-item-detail new_ui">
+                          <div class="p_col">
+                            <div class="p_checkbox">
+                              <input type="checkbox" class="form-checkbox  form-product-input" id="input_22_1000" name="item" data-inputname="Turkish-Coffee" value="Turkish-Coffee" readonly="" aria-label="Select Product: Crispy Onion Rings" />
+                              <div class="checked"></div>
+                              <div class="select_border"></div>
+                            </div>
+                          </div>
+                          <div class="p_image">
+                            <div class="image_area form-product-image-with-options">
+                              <div style="position:absolute;width:100%;height:100%">
+                                {% with pic=item.picture|stringformat:"s" %}
+                                    {% with picture=pic|split_static %}
+                                        <img loading="lazy" role="img" aria-label="Crispy Onion Rings" alt="Crispy Onion Rings Product Image" style="width:100%;height:100%;object-fit:cover" src="{% static '' %}{{ picture.1 }}" />
+                                    {% endwith %}
                                 {% endwith %}
-                            {% endwith %}
+                              </div>
+                              <div class="image_zoom"></div>
+                            </div>
                           </div>
-                          <div class="image_zoom"></div>
+                          <div for="input_22_1000" class="form-product-container">
+                            <span data-wrapper-react="true">
+                              <div class="title_description">
+                                <span class="form-product-name" id="product-name-input_22_1000">{{item.item}}</span>
+                                <span class="form-product-description" id="product-name-description-input_22_1000">{{ item.desc }}</span>
+                              </div>
+                            </span>
+                          
+                          </div>
+                          <div class="focus_action_button_container">
+                            <a class="btn-inline-product-delete"></a>
+                            <a class="btn-inline-product-settings"></a>
+                          </div>
                         </div>
-                      </div>
-                      <div for="input_22_1000" class="form-product-container">
-                        <span data-wrapper-react="true">
-                          <div class="title_description">
-                            <span class="form-product-name" id="product-name-input_22_1000">{{item.item}}</span>
-                            <span class="form-product-description" id="product-name-description-input_22_1000">{{ item.desc }}</span>
-                          </div>
-                        </span>
+                      </span>
                       
-                      </div>
-                      <div class="focus_action_button_container">
-                        <a class="btn-inline-product-delete"></a>
-                        <a class="btn-inline-product-settings"></a>
-                      </div>
-                    </div>
-                  </span>
-                  
-                  <div class="modal fade" id="modifiers" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered" role="document">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title" id="exampleModalLabel">Coffe</h5>
-                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                          </button>
-                        </div>
-                        <div class="modal-body">
-                          <div class="container">
-                            <div class="row">
-                              <div class="col-md mx-auto">
-                                <div class="swiper-container">
-                                  <div class="swiper-wrapper">
+                      <div class="modal fade" id="modifiers" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="exampleModalLabel">Coffe</h5>
+                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                              </button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="container">
+                                <div class="row">
+                                  <div class="col-md mx-auto">
+                                    <div class="swiper-container">
+                                      <div class="swiper-wrapper">
 
-                                    <div class="swiper-slide slide_1">
-                                      <img class="swip-img" src="https://images.immediate.co.uk/production/volatile/sites/30/2020/08/flat-white-3402c4f.jpg?quality=90&resize=500,454" alt="Image 1">
-                                      <p class="text-center mt-2"> Coffee  with Milk</p>
+                                        <div class="swiper-slide slide_1">
+                                          <img class="swip-img" src="https://images.immediate.co.uk/production/volatile/sites/30/2020/08/flat-white-3402c4f.jpg?quality=90&resize=500,454" alt="Image 1">
+                                          <p class="text-center mt-2"> Coffee  with Milk</p>
+                                        </div>
+                                        <div class="swiper-slide slide_2">
+                                          <img class="swip-img" src="https://neurosciencenews.com/files/2023/06/coffee-brain-caffeine-neuroscincces.jpg" alt="Image 2">
+                                        </div>
+                                        <div class="swiper-slide slide_3">
+                                          <img class="swip-img" src="https://img.freepik.com/free-photo/fresh-coffee-steams-wooden-table-close-up-generative-ai_188544-8923.jpg?size=626&ext=jpg&ga=GA1.1.1546980028.1704153600&semt=sph" alt="Image 3">
+                                        </div>
+                                        <!-- Add more images and slides here -->
+                                      </div>
+                                      <!-- Add Pagination -->
+                                      <div class="swiper-pagination"></div>
+                                      <!-- Add Navigation -->
+                                      <div class="swiper-button-prev"></div>
+                                      <div class="swiper-button-next"></div>
                                     </div>
-                                    <div class="swiper-slide slide_2">
-                                      <img class="swip-img" src="https://neurosciencenews.com/files/2023/06/coffee-brain-caffeine-neuroscincces.jpg" alt="Image 2">
-                                    </div>
-                                    <div class="swiper-slide slide_3">
-                                      <img class="swip-img" src="https://img.freepik.com/free-photo/fresh-coffee-steams-wooden-table-close-up-generative-ai_188544-8923.jpg?size=626&ext=jpg&ga=GA1.1.1546980028.1704153600&semt=sph" alt="Image 3">
-                                    </div>
-                                    <!-- Add more images and slides here -->
                                   </div>
-                                  <!-- Add Pagination -->
-                                  <div class="swiper-pagination"></div>
-                                  <!-- Add Navigation -->
-                                  <div class="swiper-button-prev"></div>
-                                  <div class="swiper-button-next"></div>
+                                </div>
+                                
+                                <div class="row mt-5">
+                                  <form>
+                                    <div class="form-group">
+                                      <span class="form-sub-label-container" style="vertical-align:top">
+                                        <label for="input_22_quantity_1000_0" style="min-height:13px" aria-hidden="false">Quantity</label>
+                                        <span class="select_cont">
+                                          <select class="form-dropdown cart66" name="quantity" id="input_22_quantity_1000_0" aria-label="Select Quantity">
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                          </select>
+                                        </span>
+                                      </span>
+                                    </div>
+                                    <div class="form-group">
+                                      <label for="exampleFormControlSelect1">Cup Size:</label>
+                                      <select class="form-dropdown cart66" id="exampleFormControlSelect1">
+                                        <option>S</option>
+                                        <option>M</option>
+                                        <option>L</option>
+                                      </select>
+                                    </div>
+                                    <div class="form-group">
+                                      <span>Modifiers:</span>
+                                      <div class="custom-control custom-checkbox mt-2">
+                                        <input type="checkbox" class="custom-control-input" id="customCheck1">
+                                        <label class="custom-control-label"  for="customCheck1">Milk:</label>
+                                      </div>
+                                    
+                                    
+                                    </div>
+                                    <div class="form-group">
+                                      <label for="exampleFormControlTextarea1">Note</label>
+                                      <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+                                    </div>
+                                  </form>
+                                  
                                 </div>
                               </div>
                             </div>
-                            
-                            <div class="row mt-5">
-                              <form>
-                                <div class="form-group">
-                                  <span class="form-sub-label-container" style="vertical-align:top">
-                                    <label for="input_22_quantity_1000_0" style="min-height:13px" aria-hidden="false">Quantity</label>
-                                    <span class="select_cont">
-                                      <select class="form-dropdown cart66" name="quantity" id="input_22_quantity_1000_0" aria-label="Select Quantity">
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                        <option value="10">10</option>
-                                      </select>
-                                    </span>
-                                  </span>
-                                </div>
-                                <div class="form-group">
-                                  <label for="exampleFormControlSelect1">Cup Size:</label>
-                                  <select class="form-dropdown cart66" id="exampleFormControlSelect1">
-                                    <option>S</option>
-                                    <option>M</option>
-                                    <option>L</option>
-                                  </select>
-                                </div>
-                                <div class="form-group">
-                                  <span>Modifiers:</span>
-                                  <div class="custom-control custom-checkbox mt-2">
-                                    <input type="checkbox" class="custom-control-input" id="customCheck1">
-                                    <label class="custom-control-label"  for="customCheck1">Milk:</label>
-                                  </div>
-                                
-                                
-                                </div>
-                                <div class="form-group">
-                                  <label for="exampleFormControlTextarea1">Note</label>
-                                  <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
-                                </div>
-                              </form>
-                              
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                              <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="document.getElementById('input_22_1000').checked = true;">Save changes</button>
                             </div>
                           </div>
                         </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                          <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="document.getElementById('input_22_1000').checked = true;">Save changes</button>
-                        </div>
                       </div>
+                      <div class="p_item_separator "></div>
                     </div>
-                  </div>
                   {% endif %}
-                  <div class="p_item_separator "></div>
-                </div>
-              {% endfor %}
+
+                {% endfor %}
+
               {% endfor %}
             
             <div class="payment_footer new_ui ">
@@ -1160,10 +1165,7 @@ div.swiper-button-next, div.swiper-button-prev {
     },
   });
 </script>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
 <script>
   $(document).ready(function() {
     function updateTotal() {
