@@ -874,7 +874,7 @@ div.swiper-button-next, div.swiper-button-prev {
                 <input type="text" name="productSearch-input" class="form-textbox " id="productSearch-input" size="15" placeholder="Search" autoComplete="on" />
               </div>
               {% for category in categories %}
-              <span class="form-product-category-item item turkish" category="2001">
+              <span class="form-product-category-item item {{category.name}}" category="2001">
                 <b>{{category.name}}</b>
                 <span class="selected-items-icon"></span>
               </span>
@@ -883,7 +883,7 @@ div.swiper-button-next, div.swiper-button-prev {
                 {% if item.category.name == category.name %}
 
               <div data-wrapper-react="true" class="items">
-                <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item turkish form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
+                <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item {{category.name}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
                   <div data-wrapper-react="true" class="form-product-item-detail new_ui">
                     <div class="p_col">
                       <div class="p_checkbox">
@@ -1014,9 +1014,10 @@ div.swiper-button-next, div.swiper-button-prev {
                 {% endif %}
                 <div class="p_item_separator "></div>
 
-                {% endfor %}
-              {% endfor %}
+               
             </div>
+            {% endfor %}
+            {% endfor %}
           </div>
         </div>
       </li>
