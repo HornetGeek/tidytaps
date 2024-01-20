@@ -1006,7 +1006,7 @@ div.swiper-button-next, div.swiper-button-prev {
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('input_22_1000').checked = true;">Save changes</button>
+                        <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="document.getElementById('input_22_1000').checked = true;">Save changes</button>
                       </div>
                     </div>
                   </div>
@@ -1018,6 +1018,18 @@ div.swiper-button-next, div.swiper-button-prev {
             </div>
             {% endfor %}
             {% endfor %}
+            <div class="payment_footer new_ui ">
+              <div class="total_area">
+                <div class="form-payment-total">
+                  <div id="total-text">Total</div>
+                  <div class="form-payment-price">
+                    <span data-wrapper-react="true"> <span id="payment_total">0.00</span>
+                      <input id="payment_total_input" hidden name="price" value="0">
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </li>
@@ -1046,7 +1058,7 @@ div.swiper-button-next, div.swiper-button-prev {
             $('#payment_total_input').text(totalPrice.toFixed(2)); // Update total price
           }
           // Event listener for changes in checkboxes and quantities
-          $('.form-checkbox, .form-dropdown').change(function() {
+          $('.form-checkbox, .save-changes').change(function() {
             updateTotal();
           });
           // Initial calculation on page load
