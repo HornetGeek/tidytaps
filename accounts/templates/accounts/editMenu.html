@@ -4,16 +4,218 @@
 {% block body %}
 
 <div class="container-fluid py-4">
+  
+  {% if error_message %}
+  <div class="alert alert-warning alert-dismissible fade show " role="alert">
+    <strong>Error!</strong> {{ error_message }}.
+    <button type="button" class="btn-close bi bi-x" data-bs-dismiss="alert" aria-label="Close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
+      <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+    </svg></button>
+  </div>
+  {% endif %}
+ 
+
     <div class="row">
       <div class="col-12">
         <div class="card-body px-0 pt-0 pb-2">
-          
           <div class="bg-white custom-box-shadow p-4 rounded">
+            
 
-            <h5>Edit Menu</h5>
-            <div class="border-bottom my-3"></div>
+            <div class="row"> 
+              <h6 class="col-10">Menu</h6>
+              <button type="button" class="col btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#menu" data-bs-whatever="@mdo">Add Menu</button>
+              
+              <div class="list-group-item list-group-item-action flex-column align-items-start py-3 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mt-3 mb-1 col-8">{{ menu.title }}</h6>
+                    <div>
+                      <a href="#" class="m-1" data-bs-toggle="modal" data-bs-target="#menuEdit">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      
+                    </div>
+                    
+                </div>
+              </div>
+              <div class="modal fade" id="menuEdit">
+                <div class="modal-dialog">
+                  <form method="POST" action="/editMenu" enctype="multipart/form-data"> 
+                    {% csrf_token %}
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Edit Menu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
 
-            <form>
+                      <div class="modal-body">             
+                         
+                          <div class="mb-3">
+                            <label for="title" class="col-form-label">Title:</label>
+                            <input type="text" name="title" class="form-control" value="{{ menu.title }}" id="title">
+                          </div>
+                          <div class="mb-3">
+                            <label for="formFile" class="col-form-label">Menu logo:</label>
+                            <input class="form-control" name="logo" value="{{ menu.logo }}" type="file" id="formFile">
+                          </div>
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Edit</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+                
+
+              <div class="modal fade" id="menu">
+                <div class="modal-dialog">
+                  <form method="Post" action="/edit_Menu" enctype="multipart/form-data"> 
+                    {% csrf_token %}
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Adding Menu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+
+                      <div class="modal-body">             
+                         
+                          <div class="mb-3">
+                            <label for="title" class="col-form-label">Title:</label>
+                            <input type="text" name="title" class="form-control" id="title">
+                          </div>
+                          <div class="mb-3">
+                            <label for="formFile" class="col-form-label">Menu logo:</label>
+                            <input class="form-control" required name="logo" type="file" id="formFile">
+                          </div>
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              
+
+              
+
+
+            </div>
+
+          </div>
+          <div class="bg-white custom-box-shadow p-4 mt-3 rounded">
+
+
+            <div class="row">
+              
+              <h6 class="col-10">Category</h6>
+              <button type="button" class="col btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#Category" data-bs-whatever="@mdo">Add Category</button>
+              <div class="modal fade" id="Category">
+                <div class="modal-dialog">
+                  <form method="Post" action="/category"> 
+                    {% csrf_token %}
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+
+                      <div class="modal-body">             
+                         
+                          <div class="mb-3">
+                            <label for="category_name" class="col-form-label">Name:</label>
+                            <input type="text" name="name" class="form-control" id="category_name">
+                          </div>
+                          
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="px-2 list-group list-group-flush">
+                {% for category in categories %}
+                  <div class="list-group-item list-group-item-action flex-column align-items-start py-3 px-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mt-3 mb-1 col-8">{{ category.name }}</h6>
+                        <div>
+                          <a href="#" class="m-1" data-bs-toggle="modal" data-bs-target="#categoryEdit{{category.id}}">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#categoryDelete{{category.id}}">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                        
+                    </div>
+                  </div>
+                  <div class="modal fade" id="categoryEdit{{category.id}}">
+                    <div class="modal-dialog">
+                      <form method="Post" action="/categoryEdit"> 
+                        {% csrf_token %}
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Category</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+    
+                          <div class="modal-body">             
+                             
+                              <div class="mb-3">
+                                <label for="category_name" class="col-form-label">Name:</label>
+                                <input type="text" name="name" value="{{ category.name }}" class="form-control" id="category_name">
+                              </div>
+
+                              <input type="text" name="id" value="{{ category.id }}" hidden class="form-control" id="category_id">
+
+                              
+                              
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Edit</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                  
+                  <div class="modal fade" id="categoryDelete{{category.id}}" tabindex="-1" caller-id="" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                      <form method="Post" action="categoryDelete">
+                        {% csrf_token %}
+                        <div class="modal-content">
+                          <div class="modal-body confirm-delete"> This action is permanent for deleting {{category.name}} category! </div>
+                          <b class="modal-body confirm-delete"> it will delete all items belong to this category</b>
+
+                          <input type="text" name="id" value="{{ category.id }}" hidden class="form-control" id="category_id">
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger" id="confirmDeleteButtonModal">Delete</button>
+                          </div>
+                        </div>
+                      </form>
+                      
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            
+
+              
+
+               <!-- 
+              <form>
                 <div class="form-group">
                     <label for="exampleFormControlInput1">Title</label>
                     <input type="text" class="form-control" id="exampleFormControlInput1" placeholder="You Can Order Now with Digital menu">
@@ -43,9 +245,314 @@
                 <label for="exampleFormControlTextarea1">Example textarea</label>
                 <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
                 </div>
-            </form>
+              </form>
 
+              -->
+            </div>
+              
+            
   
+          </div>
+
+          <div class="bg-white custom-box-shadow p-4 mt-3 rounded">
+            <div class="row">
+              <h6 class="col-10">Item</h6>
+              <button type="button" class="col btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#Item" data-bs-whatever="@mdo">Add Item</button>
+
+              <div class="modal fade" id="Item">
+                <div class="modal-dialog">
+                  <form method="Post" action="/item" enctype="multipart/form-data"> 
+                    {% csrf_token %}
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Item:</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+
+                      <div class="modal-body">             
+                        <div class="mb-3">
+                          <label for="category_select_name" class="col-form-label">Category:</label>
+                          <select class="form-control" data-toggle="select" name="category" id="category_select_name" data-minimum-results-for-search="Infinity">
+                            {% for category in categories %}
+                              <option>{{ category.name }}</option>
+                              
+                            {% endfor %}
+                          </select>
+                        </div>
+
+                        <div class="mb-3">
+                          <label for="item-name" class="col-form-label">Name:</label>
+                          <input type="text" name="name" class="form-control" id="item-name">
+                        </div>
+
+                        <div class="mb-3">
+                          <label for="item-desc" class="col-form-label">desc:</label>
+                          <input type="text" name="desc" class="form-control" id="item-desc">
+                        </div>
+
+                        
+                        <div class="mb-3">
+                          <label for="Price" class="col-form-label">Price:</label>
+                          <input type="number" name="price" class="form-control" id="Price">
+                        </div>
+
+                        <div class="mb-3">
+                          <label for="formFile" class="col-form-label">Item Pic:</label>
+                          <input class="form-control" required name="pic" type="file" id="formFile">
+                        </div>
+
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="px-2 list-group list-group-flush">
+                {% for item in items %}
+                  <div class="list-group-item list-group-item-action flex-column align-items-start py-3 px-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mt-3 mb-1 col-8">{{ item.item }}</h6>
+                        <div>
+                          <a href="#" class="m-1" data-bs-toggle="modal" data-bs-target="#itemEdit{{item.id}}">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#itemDelete{{item.id}}">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                        
+                    </div>
+                  </div>
+                  <div class="modal fade" id="itemEdit{{item.id}}">
+                    <div class="modal-dialog">
+                      <form method="Post" action="/itemEdit" enctype="multipart/form-data"> 
+                        {% csrf_token %}
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Edit Item:</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+    
+                          <div class="modal-body">   
+                            <input type="text" name="id" value="{{ item.id }}" hidden class="form-control" id="item_id">     
+                            <div class="mb-3">
+                              <label for="category_select_name" class="col-form-label">Category:</label>
+                              <select class="form-control" data-toggle="select" name="category" id="category_select_name" data-minimum-results-for-search="Infinity">
+                                {% for category in categories %}
+                                
+                                  {% if category.name == item.category.name %}
+                                    <option selected>{{ category.name }}</option>
+                                  {% else %}
+                                    <option>{{ category.name }}</option>
+                                  {% endif %}
+                                {% endfor %}
+                              </select>
+                            </div>
+    
+                            <div class="mb-3">
+                              <label for="item-name" class="col-form-label">Name:</label>
+                              <input type="text" name="name" class="form-control" value="{{ item.item }}" id="item-name">
+                            </div>
+    
+                            <div class="mb-3">
+                              <label for="item-desc" class="col-form-label">desc:</label>
+                              <input type="text" name="desc" class="form-control" value="{{item.desc}}" id="item-desc">
+                            </div>
+    
+                            
+                            <div class="mb-3">
+                              <label for="Price" class="col-form-label">Price:</label>
+                              <input type="number" name="price" class="form-control" value="{{ item.price }}" id="Price">
+                            </div>
+    
+                            <div class="mb-3">
+                              <label for="formFile" class="col-form-label">Item Pic:</label>
+                              <input class="form-control" name="pic" type="file" value="{{ item.pic }}" id="formFile">
+                            </div>
+    
+                              
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Edit</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                  <div class="modal fade" id="itemDelete{{item.id}}" tabindex="-1" caller-id="" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                      <form method="Post" action="itemDelete">
+                        {% csrf_token %}
+                        <div class="modal-content">
+                          <div class="modal-body confirm-delete"> This action is permanent for deleting {{item.item}}! </div>
+
+                          <input type="text" name="id" value="{{ item.id }}" hidden class="form-control" id="category_id">
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger" id="confirmDeleteButtonModal">Delete</button>
+                          </div>
+                        </div>
+                      </form>
+                      
+                    </div>
+                  </div>
+
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="bg-white custom-box-shadow p-4 mt-3 rounded">
+            <div class="row">
+              <h6 class="col-10">Modifiers</h6>
+              <button type="button" class="col btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#modifiers" data-bs-whatever="@mdo">Add Modifiers</button>
+
+              <div class="modal fade" id="modifiers">
+                <div class="modal-dialog">
+                  <form method="Post" action="/modifiers" enctype="multipart/form-data"> 
+                    {% csrf_token %}
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Modifiers:</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+
+                      <div class="modal-body">             
+                        <div class="mb-3">
+                          <label for="category_select_name" class="col-form-label">Item:</label>
+                          <select class="form-control" data-toggle="select" name="category" id="category_select_name" data-minimum-results-for-search="Infinity">
+                            {% for item in items %}
+                              <option>{{ item.item }}</option>
+                              
+                            {% endfor %}
+                          </select>
+                        </div>
+
+                        <div class="mb-3">
+                          <label for="item-name" class="col-form-label">Modifier Name:</label>
+                          <input type="text" name="name" class="form-control" id="item-name">
+                        </div>
+                        
+                        <div class="mb-3">
+                          <label for="Price" class="col-form-label">Price:</label>
+                          <input type="number" name="price" class="form-control" id="Price">
+                        </div>
+
+                        <div class="mb-3">
+                          <label for="formFile" class="col-form-label">Modfier Pic:</label>
+                          <input class="form-control" required name="pic" type="file" id="formFile">
+                        </div>
+
+                          
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="px-2 list-group list-group-flush">
+                {% for modifier in modifiers %}
+                  <div class="list-group-item list-group-item-action flex-column align-items-start py-3 px-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mt-3 mb-1 col-8">{{ modifier.name }}</h6>
+                        <div>
+                          <a href="#" class="m-1" data-bs-toggle="modal" data-bs-target="#itemEdit{{item.id}}">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#itemDelete{{item.id}}">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                        
+                    </div>
+                  </div>
+                  <div class="modal fade" id="itemEdit{{item.id}}">
+                    <div class="modal-dialog">
+                      <form method="Post" action="/itemEdit" enctype="multipart/form-data"> 
+                        {% csrf_token %}
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Edit Item:</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+    
+                          <div class="modal-body">   
+                            <input type="text" name="id" value="{{ item.id }}" hidden class="form-control" id="item_id">     
+                            <div class="mb-3">
+                              <label for="category_select_name" class="col-form-label">Category:</label>
+                              <select class="form-control" data-toggle="select" name="category" id="category_select_name" data-minimum-results-for-search="Infinity">
+                                {% for category in categories %}
+                                
+                                  {% if category.name == item.category.name %}
+                                    <option selected>{{ category.name }}</option>
+                                  {% else %}
+                                    <option>{{ category.name }}</option>
+                                  {% endif %}
+                                {% endfor %}
+                              </select>
+                            </div>
+    
+                            <div class="mb-3">
+                              <label for="item-name" class="col-form-label">Name:</label>
+                              <input type="text" name="name" class="form-control" value="{{ item.item }}" id="item-name">
+                            </div>
+    
+                            <div class="mb-3">
+                              <label for="item-desc" class="col-form-label">desc:</label>
+                              <input type="text" name="desc" class="form-control" value="{{item.desc}}" id="item-desc">
+                            </div>
+    
+                            
+                            <div class="mb-3">
+                              <label for="Price" class="col-form-label">Price:</label>
+                              <input type="number" name="price" class="form-control" value="{{ item.price }}" id="Price">
+                            </div>
+    
+                            <div class="mb-3">
+                              <label for="formFile" class="col-form-label">Item Pic:</label>
+                              <input class="form-control" name="pic" type="file" value="{{ item.pic }}" id="formFile">
+                            </div>
+    
+                              
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Edit</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                  <div class="modal fade" id="itemDelete{{item.id}}" tabindex="-1" caller-id="" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                      <form method="Post" action="itemDelete">
+                        {% csrf_token %}
+                        <div class="modal-content">
+                          <div class="modal-body confirm-delete"> This action is permanent for deleting {{item.item}}! </div>
+
+                          <input type="text" name="id" value="{{ item.id }}" hidden class="form-control" id="category_id">
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger" id="confirmDeleteButtonModal">Delete</button>
+                          </div>
+                        </div>
+                      </form>
+                      
+                    </div>
+                  </div>
+
+                {% endfor %}
+              </div>
+            </div>
           </div>
 
 

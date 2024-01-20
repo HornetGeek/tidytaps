@@ -1,4 +1,6 @@
 {% load static %} 
+{% load custom_filters %}
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style type="text/css">
   @media print {
@@ -815,11 +817,11 @@ div.swiper-button-next, div.swiper-button-prev {
         <div style="display:table;width:100%">
           <div class="form-header-group hasImage header-small" data-imagealign="Right">
             <div class="header-text httac htvam">
-              <h3 id="header_1" class="form-header" data-component="header">You Can Order Now</h3>
+              <h3 id="header_1" class="form-header" data-component="header">{{ menuTitle }}</h3>
               <div id="subHeader_1" class="form-subHeader">with Digital menu</div>
             </div>
             <div class="header-logo">
-              <img src="{% static 'img/ecuador_logo.png' %}" alt="You Can Order Now" width="340" class="header-logo-right" />
+              <img src="{% static  logo %}" alt="You Can Order Now" width="340" class="header-logo-right" />
             </div>
           </div>
         </div>
@@ -838,9 +840,11 @@ div.swiper-button-next, div.swiper-button-prev {
                     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
                     <select class="form-select" style="background-color: white; border-width: 1px; margin-top: 2px;" id="categories" name="categories">
+
                       <option value="all">All</option>
-                      <option value="turkish">Turkish</option>
-                      <option value="espresso">Espresso</option>
+                      {% for category in categories %}
+                        <option value="{{category.name}}">{{category.name}}</option>
+                      {% endfor %}
                       <!-- Add more categories as needed -->
                     </select>
                     <script>
@@ -869,12 +873,15 @@ div.swiper-button-next, div.swiper-button-prev {
                 
                 <input type="text" name="productSearch-input" class="form-textbox " id="productSearch-input" size="15" placeholder="Search" autoComplete="on" />
               </div>
-              
-                <span class="form-product-category-item item turkish" category="2001">
-                  <b>Turkish</b>
-                  <span class="selected-items-icon"></span>
-                </span>
+              {% for category in categories %}
+              <span class="form-product-category-item item turkish" category="2001">
+                <b>{{category.name}}</b>
+                <span class="selected-items-icon"></span>
+              </span>
+                {% for item in items %}
                 
+                {% if item.category.name == category.name %}
+
               <div data-wrapper-react="true" class="items">
                 <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item turkish form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
                   <div data-wrapper-react="true" class="form-product-item-detail new_ui">
@@ -888,7 +895,11 @@ div.swiper-button-next, div.swiper-button-prev {
                     <div class="p_image">
                       <div class="image_area form-product-image-with-options">
                         <div style="position:absolute;width:100%;height:100%">
-                          <img loading="lazy" role="img" aria-label="Crispy Onion Rings" alt="Crispy Onion Rings Product Image" style="width:100%;height:100%;object-fit:cover" src="https://krikerroasters.ae/wp-content/uploads/2022/07/Turkish-Coffee-3.webp" />
+                          {% with pic=item.picture|stringformat:"s" %}
+                              {% with picture=pic|split_static %}
+                                  <img loading="lazy" role="img" aria-label="Crispy Onion Rings" alt="Crispy Onion Rings Product Image" style="width:100%;height:100%;object-fit:cover" src="{% static '' %}{{ picture.1 }}" />
+                              {% endwith %}
+                          {% endwith %}
                         </div>
                         <div class="image_zoom"></div>
                       </div>
@@ -896,37 +907,11 @@ div.swiper-button-next, div.swiper-button-prev {
                     <div for="input_22_1000" class="form-product-container">
                       <span data-wrapper-react="true">
                         <div class="title_description">
-                          <span class="form-product-name" id="product-name-input_22_1000">Turkish Coffe</span>
-                          <span class="form-product-description" id="product-name-description-input_22_1000">Medium or Dark Roast</span>
+                          <span class="form-product-name" id="product-name-input_22_1000">{{item.item}}</span>
+                          <span class="form-product-description" id="product-name-description-input_22_1000">{{ item.desc }}</span>
                         </div>
-                        <!-- 
-                        <span class="form-product-details">
-                          <b>
-                            <span data-wrapper-react="true"><span class="item-price" id="input_22_1000_price">35.00</span>
-                            </span>
-                          </b>
-                        </span>
-                        -->
                       </span>
-                      <!-- 
-                      <span class="form-sub-label-container" style="vertical-align:top">
-                        <label class="form-sub-label" for="input_22_quantity_1000_0" style="min-height:13px" aria-hidden="false">Quantity</label>
-                        <span class="select_cont">
-                          <select class="form-dropdown cart66" name="quantity" id="input_22_quantity_1000_0" aria-label="Select Quantity">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                          </select>
-                        </span>
-                      </span>
-                      -->
+                     
                     </div>
                     <div class="focus_action_button_container">
                       <a class="btn-inline-product-delete"></a>
@@ -1026,266 +1011,11 @@ div.swiper-button-next, div.swiper-button-prev {
                     </div>
                   </div>
                 </div>
-                
-
+                {% endif %}
                 <div class="p_item_separator "></div>
-                <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item turkish form-product-item hover-product-item on_col2 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1001" aria-labelledby="label_22">
-                  <div data-wrapper-react="true" class="form-product-item-detail new_ui">
-                    <div class="p_col">
-                      <div class="p_checkbox">
-                        <input type="checkbox" class="form-checkbox  form-product-input" id="input_22_1001" name="item" data-inputname="turkish-latte" value="turkish-latte" readonly="" aria-label="Select Product: Thai Spring Rolls" />
-                        <div class="checked"></div>
-                        <div class="select_border"></div>
-                      </div>
-                    </div>
-                    <div class="p_image">
-                      <div class="image_area form-product-image-with-options">
-                        <div style="position:absolute;width:100%;height:100%">
-                          <img loading="lazy" role="img" aria-label="Thai Spring Rolls" alt="Thai Spring Rolls Product Image" style="width:100%;height:100%;object-fit:cover" src="https://popmenucloud.com/cdn-cgi/image/width%3D1200%2Cheight%3D1200%2Cfit%3Dscale-down%2Cformat%3Dauto%2Cquality%3D60/qprsamhc/22127d1a-4fdd-49a9-b322-82d05988fac5.jpg" />
-                        </div>
-                        <div class="image_zoom"></div>
-                      </div>
-                    </div>
-                    <div for="input_22_1001" class="form-product-container">
-                      <span data-wrapper-react="true">
-                        <div class="title_description">
-                          <span class="form-product-name" id="product-name-input_22_1001">Turkish Latte</span>
-                          <span class="form-product-description" id="product-name-description-input_22_1001">pla pla pla pla</span>
-                        </div>
-                        <!-- 
-                        <span class="form-product-details">
-                          <b>
-                            <span data-wrapper-react="true"><span class="item-price" id="input_22_1001_price">45.00</span>
-                            </span>
-                          </b>
-                        </span>
-                        -->
-                      </span>
-                      <!-- 
-                      <span class="form-sub-label-container" style="vertical-align:top">
-                        <label class="form-sub-label" for="input_22_quantity_1001_0" style="min-height:13px" aria-hidden="false">Quantity</label>
-                        <span class="select_cont">
-                          <select class="form-dropdown" name="quantity" id="input_22_quantity_1001_0" aria-label="Select Quantity">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                          </select>
-                        </span>
-                      </span>
-                      -->
-                    </div>
-                    <div class="focus_action_button_container">
-                      <a class="btn-inline-product-delete"></a>
-                      <a class="btn-inline-product-settings"></a>
-                    </div>
-                  </div>
-                </span>
-                <div class="p_item_separator "></div>
-                <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item turkish form-product-item hover-product-item on_col3 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1002" aria-labelledby="label_22">
-                  <div data-wrapper-react="true" class="form-product-item-detail new_ui">
-                    <div class="p_col">
-                      <div class="p_checkbox">
-                        <input type="checkbox" class="form-checkbox  form-product-input" id="input_22_1002" name="item" data-inputname="" value="turkish-Greek-latte" readonly="" aria-label="Select Product: Ancho Chili Cheese Quesadilla" />
-                        <div class="checked"></div>
-                        <div class="select_border"></div>
-                      </div>
-                    </div>
-                    <div class="p_image">
-                      <div class="image_area form-product-image-with-options">
-                        <div style="position:absolute;width:100%;height:100%">
-                          <img loading="lazy" role="img" aria-label="Ancho Chili Cheese Quesadilla" alt="Ancho Chili Cheese Quesadilla Product Image" style="width:100%;height:100%;object-fit:cover" src="{% static 'img/coffe.jpeg' %}" />
-                        </div>
-                        <div class="image_zoom"></div>
-                      </div>
-                    </div>
-                    <div for="input_22_1002" class="form-product-container">
-                      <span data-wrapper-react="true">
-                        <div class="title_description">
-                          <span class="form-product-name" id="product-name-input_22_1002">turkish Greek latte</span>
-                          <span class="form-product-description" id="product-name-description-input_22_1002">Served with sour cream, guacamole, and salsa</span>
-                        </div>
-                        <!-- 
-                        <span class="form-product-details">
-                          <b>
-                            <span data-wrapper-react="true"> <span class="item-price" id="input_22_1002_price">55.00</span>
-                            </span>
-                          </b>
-                        </span>
-                        -->
-                      </span>
-                      <!-- 
-                      <span class="form-sub-label-container" style="vertical-align:top">
-                        <label class="form-sub-label" for="input_22_quantity_1002_0" style="min-height:13px" aria-hidden="false">Quantity</label>
-                        <span class="select_cont">
-                          <select class="form-dropdown" name="quantity" id="input_22_quantity_1002_0" aria-label="Select Quantity">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                          </select>
-                        </span>
-                      </span>
-                      -->
-                    </div>
-                    <div class="focus_action_button_container">
-                      <a class="btn-inline-product-delete"></a>
-                      <a class="btn-inline-product-settings"></a>
-                    </div>
-                  </div>
-                </span>
-                <div class="p_item_separator last_p_seperator"></div>
-                
-              </div>
-              <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item espresso form-product-category-item  " category="2002">
-                <b>Espresso</b>
-                <span class="selected-items-icon"></span>
-              </span>
-              <div data-wrapper-react="true" class="items">
-                <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item espresso form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2002" active-category="2002" pid="1004" aria-labelledby="label_22">
-                  <div data-wrapper-react="true" class="form-product-item-detail new_ui">
-                    <div class="p_col">
-                      <div class="p_checkbox">
-                        <input type="checkbox" class="form-checkbox  form-product-input" id="input_22_1004" name="item" data-inputname="espresso" value="1004" readonly="" aria-label="Select Product: Cream of Wild Mushroom" />
-                        <div class="checked"></div>
-                        <div class="select_border"></div>
-                      </div>
-                    </div>
-                    <div class="p_image">
-                      <div class="image_area form-product-image-with-options">
-                        <div style="position:absolute;width:100%;height:100%">
-                          <img loading="lazy" role="img" aria-label="Cream of Wild Mushroom" alt="Cream of Wild Mushroom Product Image" style="width:100%;height:100%;object-fit:cover" src="https://cdnprod.mafretailproxy.com/sys-master-root/hfe/h1b/15418586562590/511351_main.jpg_480Wx480H" />
-                        </div>
-                        <div class="image_zoom"></div>
-                      </div>
-                    </div>
-                    <div for="input_22_1004" class="form-product-container">
-                      <span data-wrapper-react="true">
-                        <div class="title_description">
-                          <span class="form-product-name" id="product-name-input_22_1004">Espresso</span>
-                          <span class="form-product-description" id="product-name-description-input_22_1004">Espresso description</span>
-                        </div>
-                        <!-- 
-                        <span class="form-product-details">
-                          <b>
-                            <span data-wrapper-react="true"> <span class="item-price" id="input_22_1004_price">40.00</span>
-                            </span>
-                          </b>
-                        </span>
-                        -->
-                      </span>
-                      <!-- 
-                      <span class="form-sub-label-container" style="vertical-align:top">
-                        <label class="form-sub-label" for="input_22_quantity_1004_0" style="min-height:13px" aria-hidden="false">Quantity</label>
-                        <span class="select_cont">
-                          <select class="form-dropdown" name="quantity" id="quantity" aria-label="Select Quantity">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                          </select>
-                        </span>
-                      </span>
-                      -->
-                    </div>
-                    <div class="focus_action_button_container">
-                      <a class="btn-inline-product-delete"></a>
-                      <a class="btn-inline-product-settings"></a>
-                    </div>
-                  </div>
-                </span>
 
-                <div class="p_item_separator "></div>
-                <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item espresso form-product-item hover-product-item on_col2 show_image show_desc show_option new_ui" categories="2002" active-category="2002" pid="1005" aria-labelledby="label_22">
-                  <div data-wrapper-react="true" class="form-product-item-detail new_ui">
-                    <div class="p_col">
-                      <div class="p_checkbox">
-                        <input type="checkbox" class="form-checkbox form-product-input" id="input_22_1005" name="item" data-inputname="e" value="espresso-americano" readonly="" aria-label="Select Product: Tasty Chicken Noodle soup" />
-                        <div class="checked"></div>
-                        <div class="select_border"></div>
-                      </div>
-                    </div>
-
-                    <div class="p_image">
-                      <div class="image_area form-product-image-with-options">
-                        <div style="position:absolute;width:100%;height:100%">
-                          <img loading="lazy" role="img" aria-label="Tasty Chicken Noodle soup" alt="Tasty Chicken Noodle soup Product Image" style="width:100%;height:100%;object-fit:cover" src="https://majestycoffee.com/cdn/shop/articles/americano_misto_800x.jpg?v=1684064972" />
-                        </div>
-                        <div class="image_zoom"></div>
-                      </div>
-                    </div>
-                    <div for="input_22_1005" class="form-product-container">
-                      <span data-wrapper-react="true">
-                        <div class="title_description">
-                          <span class="form-product-name" id="product-name-input_22_1005">espresso americano</span>
-                          <span class="form-product-description" id="product-name-description-input_22_1005">espresso americano desc</span>
-                        </div>
-                        <!-- 
-                        <span class="form-product-details">
-                          <b>
-                            <span data-wrapper-react="true"><span class="item-price" id="input_22_1005_price">60.00</span>
-                            </span>
-                          </b>
-                        </span>
-                        -->
-                      </span>
-                      <!-- 
-                      <span class="form-sub-label-container" style="vertical-align:top">
-                        <label class="form-sub-label" for="input_22_quantity_1005_0" style="min-height:13px" aria-hidden="false">Quantity</label>
-                        <span class="select_cont">
-                          <select class="form-dropdown" name="quantity" id="input_22_quantity_1005_0" aria-label="Select Quantity">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                          </select>
-                        </span>
-                      </span>
-                      -->
-                    </div>
-                    <div class="focus_action_button_container">
-                      <a class="btn-inline-product-delete"></a>
-                      <a class="btn-inline-product-settings"></a>
-                    </div>
-                  </div>
-                </span>
-                <div class="payment_footer new_ui ">
-                  <div class="total_area">
-                    <div class="form-payment-total">
-                      <div id="total-text">Total</div>
-                      <div class="form-payment-price">
-                        <span data-wrapper-react="true"> <span id="payment_total">0.00</span>
-                          <input id="payment_total_input" hidden name="price" value="0">
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                {% endfor %}
+              {% endfor %}
             </div>
           </div>
         </div>
