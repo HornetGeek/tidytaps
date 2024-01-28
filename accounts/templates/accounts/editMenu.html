@@ -293,7 +293,7 @@
                         
                         <div class="mb-3">
                           <label for="Price" class="col-form-label">Price:</label>
-                          <input type="number" name="price" class="form-control" id="Price">
+                          <input type="number" step="any" name="price" class="form-control" id="Price">
                         </div>
 
                         <div class="mb-3">
@@ -367,7 +367,7 @@
                             
                             <div class="mb-3">
                               <label for="Price" class="col-form-label">Price:</label>
-                              <input type="number" name="price" class="form-control" value="{{ item.price }}" id="Price">
+                              <input type="number" step="any" name="price" class="form-control" value="{{ item.price }}" id="Price">
                             </div>
     
                             <div class="mb-3">
@@ -425,7 +425,7 @@
                       <div class="modal-body">             
                         <div class="mb-3">
                           <label for="category_select_name" class="col-form-label">Item:</label>
-                          <select class="form-control" data-toggle="select" name="category" id="category_select_name" data-minimum-results-for-search="Infinity">
+                          <select class="form-control" data-toggle="select" name="Item" id="category_select_name" data-minimum-results-for-search="Infinity">
                             {% for item in items %}
                               <option>{{ item.item }}</option>
                               
@@ -440,12 +440,12 @@
                         
                         <div class="mb-3">
                           <label for="Price" class="col-form-label">Price:</label>
-                          <input type="number" name="price" class="form-control" id="Price">
+                          <input type="float" step="any" name="price" class="form-control" id="Price">
                         </div>
 
                         <div class="mb-3">
                           <label for="formFile" class="col-form-label">Modfier Pic:</label>
-                          <input class="form-control" required name="pic" type="file" id="formFile">
+                          <input class="form-control" name="pic" type="file" id="formFile">
                         </div>
 
                           
@@ -465,61 +465,55 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="mt-3 mb-1 col-8">{{ modifier.name }}</h6>
                         <div>
-                          <a href="#" class="m-1" data-bs-toggle="modal" data-bs-target="#itemEdit{{item.id}}">
+                          <a href="#" class="m-1" data-bs-toggle="modal" data-bs-target="#editModifier{{modifier.id}}">
                             <i class="fas fa-edit"></i>
                           </a>
-                          <a href="#" data-bs-toggle="modal" data-bs-target="#itemDelete{{item.id}}">
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#modifierDelete{{modifier.id}}">
                             <i class="fas fa-trash"></i>
                           </a>
                         </div>
                         
                     </div>
                   </div>
-                  <div class="modal fade" id="itemEdit{{item.id}}">
+                  <div class="modal fade" id="editModifier{{modifier.id}}">
                     <div class="modal-dialog">
-                      <form method="Post" action="/itemEdit" enctype="multipart/form-data"> 
+                      <form method="Post" action="/modifierEdit" enctype="multipart/form-data"> 
                         {% csrf_token %}
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title" id="exampleModalLabel">Edit Item:</h5>
+                            <h5 class="modal-title" id="exampleModalLabel">Edit Modifier:</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
     
                           <div class="modal-body">   
-                            <input type="text" name="id" value="{{ item.id }}" hidden class="form-control" id="item_id">     
+                            <input type="text" name="id" value="{{ modifier.id }}" hidden class="form-control" id="item_id">     
                             <div class="mb-3">
-                              <label for="category_select_name" class="col-form-label">Category:</label>
-                              <select class="form-control" data-toggle="select" name="category" id="category_select_name" data-minimum-results-for-search="Infinity">
-                                {% for category in categories %}
+                              <label for="category_select_name" class="col-form-label">Item:</label>
+                              <select class="form-control" data-toggle="select" name="item" id="category_select_name" data-minimum-results-for-search="Infinity">
+                                {% for item in items %}
                                 
-                                  {% if category.name == item.category.name %}
-                                    <option selected>{{ category.name }}</option>
+                                  {% if item.item == modifier.menuitem.item %}
+                                    <option selected>{{ item.item }}</option>
                                   {% else %}
-                                    <option>{{ category.name }}</option>
+                                    <option>{{ item.item }}</option>
                                   {% endif %}
                                 {% endfor %}
                               </select>
                             </div>
     
                             <div class="mb-3">
-                              <label for="item-name" class="col-form-label">Name:</label>
-                              <input type="text" name="name" class="form-control" value="{{ item.item }}" id="item-name">
+                              <label for="item-name" class="col-form-label">Modifier Name:</label>
+                              <input type="text" name="name" class="form-control" value="{{ modifier.name }}" id="item-name">
                             </div>
-    
-                            <div class="mb-3">
-                              <label for="item-desc" class="col-form-label">desc:</label>
-                              <input type="text" name="desc" class="form-control" value="{{item.desc}}" id="item-desc">
-                            </div>
-    
-                            
+      
                             <div class="mb-3">
                               <label for="Price" class="col-form-label">Price:</label>
-                              <input type="number" name="price" class="form-control" value="{{ item.price }}" id="Price">
+                              <input type="number" step="any" name="price" class="form-control" value="{{ modifier.price }}" id="Price">
                             </div>
     
                             <div class="mb-3">
-                              <label for="formFile" class="col-form-label">Item Pic:</label>
-                              <input class="form-control" name="pic" type="file" value="{{ item.pic }}" id="formFile">
+                              <label for="formFile" class="col-form-label">Modifier Pic:</label>
+                              <input class="form-control" name="pic" type="file" value="{{ modifier.pic }}" id="formFile">
                             </div>
     
                               
@@ -532,14 +526,14 @@
                       </form>
                     </div>
                   </div>
-                  <div class="modal fade" id="itemDelete{{item.id}}" tabindex="-1" caller-id="" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                  <div class="modal fade" id="modifierDelete{{modifier.id}}" tabindex="-1" caller-id="" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
-                      <form method="Post" action="itemDelete">
+                      <form method="Post" action="modifierDelete">
                         {% csrf_token %}
                         <div class="modal-content">
-                          <div class="modal-body confirm-delete"> This action is permanent for deleting {{item.item}}! </div>
+                          <div class="modal-body confirm-delete"> This action is permanent for deleting {{modifier.name}}! </div>
 
-                          <input type="text" name="id" value="{{ item.id }}" hidden class="form-control" id="category_id">
+                          <input type="text" name="id" value="{{ modifier.id }}" hidden class="form-control" id="category_id">
                           <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-danger" id="confirmDeleteButtonModal">Delete</button>

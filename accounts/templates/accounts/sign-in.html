@@ -25,11 +25,32 @@
 </head>
 
 <body class="g-sidenav-show">
+  
 <main class="main-content  mt-0">
+  
   <section>
+    
+    {% if messages %}
+      
+        {% for message in messages %}
+          {% if message.tags == 'success' %}
+          <div class="alert alert-success m-2 justify-content-center align-items-center "  style="color: white;" role="alert">
+            <p class="text-center"><b>{{ message }}</b> </p>
+          </div>
+          {% else %}
+          <div class="alert alert-danger m-2 justify-content-center align-items-center "  style="color: white;" role="alert">
+            <p class="text-center"><b>{{ message }}</b> </p>
+          </div>
+          {% endif %}
+        {% endfor %}
+      
+    {% endif %}
+
     <div class="page-header min-vh-100">
+      
       <div class="container">
         <div class="row">
+          
           <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column mx-lg-0 mx-auto">
             <div class="card card-plain">
               <div class="card-header pb-0 text-start">

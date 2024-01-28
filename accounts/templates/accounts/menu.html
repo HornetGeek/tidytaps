@@ -703,6 +703,8 @@
   .ie-8 .form-all:before {
     display: none;
   }
+  
+
 
   .ie-8 {
     margin-top: auto;
@@ -800,8 +802,7 @@
     margin: 0 -38px;
   }
 
-
-
+  
 
 div.swiper-button-next, div.swiper-button-prev {
   top: 50%
@@ -811,7 +812,9 @@ div.swiper-button-next, div.swiper-button-prev {
   height: 80%;
   width: 100%;
 }
-
+.hidden {
+    display: none !important;
+}
   /* Injected CSS Code */
 </style>
 <form class="jotform-form" id="itemlist" action="/orders" method="post" autocomplete="on"> {% csrf_token %} <div role="main" class="form-all">
@@ -846,7 +849,7 @@ div.swiper-button-next, div.swiper-button-prev {
 
                       <option value="all">All</option>
                       {% for category in categories %}
-                        <option value="{{category.name}}">{{category.name}}</option>
+                        <option value="{{category.id}}">{{category.name}}</option>
                       {% endfor %}
                       <!-- Add more categories as needed -->
                     </select>
@@ -857,6 +860,7 @@ div.swiper-button-next, div.swiper-button-prev {
 
                       categorySelect.addEventListener("change", function() {
                         const selectedCategory = categorySelect.value;
+                        
                         items.forEach(function(item) {
                           if (selectedCategory === "all" || item.classList.contains(selectedCategory)) {
                             item.style.display = "block";
@@ -864,6 +868,10 @@ div.swiper-button-next, div.swiper-button-prev {
                             item.style.display = "none";
                           }
                         });
+                        var targetElement = document.getElementById(selectedCategory);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
                       });
                     });
                     </script>
@@ -875,20 +883,24 @@ div.swiper-button-next, div.swiper-button-prev {
                 <input type="text" name="productSearch-input" class="form-textbox " id="productSearch-input" size="15" placeholder="Search" autoComplete="on" />
               </div>
               {% for category in categories %}
-                <span class="form-product-category-item item {{category.name}}" category="2001">
+
+                <span class="form-product-category-item item {{category.name}}" onclick="collabs('{{category.id}}')" id="{{category.id}}" category="{{category.id}}">
                   <b>{{category.name}}</b>
                   <span class="selected-items-icon"></span>
                 </span>
-                {% for item in items %}
-                
-                  {% if item.category.name == category.name %}
+                    
+
 
                     <div data-wrapper-react="true" class="items">
-                      <span onclick="$('#modifiers').modal('show');" data-bs-toggle="modal" data-bs-target="#modifiers" class="item {{category.name}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
+                      
+                      {% for item in items %}
+                
+                      {% if item.category.name == category.name %}
+                      <span onclick="$('#item{{item.id}}').modal('show');" data-bs-toggle="modal" data-bs-target="#item{{item.id}}" class="item {{category.id}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
                         <div data-wrapper-react="true" class="form-product-item-detail new_ui">
                           <div class="p_col">
                             <div class="p_checkbox">
-                              <input type="checkbox" class="form-checkbox  form-product-input" id="input_22_1000" name="item" data-inputname="Turkish-Coffee" value="Turkish-Coffee" readonly="" aria-label="Select Product: Crispy Onion Rings" />
+                              <input type="checkbox" class="form-checkbox form-product-input" id="input_22_1000{{item.id}}" name="checked-item" data-inputname="Turkish-Coffee" value="{{item.id}}" readonly="" aria-label="Select Product: Crispy Onion Rings" />
                               <div class="checked"></div>
                               <div class="select_border"></div>
                             </div>
@@ -921,7 +933,7 @@ div.swiper-button-next, div.swiper-button-prev {
                         </div>
                       </span>
                       
-                      <div class="modal fade" id="modifiers" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                      <div class="modal fade" id="item{{item.id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered" role="document">
                           <div class="modal-content">
                             <div class="modal-header">
@@ -936,17 +948,20 @@ div.swiper-button-next, div.swiper-button-prev {
                                   <div class="col-md mx-auto">
                                     <div class="swiper-container">
                                       <div class="swiper-wrapper">
-
-                                        <div class="swiper-slide slide_1">
-                                          <img class="swip-img" src="https://images.immediate.co.uk/production/volatile/sites/30/2020/08/flat-white-3402c4f.jpg?quality=90&resize=500,454" alt="Image 1">
-                                          <p class="text-center mt-2"> Coffee  with Milk</p>
-                                        </div>
-                                        <div class="swiper-slide slide_2">
-                                          <img class="swip-img" src="https://neurosciencenews.com/files/2023/06/coffee-brain-caffeine-neuroscincces.jpg" alt="Image 2">
-                                        </div>
-                                        <div class="swiper-slide slide_3">
-                                          <img class="swip-img" src="https://img.freepik.com/free-photo/fresh-coffee-steams-wooden-table-close-up-generative-ai_188544-8923.jpg?size=626&ext=jpg&ga=GA1.1.1546980028.1704153600&semt=sph" alt="Image 3">
-                                        </div>
+                                        {% for modifier in modifiers %}
+                                          {% if modifier.menuitem.item == item.item %}
+                                            {% with pic=modifier.pic|stringformat:"s" %}
+                                              {% with picture=pic|split_static %}
+                                                <div class="swiper-slide slide_1">
+                                                  <img class="swip-img" src="{% static '' %}{{ picture.1 }}" alt="Image 1">
+                                                  <p class="text-center mt-2">  with {{ modifier.name }}</p>
+                                                  
+                                                </div>
+                                              {% endwith %}
+                                            {% endwith %}
+                                          {% endif %}
+                                        {% endfor %}
+                                        <input hidden name="item-{{item.item}}-price" value="{{item.price}}" class="item-price">
                                         <!-- Add more images and slides here -->
                                       </div>
                                       <!-- Add Pagination -->
@@ -959,12 +974,12 @@ div.swiper-button-next, div.swiper-button-prev {
                                 </div>
                                 
                                 <div class="row mt-5">
-                                  <form>
+                                  
                                     <div class="form-group">
                                       <span class="form-sub-label-container" style="vertical-align:top">
-                                        <label for="input_22_quantity_1000_0" style="min-height:13px" aria-hidden="false">Quantity</label>
+                                        <label for="quantity_{{item.id}}" style="min-height:13px" aria-hidden="false">Quantity</label>
                                         <span class="select_cont">
-                                          <select class="form-dropdown cart66" name="quantity" id="input_22_quantity_1000_0" aria-label="Select Quantity">
+                                          <select class="form-dropdown quantity{{item.id}} cart66" name="quantity" id="quantity_{{item.id}}" aria-label="Select Quantity">
                                             <option value="1">1</option>
                                             <option value="2">2</option>
                                             <option value="3">3</option>
@@ -980,44 +995,53 @@ div.swiper-button-next, div.swiper-button-prev {
                                       </span>
                                     </div>
                                     <div class="form-group">
-                                      <label for="exampleFormControlSelect1">Cup Size:</label>
-                                      <select class="form-dropdown cart66" id="exampleFormControlSelect1">
-                                        <option>S</option>
-                                        <option>M</option>
-                                        <option>L</option>
+                                      <label for="cupsize_{{item.id}}">Size:</label>
+                                      <select class="form-dropdown cart66" id="cupsize_{{item.id}}">
+                                        <option value="s">S</option>
+                                        <option value="m">M</option>
+                                        <option value="l">L</option>
                                       </select>
                                     </div>
+                                    {% if modifiers %}
                                     <div class="form-group">
+
                                       <span>Modifiers:</span>
-                                      <div class="custom-control custom-checkbox mt-2">
-                                        <input type="checkbox" class="custom-control-input" id="customCheck1">
-                                        <label class="custom-control-label"  for="customCheck1">Milk:</label>
-                                      </div>
-                                    
+                                      {% for modifier in modifiers %}
+                                        {% if modifier.menuitem.item == item.item %}
+                                          <div class="custom-control custom-checkbox mt-2">
+                                            
+                                            <input type="checkbox" class="custom-control-input modifier_checked_{{item.id}}" name="modifier_checked" value="{{modifier.name}}" id="modifier_checked_{{modifier.id}}">
+                                            <label class="custom-control-label"  for="modifier_checked_{{modifier.id}}">{{modifier.name}}:</label>
+                                            <input hidden name="Modifier-price" value="{{modifier.id}}">
+                                          </div>
+                                        {% endif %}
+                                      {% endfor %}
                                     
                                     </div>
+                                    {% endif %}
                                     <div class="form-group">
-                                      <label for="exampleFormControlTextarea1">Note</label>
-                                      <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+                                      <label for="modifier_note_{{item.id}}">Note</label>
+                                      <textarea class="form-control" id="modifier_note_{{item.id}}" name="modifier-note" rows="3"></textarea>
                                     </div>
-                                  </form>
+                                  
                                   
                                 </div>
                               </div>
                             </div>
                             <div class="modal-footer">
                               <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="document.getElementById('input_22_1000').checked = true;">Save changes</button>
+                              <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="saveChanges('input_22_1000{{ item.id }}', '.quantity{{item.id}}')">Save changes</button>
                             </div>
                           </div>
                         </div>
                       </div>
+                      
                       <div class="p_item_separator "></div>
+                      {% endif %}
+
+                      {% endfor %}
                     </div>
-                  {% endif %}
-
-                {% endfor %}
-
+                 
               {% endfor %}
             
             <div class="payment_footer new_ui ">
@@ -1026,7 +1050,7 @@ div.swiper-button-next, div.swiper-button-prev {
                   <div id="total-text">Total</div>
                   <div class="form-payment-price">
                     <span data-wrapper-react="true"> <span id="payment_total">0.00</span>
-                      <input id="payment_total_input" hidden name="price" value="0">
+                      <input id="payment_total_input" name="price" value="0" hidden>
                     </span>
                   </div>
                 </div>
@@ -1043,7 +1067,7 @@ div.swiper-button-next, div.swiper-button-prev {
         <div id="cid_9" class="form-input" data-layout="full">
           <div data-wrapper-react="true">
             <span class="form-sub-label-container" style="vertical-align:top" data-input-type="first">
-              <input type="text" id="first_9" name="username" class="form-textbox" data-defaultvalue="" size="10" data-component="first" aria-labelledby="label_9 sublabel_9_first" value="" />
+              <input type="text" id="first_9" name="username" required class="form-textbox" data-defaultvalue="" size="10" data-component="first" aria-labelledby="label_9 sublabel_9_first" value="" />
               <label class="form-sub-label" for="first_9" id="username" style="min-height:13px" aria-hidden="false">Name</label>
             </span>
           </div>
@@ -1109,10 +1133,10 @@ div.swiper-button-next, div.swiper-button-prev {
           <textarea id="input_17" class="form-textarea" name="note" style="width:648px;height:163px" data-component="textarea" aria-labelledby="label_17"></textarea>
         </div>
       </li>
-      <li class="form-line" data-type="control_button" id="id_24">
-        <div id="cid_24" class="form-input-wide" data-layout="full">
-          <div data-align="auto" class="form-buttons-wrapper form-buttons-auto   jsTest-button-wrapperField">
-            <button type="submit" id="send_order" class="form-submit-button form-submit-button-black_blue submit-button jf-form-buttons jsTest-submitField useJotformSign-button useJotformSign " data-component="button" data-content="">Submit</button>
+      <li class="form-line"  data-type="control_button" id="id_24">
+        <div id="cid_24" onclick="send_order()"  class="form-input-wide" data-layout="full">
+          <div data-align="auto" class="form-buttons-wrapper form-buttons-auto jsTest-button-wrapperField">
+            <button type="button" id="send_order" class="form-submit-button form-submit-button-black_blue submit-button jf-form-buttons jsTest-submitField useJotformSign-button useJotformSign " data-component="button" data-content="">Submit</button>
           </div>
         </div>
       </li>
@@ -1123,32 +1147,31 @@ div.swiper-button-next, div.swiper-button-prev {
 
 <script>
   console.log("ordeersockiet")
-
+  
+  var currentURL = window.location.href;
+  var uuid = currentURL.substr(currentURL.lastIndexOf('/') + 1);
   const orderSocket = new WebSocket(
       'ws://'
       + window.location.host
       + '/ws/order/'
+      + uuid
+     + '/' 
   );
+
+  console.log('ws://'
+      + window.location.host
+      + '/ws/order/' + uuid)
   orderSocket.onopen = function open() {
     console.log('WebSockets connection created.');
   };
 
-  document.querySelector('#send_order').onclick = function(e) {
-      const note = document.querySelector('#first_9');
-
-      const message = note.value;
-      
-      orderSocket.send(JSON.stringify({
-          "message": message
-      }));
-      
-      
-  };
+  
 
   orderSocket.onclose = function(e) {
     console.error('order socket closed unexpectedly');
   };
 </script>
+
 <script>
   var swiper = new Swiper('.swiper-container', {
     slidesPerView: 1,
@@ -1167,30 +1190,210 @@ div.swiper-button-next, div.swiper-button-prev {
 </script>
 
 <script>
-  $(document).ready(function() {
-    function updateTotal() {
-      let totalPrice = 0;
+
+  var totalprice1 = document.getElementById('payment_total_input');
+  let totalPrice = parseFloat(totalprice1.value);
+  function updateTotal(quantityid) {
+      console.log("updatetotal called")
+      
+      console.log(totalPrice)
       // Iterate through each item
-      $('.form-product-item-detail').each(function() {
+      $('.product-container-wrapper').each(function() {
         const $checkbox = $(this).find('.form-checkbox');
-        const $quantity = $(this).find('.form-dropdown');
+        
+        const $quantity = $(this).find(quantityid);
+       
         const $price = $(this).find('.item-price'); // Adjust this selector based on your HTML structure
+        
         if ($checkbox.is(':checked')) {
-          const itemPrice = parseFloat($price.text());
+          const itemPrice = parseFloat($price.val());
+          console.log(itemPrice);
+          
           const selectedQuantity = parseInt($quantity.val());
+          console.log(selectedQuantity)
           totalPrice += selectedQuantity * itemPrice;
         }
       });
+       //var paymentTotalInput = document.getElementById("payment_total_input");
+       //console.log(paymentTotalInput)
+       //console.log(paymentTotalInput.value)
+       //paymentTotalInput.value = "your_new_value";
+
       $('#payment_total').text(totalPrice.toFixed(2));
-      $('#payment_total_input').text(totalPrice.toFixed(2)); // Update total price
+     
+      //totalprice1.value = totalPrice
+      $('#payment_total_input').attr('value', totalPrice.toFixed(2)); // Update total price
+  }
+  function collabs(categoryId) {
+    // Get all items with the specified category ID
+    var items = document.querySelectorAll('.\\3' + categoryId);
+    console.log(items)
+    // Loop through the items and toggle the 'hidden' class
+    items.forEach(function(item) {
+        if (item.classList.contains('hidden')) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+  }
+
+  function send_order(){
+    console.log("wewewewe");
+
+    var checkedItems = [];
+
+    $('.form-checkbox:checked').each(function() {
+      checkedItems.push($(this).val());
+    });
+
+    var jsonData = [];
+
+    for (var i = 0; i < checkedItems.length; i++) {
+      var currentValue = checkedItems[i];
+      
+      // Use the current value to select elements with matching IDs
+      $('#quantity_'+currentValue).each(function() {
+        var itemData = {
+          id: currentValue,
+          quantity: $(this).val()
+        };
+
+        jsonData.push({ item: itemData });
+        // Do something with the matched element
+        console.log("Match found for value: " + this.value);
+        // Example: $(this).css('color', 'red'); // Change CSS or perform other actions
+      
+      });
+      $('#cupsize_'+currentValue).each(function() {
+        for (var i = 0; i < jsonData.length; i++){
+          var currentItem = jsonData[i].item;
+          if (currentItem.id === currentValue){
+            currentItem.cupsize = this.value
+          }
+        }        
+      })
+      modifiers = []
+      $('.modifier_checked_'+currentValue+":checked").each(function() {
+        
+        for (var i = 0; i < jsonData.length; i++){
+          var currentItem = jsonData[i].item;
+          if (currentItem.id === currentValue){
+            modifiers.push(this.value)
+            
+          }
+        }
+        
+        currentItem.modifiers = modifiers;
+      })
+
+      $('#modifier_note_'+currentValue).each(function() {
+        for (var i = 0; i < jsonData.length; i++){
+          var currentItem = jsonData[i].item;
+          if (currentItem.id === currentValue){
+            currentItem.modifier_note = this.value
+          }
+        }        
+      })
+
+
     }
+    var name = $('#first_9').val()
+    var email = $('#input_10').val()
+    var phone = $('#input_11_full').val()
+    var note = $('#input_17').val()
+    console.log("name")
+    console.log(name)
+    var currentURL = window.location.href;
+    var uuid = currentURL.substr(currentURL.lastIndexOf('/') + 1);
+
+    jsonData[0].name = name;
+    jsonData[0].email = email;
+    jsonData[0].phone = phone;
+    jsonData[0].uuid = uuid;
+    jsonData[0].note = note;
+    console.log("jsonData");
+    console.log(jsonData);
+    var endpointUrl = "http://127.0.0.1:8000/addorders";
+    var csrfToken = $("#itemlist input[name='csrfmiddlewaretoken']").val();
+
+    var nameInput = document.getElementById("first_9");
+    var emailInput = document.getElementById("input_10");
+
+    if (nameInput.checkValidity() && emailInput.checkValidity()) {
+      fetch(endpointUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken
+          // Add any other headers if needed
+        },
+        body: JSON.stringify(jsonData)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        
+        return response.json();
+      })
+      .then(data => {
+        // Handle the response data
+        console.log("Response:", data);
+        orderId = data['order_id']
+        console.log("ordeersockiet")
+
+        const note = document.querySelector('#first_9');
+
+        const message = note.value;
+        
+        orderSocket.send(JSON.stringify({
+            "message": message
+        }));
+        
+            
+       
+        window.location.href = "http://127.0.0.1:8000/thanks"+'?orderId='+orderId;
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+    } else {
+      var nameError = nameInput.validationMessage;
+      var emailError = emailInput.validationMessage;
+      if (nameError){
+        alert("Validation errors:\nName: " + nameError );
+      } else{
+        alert("Validation errors:\nEmail: " + emailError);
+
+      }
+
+    }
+
+    console.log("jsonData")
+    console.log(jsonData);
+  }
+
+  function saveChanges(itemId, quantityid) {
+      // Your code here
+      document.getElementById(itemId).checked = true;
+
+      updateTotal(quantityid);
+    }
+
+  $(document).ready(function() {
+    updateTotal();
     // Event listener for changes in checkboxes and quantities
     $('.form-checkbox, .save-changes').change(function() {
       updateTotal();
     });
     // Initial calculation on page load
     updateTotal();
-  });
+    
+  }
+  
+  
+  );
 
   $(document).ready(function() {
     $('#productSearch-input').on('keyup', function() {
@@ -1207,5 +1410,7 @@ div.swiper-button-next, div.swiper-button-prev {
       });
     });
   });
+
+  
 </script>
 

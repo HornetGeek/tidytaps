@@ -180,7 +180,9 @@
                 const recieveSocket = new WebSocket(
                   'ws://'
                   + window.location.host
-                  + '/ws/order/'
+                  + '/ws/order/' 
+                  + "{{account.id}}"
+                  + '/'
                 );
 
                 recieveSocket.onopen = () => {
@@ -200,8 +202,13 @@
                   console.log(data)
                   var name = document.getElementById("name");
                   name.textContent = data['message']
-                 
+                  playNotificationSound();
                 };
+                function playNotificationSound() {
+
+                  var audio = new Audio("{% static 'mixkit-bell-notification-933.wav' %}"); // Replace with the actual path to your sound file
+                  audio.play();
+                }
 
                 recieveSocket.onclose = () => {
                   console.log('WebSocket connection closed!');

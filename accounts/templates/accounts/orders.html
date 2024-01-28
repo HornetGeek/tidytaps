@@ -16,6 +16,8 @@
               </div>
                 <ul class="list-group list-group-light">
                   {% for order in orders %}
+                  
+                 
                   {% if order.status == 'waiting' %}
                   <a href="#" data-bs-toggle="modal" data-bs-target="#order{{order.id}}">
                     <li id="{{ order.id }}" class="list-group-item d-flex justify-content-between align-items-center">
@@ -46,21 +48,36 @@
                         </div>
                         <div class="modal-body">
                           <!-- Modal content goes here -->
-                          <h6>Table 2</h6>
+                          <h6>Table 1</h6>
                           <ul class="list-group">
                             <li class="list-group-item">{{order.quantity}} x {{order.item}}</li>
                           </ul>
                           <br>
                           <div class="info">
+                            <p><strong>Size:</strong><br> {{ order.size }} </p>
+                          </div> 
+                          {% if order.modifier %}
+                          <div class="info">
+                            <p><strong>Modifier:</strong><br> {{order.modifier}}</p>
+                          </div> 
+                          <div class="info">
+                            <p><strong>Modifier Note:</strong><br> {{order.modifier_note}}</p>
+                          </div> 
+                          {% endif %}
+                          <div class="info">
                             <p><strong>Note!</strong><br> {{ order.note }} </p>
                           </div> 
+
                           
                           <hr style="border-top: 1px solid #000;">
+                          <!-- 
                           {% if order.pay == 'cash' %}
                             <div class="info">
                               <i class="fa fa-money" aria-hidden="true"> Cash</i>
                             </div> 
                           {% endif %}
+                          -->
+
                           {% if order.pay == 'payment' %}
                             <div class="info">
                               <i class="fa fa-credit-card" aria-hidden="true">  Payment Gatway</i>
@@ -114,7 +131,7 @@
                     </script>
                     {% endif %}
                     {% endfor %}
-
+                  
                 </ul>
             </div>
 
@@ -166,17 +183,16 @@
                         </div>
                         <div class="modal-body">
                           <!-- Modal content goes here -->
-                          <h6>Table 2</h6>
+                          <h6>Table 1</h6>
                           <ul class="list-group">
-                            <li class="list-group-item">4 x coffie latine</li>
+                            <li class="list-group-item">{{ order.quantity }} x {{ order.item }}</li>
                           </ul>
                           <br>
                           <div class="info">
-                            <p><strong>Note!</strong><br> more sugar </p>
+                            <p><strong>Note!</strong><br> {{ order.note }} </p>
                           </div>
-                          <div class="info">
-                            <p><strong>Note!</strong><br> more sugar </p>
-                          </div>
+                          <hr style="border-top: 1px solid #000;">
+                         
 
                           </div>
                         

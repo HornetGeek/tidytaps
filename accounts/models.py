@@ -29,7 +29,6 @@ class Account(models.Model):
     username = models.CharField(max_length=150, unique=True)
     #password = models.CharField(max_length=128)
     phone_number = models.IntegerField(blank=True, null=True)
-    password = models.CharField(max_length=150)
 
     idnumber = models.IntegerField(blank=True, null=True)
     picture = models.CharField(max_length=200, blank=True)
@@ -78,7 +77,8 @@ class Payment(models.Model):
 class Order(models.Model):
     client = models.ForeignKey(Clients, on_delete=models.CASCADE, related_name="client_order")
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="freelancer_order")
-    price = models.IntegerField()
+    orderId = models.IntegerField(default=0)
+    price = models.FloatField()
     status = models.CharField(
         max_length=50,
         choices=[('Done', 'Done'), ('canceled' , 'canceled'), ('waiting','waiting')],
@@ -89,7 +89,9 @@ class Order(models.Model):
     item = models.CharField(max_length=300,blank=True, null=True)
     quantity = models.IntegerField(default=0)
     note = models.CharField(max_length=300,blank=True, null=True)
-
+    size = models.CharField(max_length=300,default='s')
+    modifier = models.CharField(max_length=300,blank=True, null=True)
+    modifier_note = models.CharField(max_length=300,blank=True, null=True)
     pay = models.CharField(
         max_length=50,
         choices=[('cash', 'cash'), ('payment' , 'payment')],
@@ -97,7 +99,6 @@ class Order(models.Model):
         null=True
     )
     
-
     def __str__(self):
         return self.status
     
@@ -134,7 +135,8 @@ class Modifier(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="Modifier_account",  null=True)
     menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_Modifier")
     name = models.CharField(max_length=500)
-    pic = models.FileField(upload_to='accounts/static/img/modifier/')
+    price = models.CharField(max_length=500, default=0)
+    pic = models.FileField(upload_to='accounts/static/img/modifier/',blank=True )
     
 
 class Offers(models.Model):

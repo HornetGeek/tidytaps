@@ -6,7 +6,7 @@ from .models import *
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework import permissions
 from django.shortcuts import get_object_or_404
@@ -18,7 +18,8 @@ from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
-
+from django.contrib import messages
+import random
 
 def login_view(request):
     return render(request, 'accounts/sign-in.html')
@@ -39,15 +40,15 @@ def login_user(request):
             #return HttpResponseRedirect(reverse("index"))
         # Otherwise, return login page again with new context
         else:
-            return render(request, "accounts/sign-in.html", {
-                "message": "Invalid Credentials"
-            })
+            messages.error(request, 'Incorrect username or password. Please try again.')
+            return render(request, "accounts/sign-in.html")
+
     return render(request, "accounts/sign-in.html")
 
 def logout_view(request):
     logout(request)
     return render(request, "accounts/sign-in.html", {
-                "message": "Logged Out"
+                "messages": "Logged Out"
             })
 
 
@@ -118,7 +119,7 @@ def index(request):
         6: "Sunday"
     }
     stats = {"Monday":0, "Tuesday":0, "Wednesday": 0, "Thursday":0,"Friday":0, "Saturday":0, "Sunday":0 }
-    orders_by_day = Order.objects.filter(date__gte=start_date).extra({'day': "date(date)"}).values('day').annotate(order_count=Count('id')).order_by('day')    
+    orders_by_day = Order.objects.filter(account=account,date__gte=start_date).extra({'day': "date(date)"}).values('day').annotate(order_count=Count('id')).order_by('day')    
     for entry in orders_by_day:
         day_date_str = entry['day']  # Assuming 'day' is a string representation of the date
         day_date = datetime.strptime(day_date_str, '%Y-%m-%d')  # Convert string to datetime object
@@ -151,7 +152,8 @@ def index(request):
         "Saturday": stats['Saturday'],
         "Sunday": stats['Sunday'],
         "page_obj":page_obj,
-        "active":"active"
+        "active":"active",
+        "account":account
     }
     return render(request, 'accounts/index.html', context=context)
 
@@ -163,7 +165,7 @@ def menu(request):
 @login_required(login_url='loginUser')
 def order(request):
     account = Account.objects.get(user=request.user)
-
+    
     username = request.user.username
 
     if request.method == 'POST':
@@ -172,7 +174,7 @@ def order(request):
         email = request.POST.get('email')
         username = request.POST.get('username')
         phone = request.POST.get('phone')
-        price = request.POST.get('price')
+        price = float(request.POST.get('price'))
         note = request.POST.get('note')
         item = request.POST.get('item')
         pay = request.POST.get('pay')
@@ -208,6 +210,27 @@ def order(request):
         return JsonResponse({'statue' : 'done'},status=200)   
 
     orders = Order.objects.filter(account=account)
+    grouped_orders = {}
+   
+    orders_by_order_id = (
+        Order.objects.filter(account=account)
+        .values('orderId', 'status')
+        .annotate(order_count=Count('orderId'))
+    )
+    print(orders_by_order_id)
+    for order_data in orders_by_order_id:
+        order_id = order_data['orderId']
+        order_count = order_data['order_count']
+        order_status = order_data['status']
+        print(order_status)
+        if order_status == 'waiting':
+        # Fetch all Order objects with the same orderId
+            orders_with_same_id = Order.objects.filter(account=account, orderId=order_id)
+
+            # Store the list of orders in the dictionary
+            grouped_orders[order_id] = orders_with_same_id
+    print("grouped_orders")
+    print(grouped_orders)
     items_per_page = 10
 
     paginator = Paginator(orders, items_per_page)
@@ -219,10 +242,68 @@ def order(request):
         "username":username,
         "activeOrder":"active",
         "page_order_obj":page_order_obj,
-        "orders": orders
+        "orders": orders,
+        "account":account
     }
     
     return render(request, 'accounts/orders.html',  context=context)
+
+def generate_unique_order_id():
+    while True:
+        # Generate a random orderId
+        order_id = random.randint(1000, 9999)  # Adjust the range as needed
+
+        # Check if the orderId already exists in the database
+        if not Order.objects.filter(orderId=order_id).exists():
+            return order_id
+
+
+
+def add_order(request):
+    json_data = json.loads(request.body.decode('utf-8'))
+    date = datetime.now()
+    print(json_data)
+    uuid = json_data[0]['uuid']
+    email = json_data[0]['email']
+    username = json_data[0]['name']
+    phone = json_data[0]['phone']
+    note = json_data[0]["note"]
+
+    unique_order_id = generate_unique_order_id()
+
+    account = Account.objects.get(id=uuid)
+    client = Clients.objects.filter(account=account, email=email)
+
+    if len(client) == 0:
+        client = Clients(account=account,username=username,numberOfOrders=1 ,email=email, phone=phone)
+        client.save()
+    else:
+        client = Clients.objects.get(account=account, email=email)
+        client.numberOfOrders += 1
+        client.save()
+
+    for data in json_data:
+        print(data['item'])
+        item_id = data['item']['id']
+        quantity = data['item']['quantity']
+        cupsize = data['item']['cupsize']
+        if "modifiers" in data['item']:
+            modifiers = data['item']['modifiers']
+        else:
+            modifiers = None
+
+        if "modifier_note" in data['item']:
+            modifiers_note = data['item']['modifier_note']
+        else:
+            modifiers_note = None
+        
+        item = MenuItem.objects.get(account=account,id=item_id)
+        price = item.price
+        
+        newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account, quantity=quantity, orderId=unique_order_id,modifier=modifiers, size=cupsize, modifier_note=modifiers_note )
+        newOrder.save()
+        
+    return JsonResponse({'status': 'success', 'order_id': unique_order_id})
 
 
 @login_required(login_url='loginUser')
@@ -231,7 +312,8 @@ def payment(request):
 
     context={
         "username":username,
-        "activePayment":"active"
+        "activePayment":"active",
+        "account":account
     }
 
     return render(request, 'accounts/payment.html', context=context)
@@ -253,13 +335,21 @@ def category(request):
 
 
 def thanks(request):
-    return render(request, 'accounts/thanks.html')
+    order_id = request.GET.get('orderId', None)
+    if order_id is not None:
+        context={
+        "orderId":order_id,
+        }
+        return render(request, 'accounts/thanks.html', context=context)
+    else:
+        return render(request, 'accounts/thanks.html')
 
 @login_required(login_url='loginUser')
 def edit_menu(request):
     username = request.user.username
     account = Account.objects.get(user=request.user)
     print("logging accound id ")
+    accountId = account.id
     print(account.id)
     try:
         menu = Menu.objects.get(account=account)
@@ -297,7 +387,9 @@ def edit_menu(request):
                 "categories":categories,
                 "items":items,
                 'error_message': "You have already menu",
-                "menu":menu
+                "menu":menu,
+                "accountId": accountId,
+                "account":account
             }
             return render(request, 'accounts/editMenu.html', context=context)
             print("menu is exists")
@@ -311,7 +403,9 @@ def edit_menu(request):
         "categories":categories,
         "items":items,
         "menu":menu,
-        "modifiers":modifiers
+        "modifiers":modifiers,
+        "accountId":accountId,
+        "account":account
         
     }
     return render(request, 'accounts/editMenu.html', context=context)
@@ -412,7 +506,6 @@ def itemEdit(request):
         menu = Menu.objects.get(account=account)
         category = Category.objects.get(menu=menu,name=category_name)
         
-
         try :
             menuItems = MenuItem.objects.get(id=itemId)
         except Exception as e:
@@ -447,10 +540,53 @@ def modifiers(request):
     menu = Menu.objects.get(account=account)
 
     categories = menu.category_menu.all()
-    menuitems = MenuItem.objects.get(account=account, category__in=menu.category_menu.all())
-    modifiers = Modifier.objects.get(account=account, menuitem=menuitems)
-    
+    #menuitems = MenuItem.objects.get(account=account, category__in=menu.category_menu.all())
+    if request.method == 'POST':
+        item = request.POST.get('Item')
+        name = request.POST.get('name')
+        price = request.POST.get('price')
+        pic = request.FILES['pic']
+        print(item)
+        menuItem = MenuItem.objects.get(account=account, item=item)
+        modifier = Modifier(account=account, menuitem=menuItem, name=name, pic=pic, price=price )
+        modifier.save()
     return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def modifierEdit(request):
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        item = request.POST.get('item')
+        menuItem = MenuItem.objects.get(account=account, item=item)
+
+        modifierId = request.POST.get('id')
+        name = request.POST.get('name')
+        price = request.POST.get('price')
+        modifier = Modifier.objects.get(id=modifierId, account=account)
+        if 'pic' in request.FILES:
+            pic = request.FILES['pic']
+            modifier.pic = pic
+
+
+        
+        modifier.menuitem = menuItem
+        modifier.price = price
+        modifier.name = name
+        modifier.save()
+        print("modifissss")
+        print(modifier)
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def modifierDelete(request):
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        modifierId = request.POST.get('id')
+        modifier = Modifier.objects.get(id=modifierId, account=account)
+        modifier.delete()
+
+    return redirect('edit_Menu')
+
 
 
 def listMenu(request, uuid):
@@ -466,42 +602,56 @@ def listMenu(request, uuid):
     
     categories = menu.category_menu.all()
     menuitems = MenuItem.objects.filter(account=account, category__in=menu.category_menu.all())
+    modifiers = Modifier.objects.filter(account=account)
     print(menuitems)
 
     context = {
         "menuTitle": menuTitle,
         "logo" : str(str(logo).split("static")[1]),
         "categories": categories,
-        "items":menuitems
+        "items":menuitems,
+        "modifiers":modifiers,
+        "account":account
     }
     return render(request, 'accounts/menu.html', context=context)
 
 @login_required(login_url='loginUser')
 def profile(request):
+    account = Account.objects.get(user=request.user)
+
     current_user = request.user
     username = request.user.username
 
     if request.method == 'POST':
         user_to_update = User.objects.get(username=username)
         user_to_update.username = request.POST.get('username')
-        user_to_update.first_name = request.POST.get('firstName')
-        user_to_update.last_name = request.POST.get('lastName')
-        user_to_update.email = request.POST.get('email')
-        password = request.POST.get('passowrd')
-        print(password)
-        if request.POST.get('passowrd') == request.POST.get('passowrd2'):
-            print("inside password")
-            user_to_update.set_password()
+        if "email" in request.POST:
+            user_to_update.email = request.POST.get('email')
+            messages.success(request, 'Your information was successfully updated!')
+        if "password" in request.POST:
+            
+            print("insice passsssowd ")
+            password = request.POST.get('password')
+            if password == '':
+                pass
+            else:
+                print(password)
+                if request.POST.get('password') == request.POST.get('password2'):
+                    print("inside password2222222")
+                    user_to_update.set_password(password)
+                    messages.success(request, 'Your password was successfully updated!')
+                else:
+                    return "<p> password doesn't match </p>"
         else:
-            return "<p> password doesn't match </p>"
-
+            print("can't catch ")
+            
         user_to_update.save()
+        return redirect('profile')
   
 
     context = {
         "username":username,
         "email": current_user.email,
-        "firstName":current_user.first_name,
-        "lastName":current_user.last_name
+        "account":account
     }
     return render(request, 'accounts/profile.html', context=context)

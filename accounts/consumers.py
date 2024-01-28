@@ -6,7 +6,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class OrderConsumer(WebsocketConsumer):
     def connect(self):
-        self.group_name = "dashboardgroup"
+        
+        self.user_id = self.scope["url_route"]["kwargs"]["order_id"]
+        self.group_name = f"dashboardgroup{self.user_id}"
         async_to_sync(self.channel_layer.group_add)(
             self.group_name, self.channel_name
         )
