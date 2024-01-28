@@ -349,8 +349,8 @@ def edit_menu(request):
     username = request.user.username
     account = Account.objects.get(user=request.user)
     print("logging accound id ")
-    accountId = account.id
-    print(account.id)
+    accountId = account.accountId
+    print(account.accountId)
     try:
         menu = Menu.objects.get(account=account)
         categories = menu.category_menu.all()
@@ -592,7 +592,7 @@ def modifierDelete(request):
 def listMenu(request, uuid):
     
     print(uuid)
-    account = Account.objects.get(id=uuid)
+    account = Account.objects.get(accountId=uuid)
     print(account)
     menu = Menu.objects.get(account=account)
   
