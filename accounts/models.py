@@ -84,7 +84,7 @@ class Order(models.Model):
         choices=[('Done', 'Done'), ('canceled' , 'canceled'), ('waiting','waiting')],
         default='waiting'
     )
-    
+    tableNum = models.IntegerField(default=0)
     date = models.DateTimeField()
     item = models.CharField(max_length=300,blank=True, null=True)
     quantity = models.IntegerField(default=0)

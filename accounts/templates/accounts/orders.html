@@ -48,7 +48,7 @@
                         </div>
                         <div class="modal-body">
                           <!-- Modal content goes here -->
-                          <h6>Table 1</h6>
+                          <h6>Table {{order.tableNum}}</h6>
                           <ul class="list-group">
                             <li class="list-group-item">{{order.quantity}} x {{order.item}}</li>
                           </ul>
@@ -65,7 +65,11 @@
                           </div> 
                           {% endif %}
                           <div class="info">
-                            <p><strong>Note!</strong><br> {{ order.note }} </p>
+                            <p><strong>Item Note!</strong><br> {{ order.modifier_note }} </p>
+                          </div> 
+
+                          <div class="info">
+                            <p><strong>General Note!</strong><br> {{ order.note }} </p>
                           </div> 
 
                           

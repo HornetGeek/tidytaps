@@ -1305,12 +1305,18 @@ div.swiper-button-next, div.swiper-button-prev {
     console.log("name")
     console.log(name)
     var currentURL = window.location.href;
-    var uuid = currentURL.substr(currentURL.lastIndexOf('/') + 1);
+    const uuidMatch = currentURL.match(/\/menu\/([^/?]+)/);
+    var uuid = uuidMatch ? uuidMatch[1] : null;
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const table = urlParams.get('table');
+    console.log("table")
+    console.log(table)
     jsonData[0].name = name;
     jsonData[0].email = email;
     jsonData[0].phone = phone;
     jsonData[0].uuid = uuid;
+    jsonData[0].table = table;
     jsonData[0].note = note;
     console.log("jsonData");
     console.log(jsonData);

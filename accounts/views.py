@@ -78,7 +78,8 @@ def clients(request):
     context = {
         'username': username,
         "page_obj": page_obj,
-        "activeClient":"active"
+        "activeClient":"active",
+        "account":account
     }
 
     return render(request, 'accounts/clients.html',context=context)
@@ -119,10 +120,13 @@ def index(request):
         6: "Sunday"
     }
     stats = {"Monday":0, "Tuesday":0, "Wednesday": 0, "Thursday":0,"Friday":0, "Saturday":0, "Sunday":0 }
-    orders_by_day = Order.objects.filter(account=account,date__gte=start_date).extra({'day': "date(date)"}).values('day').annotate(order_count=Count('id')).order_by('day')    
+    orders_by_day = Order.objects.filter(account=account,date__gte=start_date).extra({'day': "date(date)"}).values('day').annotate(order_count=Count('id')).order_by('day')   
+    print(orders_by_day) 
     for entry in orders_by_day:
         day_date_str = entry['day']  # Assuming 'day' is a string representation of the date
+        print(day_date_str)
         day_date = datetime.strptime(day_date_str, '%Y-%m-%d')  # Convert string to datetime object
+        print(day_date)
         day_number = day_date.weekday()  # Get the weekday number from the date
         day_name = day_names[day_number]
         stats[day_name] = entry['order_count']  # Map the number to the day name
@@ -268,10 +272,11 @@ def add_order(request):
     username = json_data[0]['name']
     phone = json_data[0]['phone']
     note = json_data[0]["note"]
-
+    table = json_data[0]["table"]
+    print(table)
     unique_order_id = generate_unique_order_id()
 
-    account = Account.objects.get(id=uuid)
+    account = Account.objects.get(accountId=uuid)
     client = Clients.objects.filter(account=account, email=email)
 
     if len(client) == 0:
@@ -300,7 +305,7 @@ def add_order(request):
         item = MenuItem.objects.get(account=account,id=item_id)
         price = item.price
         
-        newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account, quantity=quantity, orderId=unique_order_id,modifier=modifiers, size=cupsize, modifier_note=modifiers_note )
+        newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account, quantity=quantity, orderId=unique_order_id,modifier=modifiers, size=cupsize, modifier_note=modifiers_note, tableNum=int(table) )
         newOrder.save()
         
     return JsonResponse({'status': 'success', 'order_id': unique_order_id})
