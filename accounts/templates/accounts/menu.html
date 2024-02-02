@@ -1241,14 +1241,14 @@ div.swiper-button-next, div.swiper-button-prev {
   var currentURL = window.location.href;
   var uuid = currentURL.substr(currentURL.lastIndexOf('/') + 1);
   const orderSocket = new WebSocket(
-      'ws://'
+      'wss://'
       + window.location.host
       + '/ws/order/'
       + uuid
      + '/' 
   );
 
-  console.log('ws://'
+  console.log('wss://'
       + window.location.host
       + '/ws/order/' + uuid)
       
@@ -1412,7 +1412,7 @@ div.swiper-button-next, div.swiper-button-prev {
     jsonData[0].note = note;
     console.log("jsonData");
     console.log(jsonData);
-    var endpointUrl = "http://127.0.0.1:8000/addorders";
+    var endpointUrl = "https://tidy-taps.com/addorders";
     var csrfToken = $("#itemlist input[name='csrfmiddlewaretoken']").val();
 
     var nameInput = document.getElementById("first_9");
@@ -1451,7 +1451,7 @@ div.swiper-button-next, div.swiper-button-prev {
         
             
        
-        window.location.href = "http://127.0.0.1:8000/thanks"+'?orderId='+orderId;
+        window.location.href = "https://tidy-taps.com/thanks"+'?orderId='+orderId;
       })
       .catch(error => {
         console.error("Error:", error);
