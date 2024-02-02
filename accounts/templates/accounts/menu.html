@@ -815,6 +815,34 @@ div.swiper-button-next, div.swiper-button-prev {
 .hidden {
     display: none !important;
 }
+.form-product-price{
+  text-align: center;
+  margin: 0;
+  font-family:  sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+}
+.form-product-price-model{
+  text-align: start;
+  margin-left: 7px;
+ 
+  font-family:  sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+.fixed-icon {
+    position: fixed;
+    top: 20px; /* Adjust top position as needed */
+    right: 20px; /* Adjust right position as needed */
+    color: #333; /* Set icon color */
+    cursor: pointer;
+    z-index: 999;
+}
+.hr-for-modal {
+    border: 22px solid #000000; /* Set border style, color, and width */
+    margin: 20px 0; /* Add margin for spacing */
+}
   /* Injected CSS Code */
 </style>
 <form class="jotform-form" id="itemlist" action="/orders" method="post" autocomplete="on"> {% csrf_token %} <div role="main" class="form-all">
@@ -882,9 +910,60 @@ div.swiper-button-next, div.swiper-button-prev {
                 
                 <input type="text" name="productSearch-input" class="form-textbox " id="productSearch-input" size="15" placeholder="Search" autoComplete="on" />
               </div>
+
+              <span id="openModalBtn" onclick="$('#cart').modal('show');" data-bs-toggle="modal" data-bs-target="#cart" class="bi bi-cart fixed-icon" style="font-size: 35px; color: rgb(0, 128, 55); opacity: 1; -webkit-text-stroke-width: 0px; border: medium hidden; background-color: rgb(255, 255, 255); border-radius: 50%; padding: 9px;">
+                <span id="notificationIcon" style="position: absolute; top: -5px; right: -5px;font-size: 12px;" class="badge rounded-pill badge-notification bg-danger">0</span>
+              </span> 
+
+              <div class="modal fade" id="cart" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+
+                  <div class="modal-content">
+
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="exampleModalLabel">Cart</h5> 
+
+                      <div class="col-auto ms-auto">
+                        <span id="openModalBtn" class="bi bi-cart" style="font-size: 35px; color: rgb(0, 128, 55); opacity: 1; -webkit-text-stroke-width: 0px; border: medium hidden; background-color: rgb(255, 255, 255); border-radius: 50%; padding: 9px;"></span>
+                      </div>
+
+                    </div>
+
+
+                    <div class="modal-body">
+                      <div class="container">
+                        <div class="row">
+                          <div class="col-md mx-auto">
+                            <ul class="list-group list-group-flush list cartcontainer">
+
+                            </ul>
+                            <p class="text-muted">There are no items.</p>
+                          </div>
+                        </div>
+
+                        <hr class="hr-for-modal">
+
+                        <div class="row">
+                            <div class="form-group">
+                              <p class="form-product-price-model" id="total-price-checkout">Total Price : {{ item.price }} EGP</p>
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" >Go to Order</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+
+
               {% for category in categories %}
 
-                <span class="form-product-category-item item {{category.name}}" onclick="collabs('{{category.id}}')" id="{{category.id}}" category="{{category.id}}">
+                <span onclick="$('#item{{item.id}}').modal('show');" data-bs-toggle="modal" data-bs-target="#item{{item.id}}" class="form-product-category-item item {{category.name}}" onclick="collabs('{{category.id}}')" id="{{category.id}}" category="{{category.id}}">
                   <b>{{category.name}}</b>
                   <span class="selected-items-icon"></span>
                 </span>
@@ -896,7 +975,7 @@ div.swiper-button-next, div.swiper-button-prev {
                       {% for item in items %}
                 
                       {% if item.category.name == category.name %}
-                      <span onclick="$('#item{{item.id}}').modal('show');" data-bs-toggle="modal" data-bs-target="#item{{item.id}}" class="item {{category.id}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
+                      <span id="itemData{{item.id}}" onclick="$('#item{{item.id}}').modal('show');" data-bs-toggle="modal" data-bs-target="#item{{item.id}}" class="item {{category.id}} form-product-item hover-product-item on_col1 show_image show_desc show_option new_ui" categories="2001" active-category="2001" pid="1000" aria-labelledby="label_22">
                         <div data-wrapper-react="true" class="form-product-item-detail new_ui">
                           <div class="p_col">
                             <div class="p_checkbox">
@@ -922,6 +1001,11 @@ div.swiper-button-next, div.swiper-button-prev {
                               <div class="title_description">
                                 <span class="form-product-name" id="product-name-input_22_1000">{{item.item}}</span>
                                 <span class="form-product-description" id="product-name-description-input_22_1000">{{ item.desc }}</span>
+                                <div>
+                                  <p class="form-product-price" id="product-name-price">{{ item.price }} EGP</p>
+
+                                </div>
+
                               </div>
                             </span>
                           
@@ -937,7 +1021,7 @@ div.swiper-button-next, div.swiper-button-prev {
                         <div class="modal-dialog modal-dialog-centered" role="document">
                           <div class="modal-content">
                             <div class="modal-header">
-                              <h5 class="modal-title" id="exampleModalLabel">Coffe</h5>
+                              <h5 class="modal-title" id="exampleModalLabel">{{item.item}}</h5>
                               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                               </button>
@@ -961,7 +1045,7 @@ div.swiper-button-next, div.swiper-button-prev {
                                             {% endwith %}
                                           {% endif %}
                                         {% endfor %}
-                                        <input hidden name="item-{{item.item}}-price" value="{{item.price}}" class="item-price">
+                                        <input hidden name="item-{{item.item}}-price" value="{{item.price}}" class="item-price{{item.id}}">
                                         <!-- Add more images and slides here -->
                                       </div>
                                       <!-- Add Pagination -->
@@ -1023,14 +1107,18 @@ div.swiper-button-next, div.swiper-button-prev {
                                       <label for="modifier_note_{{item.id}}">Note</label>
                                       <textarea class="form-control" id="modifier_note_{{item.id}}" name="modifier-note" rows="3"></textarea>
                                     </div>
-                                  
+
+                                    <div class="form-group">
+                                      
+                                      <p class="form-product-price-model" id="product-name-price{{item.id}}"> Price : {{ item.price }} EGP</p>
+                                    </div>
                                   
                                 </div>
                               </div>
                             </div>
                             <div class="modal-footer">
                               <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                              <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="saveChanges('input_22_1000{{ item.id }}', '.quantity{{item.id}}')">Save changes</button>
+                              <button type="button" class="btn btn-primary save-changes" data-dismiss="modal" onclick="saveChanges('input_22_1000{{ item.id }}', '.quantity{{item.id}}', 'itemData{{item.id}}', '{{item.id}}')">Save changes</button>
                             </div>
                           </div>
                         </div>
@@ -1145,6 +1233,8 @@ div.swiper-button-next, div.swiper-button-prev {
   
 </form>
 
+
+
 <script>
   console.log("ordeersockiet")
   
@@ -1161,6 +1251,7 @@ div.swiper-button-next, div.swiper-button-prev {
   console.log('ws://'
       + window.location.host
       + '/ws/order/' + uuid)
+      
   orderSocket.onopen = function open() {
     console.log('WebSockets connection created.');
   };
@@ -1193,7 +1284,8 @@ div.swiper-button-next, div.swiper-button-prev {
 
   var totalprice1 = document.getElementById('payment_total_input');
   let totalPrice = parseFloat(totalprice1.value);
-  function updateTotal(quantityid) {
+
+  function updateTotal(quantityid, id) {
       console.log("updatetotal called")
       
       console.log(totalPrice)
@@ -1203,7 +1295,7 @@ div.swiper-button-next, div.swiper-button-prev {
         
         const $quantity = $(this).find(quantityid);
        
-        const $price = $(this).find('.item-price'); // Adjust this selector based on your HTML structure
+        const $price = $(this).find('.item-price'+ id); // Adjust this selector based on your HTML structure
         
         if ($checkbox.is(':checked')) {
           const itemPrice = parseFloat($price.val());
@@ -1380,12 +1472,163 @@ div.swiper-button-next, div.swiper-button-prev {
     console.log(jsonData);
   }
 
-  function saveChanges(itemId, quantityid) {
+  function saveChanges(itemId, quantityid, itemDataId, id) {
+
+      itemD = document.getElementById(itemDataId);
+      console.log(itemD)
+      console.log(itemDataId)
+      
+      var quantity = document.getElementById("quantity_" + id);
+
+      if (itemD) {
+        // Get the values you need from the item element
+        var itemName = itemD.querySelector(".form-product-name").innerText;
+        var itemDesc = itemD.querySelector(".form-product-description").innerText;
+        var itemPrice = itemD.querySelector(".form-product-price").innerText;
+
+
+        console.log(itemName);
+        console.log(itemPrice)
+
+        var notificationBadge = document.getElementById('notificationIcon');
+        var currentValue = parseInt(notificationBadge.innerText);
+        var newValue = currentValue + 1;
+        notificationBadge.innerText = newValue.toString();
+
+        //cartContainer = document.getElementsByClassName("cartcontainer");
+        var cartContainer = document.querySelector(".cartcontainer");
+
+        var ulElement = document.createElement('ul');
+        ulElement.className = 'list-group list-group-flush list my--3';
+
+        // Create li element
+        var liElement = document.createElement('li');
+        liElement.className = 'list-group-item px-0';
+
+        // Create div element with row and align-items-center classes
+        var divElement = document.createElement('div');
+        divElement.className = 'row align-items-center';
+
+        // Create col-auto div for avatar
+        var colAutoElement = document.createElement('div');
+        colAutoElement.className = 'col-auto';
+
+        // Create avatar link
+        var avatarLink = document.createElement('a');
+        avatarLink.href = '#';
+        avatarLink.className = 'avatar rounded-circle';
+
+        // Create img element for avatar
+        var imgElement = document.createElement('span');
+        imgElement.textContent = quantity.value + ' X ' + itemName;
+        
+
+        // Append img to avatar link
+        colAutoElement.appendChild(imgElement);
+
+        // Append avatar link to col-auto div
+        //colAutoElement.appendChild(avatarLink);
+
+        // Create col div for user information
+        var colElement = document.createElement('div');
+        colElement.className = 'col';
+
+        // Create h4 element
+        //var h4Element = document.createElement('h6');
+        //h4Element.className = 'mb-0';
+
+        // Create a link inside h4
+        var pElement = document.createElement('span');
+        //aElement.href = '#!';
+        pElement.textContent = quantity.value + ' X ' + itemPrice;
+        pElement.className = "ml-5"
+       
+
+     
+
+        // Append h4, span, and small to col div
+        colElement.appendChild(pElement);
+        //colElement.appendChild(spanElement);
+        //colElement.appendChild(smallElement);
+
+        // Create col-auto div for button
+        var colAutoButtonElement = document.createElement('div');
+        colAutoButtonElement.className = 'col-auto';
+
+
+        // Create button element
+
+
+        var buttonElement = document.createElement('i');
+        buttonElement.className = 'bi bi-trash';
+        
+        buttonElement.addEventListener('click', function() {
+          // Your onclick functionality goes here
+          liElement.style.display = 'none';
+          document.getElementById(itemId).checked = false;
+
+          paymentTotal = document.getElementById('payment_total');
+          //paymentTotal_input = document.getElementById('payment_total_input');
+          console.log(paymentTotal.innerText)
+          paymentTotal.innerText = parseInt(paymentTotal.innerText) - parseInt(itemPrice);
+          $('#payment_total_input').attr('value',parseInt(paymentTotal.innerText));
+          totalPrice = parseInt(paymentTotal.innerText);
+
+          var notificationBadge = document.getElementById('notificationIcon');
+          var currentValue = parseInt(notificationBadge.innerText);
+          var newValue = currentValue - 1;
+          notificationBadge.innerText = newValue.toString();
+
+          
+          
+
+
+        });
+        
+
+        // Append button to col-auto div
+        colAutoButtonElement.appendChild(buttonElement);
+
+        // Append col-auto elements to the row div
+        divElement.appendChild(colAutoElement);
+        divElement.appendChild(colElement);
+        divElement.appendChild(colAutoButtonElement);
+
+        // Append row div to li element
+        liElement.appendChild(divElement);
+
+        // Append li element to ul element
+        ulElement.appendChild(liElement);
+
+       
+
+          // Now you can append the ulElement to the cartContainer
+        cartContainer.appendChild(liElement);
+
+        var elements = document.getElementsByClassName("text-muted");
+        if (elements.length > 0) {
+          // Access the first element with the class
+          var element = elements[0];
+
+          // Set the display property to 'none'
+          element.style.display = 'none';
+        }
+        
+                
+
+
+
       // Your code here
       document.getElementById(itemId).checked = true;
 
-      updateTotal(quantityid);
+      updateTotal(quantityid, id);
+      paymentTotal = document.getElementById('payment_total');
+
+      total_price_checkout = document.getElementById('total-price-checkout');
+      total_price_checkout.innerText = "Total Price : " + parseInt(paymentTotal.innerText) + " EGP"
+      
     }
+  }
 
   $(document).ready(function() {
     updateTotal();
@@ -1418,5 +1661,15 @@ div.swiper-button-next, div.swiper-button-prev {
   });
 
   
+</script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-P87QYCCB0L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-P87QYCCB0L');
 </script>
 
