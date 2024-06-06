@@ -1,4 +1,4 @@
-"""freewoma URL Configuration
+"""tidytap URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.1/topics/http/urls/
@@ -15,8 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.i18n import i18n_patterns
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('',include('accounts.url'))
+    path("i18n/", include("django.conf.urls.i18n")),
 ]
+
+urlpatterns += i18n_patterns( 
+    path('admin/', admin.site.urls),
+    path('',include('accounts.url')),
+    path('api/',include('freeapi.url'))
+)

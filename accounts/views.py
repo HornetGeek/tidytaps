@@ -19,6 +19,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
 from django.contrib import messages
+from django.utils.translation import gettext as _
 import random
 
 def login_view(request):
@@ -268,6 +269,7 @@ def add_order(request):
     date = datetime.now()
     print(json_data)
     uuid = json_data[0]['uuid']
+
     email = json_data[0]['email']
     username = json_data[0]['name']
     phone = json_data[0]['phone']
@@ -277,13 +279,14 @@ def add_order(request):
     unique_order_id = generate_unique_order_id()
 
     account = Account.objects.get(accountId=uuid)
-    client = Clients.objects.filter(account=account, email=email)
-
+    client = Clients.objects.filter(account=account, phone=phone)
+    print("lennnnnnnnn")
+    print(len(client))
     if len(client) == 0:
         client = Clients(account=account,username=username,numberOfOrders=1 ,email=email, phone=phone)
         client.save()
     else:
-        client = Clients.objects.get(account=account, email=email)
+        client = Clients.objects.get(account=account, phone=phone)
         client.numberOfOrders += 1
         client.save()
 
@@ -291,11 +294,138 @@ def add_order(request):
         print(data['item'])
         item_id = data['item']['id']
         quantity = data['item']['quantity']
-        cupsize = data['item']['cupsize']
+        #cupsize = data['item']['cupsize']
         if "modifiers" in data['item']:
             modifiers = data['item']['modifiers']
         else:
             modifiers = None
+
+        if "cupsize" in data["item"]:
+            size = data['item']['cupsize']
+        else:
+            size = ""
+       
+        if "modifier_note" in data['item']:
+            modifiers_note = data['item']['modifier_note']
+        else:
+            modifiers_note = None
+        
+        item = MenuItem.objects.get(account=account,id=item_id)
+        price = item.price
+        
+        newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account, size=size,quantity=quantity, orderId=unique_order_id,modifier=modifiers, modifier_note=modifiers_note, tableNum=int(table) )
+        newOrder.save()
+        import threading
+        thread = threading.Thread(target=send_telegram_message, args=(table,account, item, price, date, note, size, quantity, modifiers, modifiers_note))
+        thread.start()
+        
+    return JsonResponse({'status': 'success', 'order_id': unique_order_id})
+
+def add_order2(request):
+    try:
+        print("add order22222")
+        json_data = json.loads(request.body.decode('utf-8'))
+        date = datetime.now()
+        print(json_data)
+        uuid = json_data[0]['uuid']
+        auuid = json_data[0]['auuid']
+        email = json_data[0]['email']
+        username = json_data[0]['name']
+        phone = json_data[0]['phone']
+        note = json_data[0]["note"]
+        table = json_data[0]["table"]
+        print(table)
+        unique_order_id = generate_unique_order_id()
+
+        
+        TempNewlink = "/menu/link/" + uuid + '/' + auuid +"?table="+table
+        link = OneLink.objects.get(link=TempNewlink)
+
+        account = Account.objects.get(accountId=link.account.accountId)
+        account = Account.objects.get(accountId=link.account.accountId)
+        client = Clients.objects.filter(account=account, phone=phone)
+
+        if len(client) == 0:
+            client = Clients(account=account,username=username,numberOfOrders=1 ,email=email, phone=phone)
+            client.save()
+        else:
+            client = Clients.objects.get(account=account, phone=phone)
+            client.numberOfOrders += 1
+            client.save()
+        print("wwwwwwwwwwwwwwwwww2")
+        for data in json_data:
+            print(data['item'])
+            item_id = data['item']['id']
+            quantity = data['item']['quantity']
+            #cupsize = data['item']['cupsize']
+            if "modifiers" in data['item']:
+                modifiers = data['item']['modifiers']
+            else:
+                modifiers = None
+
+            if "cupsize" in data["item"]:
+                size = data['item']['cupsize']
+            else:
+                size = ""
+
+            if "modifier_note" in data['item']:
+                modifiers_note = data['item']['modifier_note']
+            else:
+                modifiers_note = None
+            
+            item = MenuItem.objects.get(account=account,id=item_id)
+            price = item.price
+            
+            newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account, size=size,quantity=quantity, orderId=unique_order_id,modifier=modifiers, modifier_note=modifiers_note, tableNum=int(table) )
+            newOrder.save()
+            import threading
+            thread = threading.Thread(target=send_telegram_message, args=(table,account,item.item, price,date,note,size,quantity,modifiers, modifiers_note))
+            thread.start()
+            link.delete()
+            
+        return JsonResponse({'status': 'success', 'order_id': unique_order_id})
+    except Exception as e :
+        print(e)
+        return HttpResponse("link Expired, Rescan QR code", status=404)
+
+def order_now(request):
+    json_data = json.loads(request.body.decode('utf-8'))
+    date = datetime.now()
+    print(json_data)
+    uuid = json_data[0]['uuid']
+    
+    username = "table " + str(json_data[0]['name'])
+    note = json_data[0]["note"]
+    table = json_data[0]["name"]
+
+    print(table)
+    unique_order_id = generate_unique_order_id()
+
+    account = Account.objects.get(accountId=uuid)
+    client = Clients.objects.filter(account=account,username=username)
+
+    if len(client) == 0:
+        client = Clients(account=account,username=username,numberOfOrders=1)
+        client.save()
+    else:
+        client = Clients.objects.get(account=account,username=username)
+        client.numberOfOrders += 1
+        client.save()
+
+    for data in json_data:
+        print(data['item'])
+        item_id = data['item']['id']
+        quantity = data['item']['quantity']
+        #cupsize = data['item']['cupsize']
+
+        if "modifiers" in data['item']:
+            modifiers = data['item']['modifiers']
+        else:
+            modifiers = None
+        if "cupsize" in data["item"]:
+            size = data['item']['cupsize']
+        else:
+            size = "NO Size"
 
         if "modifier_note" in data['item']:
             modifiers_note = data['item']['modifier_note']
@@ -305,16 +435,144 @@ def add_order(request):
         item = MenuItem.objects.get(account=account,id=item_id)
         price = item.price
         
-        newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account, quantity=quantity, orderId=unique_order_id,modifier=modifiers, size=cupsize, modifier_note=modifiers_note, tableNum=int(table) )
+        import threading
+        thread = threading.Thread(target=send_telegram_message, args=(table,account,item, price, date, note, size, quantity, modifiers, modifiers_note))
+        thread.start()
+
+        newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account,size=size, quantity=quantity, orderId=unique_order_id,modifier=modifiers, modifier_note=modifiers_note, tableNum=int(table) )
         newOrder.save()
         
     return JsonResponse({'status': 'success', 'order_id': unique_order_id})
 
+def order_now2(request):
+    try:
+
+        print("order_now 222222")
+        print("request.body.decode('utf-8')")
+        print(request.body)
+        json_data = json.loads(request.body.decode('utf-8'))
+        date = datetime.now()
+
+        print("order_now 33333")
+        print(json_data)
+        uuid = json_data[0]['uuid']
+        auuid = json_data[0]['auuid']
+        username = "table " + str(json_data[0]['name'])
+        note = json_data[0]["note"]
+        table = json_data[0]["name"]
+
+        print(table)
+        unique_order_id = generate_unique_order_id()
+        TempNewlink = "/menu/link/" + uuid + '/' + auuid +"?table="+table
+        link = OneLink.objects.get(link=TempNewlink)
+        account = Account.objects.get(accountId=link.account.accountId)
+        
+        client = Clients.objects.filter(account=account,username=username)
+
+        if len(client) == 0:
+            client = Clients(account=account,username=username,numberOfOrders=1)
+            client.save()
+        else:
+            client = Clients.objects.get(account=account,username=username)
+            client.numberOfOrders += 1
+            client.save()
+
+        for data in json_data:
+            print(data['item'])
+            item_id = data['item']['id']
+            quantity = data['item']['quantity']
+            #cupsize = data['item']['cupsize']
+
+            if "modifiers" in data['item']:
+                modifiers = data['item']['modifiers']
+            else:
+                modifiers = None
+            if "cupsize" in data["item"]:
+                size = data['item']['cupsize']
+            else:
+                size = "NO Size"
+
+            if "modifier_note" in data['item']:
+                modifiers_note = data['item']['modifier_note']
+            else:
+                modifiers_note = None
+            
+            item = MenuItem.objects.get(account=account,id=item_id)
+            price = item.price
+            print("wwwwwwwwwwwwwwwwwwwwwwwww")
+            import threading
+            thread = threading.Thread(target=send_telegram_message, args=(table,account,item, price,date,note,size,quantity,modifiers, modifiers_note))
+            thread.start()
+
+            newOrder = Order(item=item,price=price, date=date,note=note, client=client,account=account,size=size, quantity=quantity, orderId=unique_order_id,modifier=modifiers, modifier_note=modifiers_note, tableNum=int(table) )
+            newOrder.save()
+            link.delete()
+
+            
+        return JsonResponse({'status': 'success', 'order_id': unique_order_id})
+    except Exception as e:
+        print(e)
+        return HttpResponse("link Expired, Rescan QR code", status=404)
+
+def send_telegram_message(table,account, item, price,date,note,size,quantity,modifiers, modifiers_note):
+    import requests
+    # Replace 'YOUR_BOT_TOKEN' and 'YOUR_CHAT_ID' with your actual bot token and chat ID
+    bot_token = '6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8'
+    #chat_id = '1281643104'
+    chat_id = account.telegramId
+    print(chat_id)
+    api_url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+
+    # Message content
+    message_text = f' New Order from Table  {str(table)} \n \n Item : {str(item)} \n  Extra: {str(modifiers)} \n Size : {str(size)} \n Quantity : {str(quantity)} \n Note : {str(note)} \n Price: {str(price)} \n Date: {str(date)}' 
+
+        # Send the message using a POST request
+    params = {
+        'chat_id': chat_id,
+        'text': message_text,
+    }
+
+    response = requests.post(api_url, params=params)
+
+          # Check if the request was successful
+    if response.ok:
+        print("Message sent successfully!")
+    else:
+        print(f"Failed to send message. Response content: {response.content}")
+
+def online(request, name):
+    print(name)
+    account = Account.objects.get(username=name)
+    print(account)
+    menu = Menu.objects.get(account=account)
+  
+    menuTitle = menu.title
+   
+    logo = menu.logo
+    
+    categories = menu.category_menu.all()
+    menuitems = MenuItem.objects.filter(account=account, category__in=menu.category_menu.all())
+    modifiers = Modifier.objects.filter(account=account)
+
+    sizemodifier = SizeModifier.objects.filter(account=account)
+    
+    print(menuitems)
+
+    context = {
+        "menuTitle": menuTitle,
+        "logo" : str(str(logo).split("static")[1]),
+        "categories": categories,
+        "items":menuitems,
+        "modifiers":modifiers,
+        "account":account,
+        "sizemodifier":sizemodifier 
+    }
+    return render(request, 'accounts/online-order.html', context=context)
 
 @login_required(login_url='loginUser')
 def payment(request):
     username = request.user.username
-
+    account = Account.objects.get(user=request.user)
     context={
         "username":username,
         "activePayment":"active",
@@ -380,6 +638,12 @@ def edit_menu(request):
         modifiers = []
         print(e)
 
+    try:
+        sizes = SizeModifier.objects.filter(account=account, menuitem__in=items)
+    except Exception as e:
+        sizes = []
+        print(e)  
+
     if request.method == 'POST':
         title = request.POST.get('title', '')
         logo = request.FILES['logo']
@@ -394,7 +658,8 @@ def edit_menu(request):
                 'error_message': "You have already menu",
                 "menu":menu,
                 "accountId": accountId,
-                "account":account
+                "account":account,
+                "sizes":sizes
             }
             return render(request, 'accounts/editMenu.html', context=context)
             print("menu is exists")
@@ -410,9 +675,11 @@ def edit_menu(request):
         "menu":menu,
         "modifiers":modifiers,
         "accountId":accountId,
-        "account":account
+        "account":account,
+        "sizes":sizes
         
     }
+    print(sizes)
     return render(request, 'accounts/editMenu.html', context=context)
 
 
@@ -470,6 +737,7 @@ def categoryDelete(request):
 
     return redirect('edit_Menu')
 
+
 @login_required(login_url='loginUser')
 def item(request):
     account = Account.objects.get(user=request.user)
@@ -481,7 +749,10 @@ def item(request):
         name = request.POST.get('name')
         price = request.POST.get('price')
         desc = request.POST.get('desc')
+
+        
         pic = request.FILES['pic']
+       
         category_name = request.POST.get('category')
         print(menu)
         category = Category.objects.get(menu=menu,name=category_name)
@@ -492,9 +763,23 @@ def item(request):
             menuItems = []
         Item = MenuItem(account=account,category=category, item=name, price=price, desc=desc, picture=pic )
         Item.save()
-        print(menu.category_menu.all())
+        print(menu.category_menu.all()) 
         print(menu.title)
 
+    elif request.method == 'GET':
+        try:
+            menu = Menu.objects.get(account=account)
+            categories = menu.category_menu.all()
+            print(categories)
+        except Exception as e:
+            menu = []
+            categories = []
+            print(e)
+            pass
+        context = {
+            "categories":categories
+        }
+        return render(request, 'accounts/item.html', context=context)
     return redirect('edit_Menu')
 
 @login_required(login_url='loginUser')
@@ -502,7 +787,7 @@ def itemEdit(request):
     account = Account.objects.get(user=request.user)
 
     if request.method == 'POST':
-            
+        print("weeeeeeeeeeee")
         name = request.POST.get('name')
         price = request.POST.get('price')
         desc = request.POST.get('desc')
@@ -523,8 +808,9 @@ def itemEdit(request):
         if 'pic' in request.FILES:
             pic = request.FILES['pic']
             menuItems.picture = pic
-
-        menuItems.save()
+        print(price)
+        print(menuItems.save())
+        
 
     return redirect('edit_Menu')
 
@@ -550,7 +836,10 @@ def modifiers(request):
         item = request.POST.get('Item')
         name = request.POST.get('name')
         price = request.POST.get('price')
-        pic = request.FILES['pic']
+        if 'pic' in request.FILES:
+            pic = request.FILES['pic']
+        else:
+            pic = ''
         print(item)
         menuItem = MenuItem.objects.get(account=account, item=item)
         modifier = Modifier(account=account, menuitem=menuItem, name=name, pic=pic, price=price )
@@ -592,10 +881,55 @@ def modifierDelete(request):
 
     return redirect('edit_Menu')
 
+@login_required(login_url='loginUser')
+def size(request):
+    account = Account.objects.get(user=request.user)
+    menu = Menu.objects.get(account=account)
+
+    categories = menu.category_menu.all()
+    if request.method == 'POST':
+        item = request.POST.get('Item')
+        name = request.POST.get('name')
+        price = request.POST.get('price')
+        menuItem = MenuItem.objects.get(account=account, item=item)
+        size = SizeModifier(account=account, menuitem=menuItem, size=name,price=price )
+        size.save()
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')
+def sizeEdit(request):
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        item = request.POST.get('item')
+        print(item)
+
+        menuItem = MenuItem.objects.get(account=account, item=item)
+        print(menuItem)
+        sizeId = request.POST.get('id')
+        name = request.POST.get('name')
+        price = request.POST.get('price')
+        size = SizeModifier.objects.get(id=sizeId, account=account)
+
+        size.menuitem = menuItem
+        size.price = price
+        size.size = name
+        size.save()
+    return redirect('edit_Menu')
+
+@login_required(login_url='loginUser')    
+def sizeDelete(request):
+    account = Account.objects.get(user=request.user)
+    if request.method == 'POST':
+        sizeId = request.POST.get('id')
+        size = SizeModifier.objects.get(id=sizeId, account=account)
+        size.delete()
+
+    return redirect('edit_Menu')
 
 
 def listMenu(request, uuid):
     
+
     print(uuid)
     account = Account.objects.get(accountId=uuid)
     print(account)
@@ -608,6 +942,9 @@ def listMenu(request, uuid):
     categories = menu.category_menu.all()
     menuitems = MenuItem.objects.filter(account=account, category__in=menu.category_menu.all())
     modifiers = Modifier.objects.filter(account=account)
+
+    sizemodifier = SizeModifier.objects.filter(account=account)
+    
     print(menuitems)
 
     context = {
@@ -616,9 +953,73 @@ def listMenu(request, uuid):
         "categories": categories,
         "items":menuitems,
         "modifiers":modifiers,
-        "account":account
+        "account":account,
+        "sizemodifier":sizemodifier 
     }
     return render(request, 'accounts/menu.html', context=context)
+
+def proxy(request,auuid):
+    try:
+        print(auuid)
+        account = Account.objects.get(accountId=auuid)
+
+        domain = request.META['HTTP_HOST']
+        print(domain)
+
+        table = request.GET.get('table')
+
+        unique_id = uuid.uuid4()
+
+
+        TempNewlink = "/menu/link/" + str(unique_id) + '/' + auuid +"?table="+table
+        print(TempNewlink)
+        
+        onelink = OneLink(account=account, link=TempNewlink)
+        onelink.save()
+        print(account)
+        return redirect(TempNewlink)
+    except Exception as e :
+        print(e)
+        return HttpResponse("link Expired, Rescan QR code")
+    
+
+def listMenuv2(request,linkuuid ,auuid):
+    try:
+        print(linkuuid)
+        table = request.GET.get('table')
+        TempNewlink = "/menu/link/" + linkuuid + '/' + auuid + "?table="+table
+        link = OneLink.objects.get(link=TempNewlink)
+        print(link.account.accountId)
+
+        account = Account.objects.get(accountId=link.account.accountId)
+
+        menu = Menu.objects.get(account=account)
+    
+        menuTitle = menu.title
+    
+        logo = menu.logo
+        
+        categories = menu.category_menu.all()
+        menuitems = MenuItem.objects.filter(account=account, category__in=menu.category_menu.all())
+        modifiers = Modifier.objects.filter(account=account)
+
+        sizemodifier = SizeModifier.objects.filter(account=account)
+        
+        print(menuitems)
+
+        context = {
+            "menuTitle": _(menu.title),
+            "logo" : str(str(logo).split("static")[1]),
+            "categories": categories,
+            "items":menuitems,
+            "modifiers":modifiers,
+            "account":account,
+            "sizemodifier":sizemodifier 
+        }
+        return render(request, 'accounts/menu2.html', context=context)
+    except Exception as e :
+        print(e)
+        return HttpResponse("link Expired, Rescan QR code")
 
 @login_required(login_url='loginUser')
 def profile(request):
