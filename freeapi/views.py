@@ -1,3 +1,7 @@
+from django.utils import timezone
+from datetime import timedelta
+from django.http import JsonResponse
+from django.db.models import Count
 from django.shortcuts import render
 from .serializers import *
 from django.contrib.auth.decorators import login_required
@@ -25,6 +29,37 @@ class IndexView(APIView):
         serialized_data = serializer.data
 
         return Response(serialized_data, status=status.HTTP_200_OK)
+
+class ChartIndex(APIView):
+    def get(self, request):
+        username = request.user.username
+
+        account = Account.objects.get(user=request.user)
+        current_date = timezone.now()
+        start_date = current_date - timedelta(days=6)  # For a week
+
+        day_names = {
+            0: "Monday",
+            1: "Tuesday",
+            2: "Wednesday",
+            3: "Thursday",
+            4: "Friday",
+            5: "Saturday",
+            6: "Sunday"
+        }
+        stats = {"Monday":0, "Tuesday":0, "Wednesday": 0, "Thursday":0,"Friday":0, "Saturday":0, "Sunday":0 }
+        orders_by_day = Order.objects.filter(account=account,date__gte=start_date).extra({'day': "date(date)"}).values('day').annotate(order_count=Count('id')).order_by('day')   
+        print(orders_by_day) 
+        for entry in orders_by_day:
+            day_date_str = entry['day']  # Assuming 'day' is a string representation of the date
+            print(day_date_str)
+            day_date = datetime.strptime(day_date_str, '%Y-%m-%d')  # Convert string to datetime object
+            print(day_date)
+            day_number = day_date.weekday()  # Get the weekday number from the date
+            day_name = day_names[day_number]
+            stats[day_name] = entry['order_count']  # Map the number to the day name
+
+        return JsonResponse(stats)
 
 
 class LoginView(APIView):
