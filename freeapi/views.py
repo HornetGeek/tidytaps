@@ -31,6 +31,7 @@ class IndexView(APIView):
         return Response(serialized_data, status=status.HTTP_200_OK)
 
 class ChartIndex(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         username = request.user.username
 
