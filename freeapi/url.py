@@ -7,6 +7,7 @@ urlpatterns = [
     path('dashboard', views.IndexView.as_view(), name='index'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('chart/',views.ChartIndex.as_view(), name='Chart' ),
+    path('lastClient/',views.LastClientView.as_view(), name='lastClient' ),
     path('register/', views.RegisterView.as_view(), name='register'),
     
 ]

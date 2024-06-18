@@ -87,3 +87,13 @@ class RegisterView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class LastClientView(APIView):
+    def get(self, request):
+        account = Account.objects.get(user=request.user)
+        last_10_clients = Clients.objects.filter(account=account).order_by('-date')[:10]
+        serializer = ClientSerializer(last_10_clients, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
