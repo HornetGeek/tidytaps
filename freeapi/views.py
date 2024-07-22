@@ -103,7 +103,7 @@ class OfferDetailView(APIView):
 
     def get(self, request, pk, format=None):
         try:
-            offer = Offers.objects.get(account=pk)
+            offer = Offers.objects.filter(account=pk)
             serializer = OfferSerializer(offer)
             return Response(serializer.data)
         except Offers.DoesNotExist:
