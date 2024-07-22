@@ -155,4 +155,4 @@ class SizeModifier(models.Model):
 class Offers(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     message = models.CharField(max_length=500, default="")
-    photo = models.FileField(upload_to='accounts/static/img/offers/',blank=True )
+    photo = models.FileField(upload_to='static/img/offers/',blank=True )
