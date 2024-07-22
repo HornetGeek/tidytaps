@@ -133,7 +133,7 @@ class MenuItem(models.Model):
     old_price = models.CharField(max_length=500, default="")
     hasOffer = models.BooleanField(default=False)
     desc = models.CharField(max_length=500, blank=True)
-    picture = models.FileField(upload_to='accounts/static/img/items/')
+    picture = models.FileField(upload_to='static/img/items/')
 
     def __str__(self):
         return self.item
@@ -143,7 +143,7 @@ class Modifier(models.Model):
     menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_Modifier")
     name = models.CharField(max_length=500)
     price = models.CharField(max_length=500, default=0)
-    pic = models.FileField(upload_to='accounts/static/img/modifier/',blank=True )
+    pic = models.FileField(upload_to='static/img/modifier/',blank=True )
 
 class SizeModifier(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="SizeModifier_account",  null=True)
