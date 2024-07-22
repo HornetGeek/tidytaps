@@ -153,6 +153,6 @@ class SizeModifier(models.Model):
         return self.menuitem.item
 
 class Offers(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_offers")
-    message = models.CharField(max_length=500)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    message = models.CharField(max_length=500, default="")
     photo = models.FileField(upload_to='accounts/static/img/offers/',blank=True )

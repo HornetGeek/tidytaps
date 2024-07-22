@@ -103,12 +103,12 @@ class OfferDetailView(APIView):
 
     def get(self, request, pk, format=None):
         try:
-            offer = Offers.objects.filter(account=pk)
-            serializer = OfferSerializer(offer)
-            return Response(serializer.data)
+            offers = Offers.objects.filter(account=pk)
+            serialized_offers = [OfferSerializer(offer).data for offer in offers]
+            return Response(serialized_offers)
         except Offers.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
+            
     def post(self, request, format=None):
         serializer = OfferSerializer(data=request.data)
         if serializer.is_valid():
