@@ -144,7 +144,7 @@ class MenuItemDetailView(APIView):
     def get(self, request, pk, format=None):
         try:
             menu_items = MenuItem.objects.filter(account=pk)  # Filter by account
-            serializer = MenuItemSerializer(menu_items, many=True)  # Serialize multiple items
+            serializer = MenuItemGetSerializer(menu_items, many=True)  # Serialize multiple items
             return Response(serializer.data)
         except MenuItem.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
