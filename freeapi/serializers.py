@@ -76,3 +76,12 @@ class OfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offers
         fields = ('__all__')  # Replace with specific fields you want to expose
+
+
+class MenuItemSerializer(serializers.ModelSerializer):
+    account = AccountSerializer(read_only=True)  # Nested serializer for account data
+
+    class Meta:
+        model = MenuItem
+        fields = ('__all__')
+

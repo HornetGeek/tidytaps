@@ -96,4 +96,82 @@ class LastClientView(APIView):
         last_10_clients = Clients.objects.filter(account=account).order_by('-date')[:10]
         serializer = ClientSerializer(last_10_clients, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
+
+class OfferDetailView(APIView):
+    permission_classes = [IsAuthenticated]  # Optional authentication
+
+    def get(self, request, pk, format=None):
+        try:
+            offer = Offers.objects.get(account=pk)
+            serializer = OfferSerializer(offer)
+            return Response(serializer.data)
+        except Offers.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+    def post(self, request, format=None):
+        serializer = OfferSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk, format=None):
+        try:
+            offer = Offers.objects.get(pk=pk)
+            serializer = OfferSerializer(offer, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Offers.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk, format=None):
+        try:
+            offer = Offers.objects.get(pk=pk)
+            offer.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)  # No content to return
+        except Offers.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class MenuItemDetailView(APIView):
+    permission_classes = [IsAuthenticated]  # Optional authentication
+
+    def get(self, request, pk, format=None):
+        try:
+            menu_items = MenuItem.objects.filter(account=pk)  # Filter by account
+            serializer = MenuItemSerializer(menu_items, many=True)  # Serialize multiple items
+            return Response(serializer.data)
+        except MenuItem.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+    def put(self, request, pk, format=None):
+        try:
+            menu_item = MenuItem.objects.get(account=pk)
+            serializer = MenuItemSerializer(menu_item, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except MenuItem.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk, format=None):
+        try:
+            menu_item = MenuItem.objects.get(account=pk)
+            menu_item.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except MenuItem.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, format=None):
+        serializer = MenuItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
