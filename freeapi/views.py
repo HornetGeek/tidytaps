@@ -103,14 +103,14 @@ class OfferDetailView(APIView):
 
     def get(self, request, pk, format=None):
         try:
-            offers = Offers.objects.filter(account=pk)
-            serialized_offers = [OfferSerializer(offer).data for offer in offers]
+            offers = MenuItem.objects.filter(account=pk,hasOffer=True)
+            serialized_offers = [MenuItemSerializer(offer).data for offer in offers]
             return Response(serialized_offers)
         except Offers.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
             
     def post(self, request, format=None):
-        serializer = OfferSerializer(data=request.data)
+        serializer = MenuItemSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -150,9 +150,9 @@ class MenuItemDetailView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-    def put(self, request, pk, format=None):
+    def put(self, request, pk,itemId, format=None):
         try:
-            menu_item = MenuItem.objects.get(account=pk)
+            menu_item = MenuItem.objects.get(account=pk, pk=itemId)
             serializer = MenuItemSerializer(menu_item, data=request.data)
             if serializer.is_valid():
                 serializer.save()

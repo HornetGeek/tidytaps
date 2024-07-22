@@ -10,6 +10,7 @@ urlpatterns = [
     path('lastClient',views.LastClientView.as_view(), name='lastClient' ),
     path('register', views.RegisterView.as_view(), name='register'),
     path('offers/<int:pk>', views.OfferDetailView.as_view(), name="offers"),
+    path('items/<int:pk>/<int:itemId>', views.MenuItemDetailView.as_view(), name="offers"),
     path('offers', views.OfferDetailView.as_view(), name="Post offers"),
     path('items/<int:pk>', views.MenuItemDetailView.as_view(), name="menuItems"),
     path('items', views.MenuItemDetailView.as_view(), name="PostMenuItems")

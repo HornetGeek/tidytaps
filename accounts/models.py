@@ -130,6 +130,8 @@ class MenuItem(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="menuitem_categgory")
     item = models.CharField(max_length=500)
     price = models.CharField(max_length=500)
+    old_price = models.CharField(max_length=500, default="")
+    hasOffer = models.BooleanField(default=False)
     desc = models.CharField(max_length=500, blank=True)
     picture = models.FileField(upload_to='accounts/static/img/items/')
 
