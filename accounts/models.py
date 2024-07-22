@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.hashers import make_password, check_password
 from datetime import datetime
+from django.utils.translation import gettext_lazy as _
 import uuid
 from django.conf import settings
 # Create your models here.
@@ -32,6 +33,7 @@ class Account(models.Model):
 
     idnumber = models.IntegerField(blank=True, null=True)
     picture = models.CharField(max_length=200, blank=True)
+    telegramId = models.CharField(max_length=150, default="", blank=True)
 
     
     #objects = CustomUserManager()
@@ -39,7 +41,10 @@ class Account(models.Model):
     def __str__(self):
         return self.username
 
-
+class OneLink(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="onelink_account")
+    link = models.CharField(max_length=500, default="")
+    date = models.DateTimeField(default=datetime.now)
 
 class Clients(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="clients_data")
@@ -108,7 +113,7 @@ class Order(models.Model):
 
 class Menu(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="menu_account")
-    title = models.CharField(max_length=500)
+    title = models.CharField(max_length=500, default=_("Menu Title"))
     logo = models.FileField(upload_to='accounts/static/img/logos')
     def __str__(self):
         return 'Menu'
@@ -137,9 +142,17 @@ class Modifier(models.Model):
     name = models.CharField(max_length=500)
     price = models.CharField(max_length=500, default=0)
     pic = models.FileField(upload_to='accounts/static/img/modifier/',blank=True )
-    
+
+class SizeModifier(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="SizeModifier_account",  null=True)
+    menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_SizeModifier")
+    size = models.CharField(max_length=500)
+    price = models.CharField(max_length=500, default=0)
+
+    def __str__(self):
+        return self.menuitem.item
 
 class Offers(models.Model):
-    client = models.ForeignKey(Clients, on_delete=models.CASCADE, related_name="client_offers")
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_offers")
     message = models.CharField(max_length=500)
+    photo = models.FileField(upload_to='accounts/static/img/offers/',blank=True )
