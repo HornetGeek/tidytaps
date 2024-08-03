@@ -158,3 +158,10 @@ class Offers(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     message = models.CharField(max_length=500, default="")
     photo = models.FileField(upload_to='static/img/offers/',blank=True )
+
+class Options(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_Options")
+    name = models.CharField(max_length=500)
+    Popular = models.BooleanField(default=False)
+
