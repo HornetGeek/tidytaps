@@ -1,6 +1,13 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from . import views
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework import routers
+
+router = routers.DefaultRouter()
+router.register('options',  
+ views.OptionsViewSet)
+
+
 
 
 urlpatterns = [
@@ -13,5 +20,7 @@ urlpatterns = [
     path('items/<int:pk>/<int:itemId>', views.MenuItemDetailView.as_view(), name="offers"),
     path('offers', views.OfferDetailView.as_view(), name="Post offers"),
     path('items/<int:pk>', views.MenuItemDetailView.as_view(), name="menuItems"),
-    path('items', views.MenuItemDetailView.as_view(), name="PostMenuItems")
+    path('items', views.MenuItemDetailView.as_view(), name="PostMenuItems"),
+    path('', include(router.urls)),
+    path('options/<int:account_id>/<int:menuitem_id>', views.get_items_by_account_and_menuitem),
 ]

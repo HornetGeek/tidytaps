@@ -13,6 +13,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import viewsets
+
 
 class IndexView(APIView):
     permission_classes = [IsAuthenticated]
@@ -175,3 +177,13 @@ class MenuItemDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OptionsViewSet(viewsets.ModelViewSet):
+    queryset = Options.objects.all()
+    serializer_class = OptionsSerializer
+
+def get_items_by_account_and_menuitem(request, account_id, menuitem_id):
+    items = Options.objects.filter(account=account_id, menuitem=menuitem_id)
+    serializer = OptionsSerializer(items, many=True)  
+    return JsonResponse(serializer.data, safe=False)
