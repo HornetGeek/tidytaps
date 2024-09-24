@@ -4,8 +4,10 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register('options',  
- views.OptionsViewSet)
+router.register('choices',  views.MenuItemOptionsViewSet)
+
+router2 = routers.DefaultRouter()
+router2.register('options',  views.MenuOptionsViewSet)
 
 
 
@@ -19,8 +21,11 @@ urlpatterns = [
     path('offers/<int:pk>', views.OfferDetailView.as_view(), name="offers"),
     path('items/<int:pk>/<int:itemId>', views.MenuItemDetailView.as_view(), name="offers"),
     path('offers', views.OfferDetailView.as_view(), name="Post offers"),
+    path('order',views.MakeOrderView.as_view()),
     path('items/<int:pk>', views.MenuItemDetailView.as_view(), name="menuItems"),
     path('items', views.MenuItemDetailView.as_view(), name="PostMenuItems"),
     path('', include(router.urls)),
-    path('options/<int:account_id>/<int:menuitem_id>', views.get_items_by_account_and_menuitem),
+    path('', include(router2.urls)),
+    path('option/<int:account_id>/<int:menuitem_id>/', views.get_option_by_account_and_menuitem),
+    path('choices/<int:account_id>/<int:menuitem_id>/<int:option_id>', views.get_items_by_account_and_menuitem),
 ]

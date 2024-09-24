@@ -179,11 +179,95 @@ class MenuItemDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OptionsViewSet(viewsets.ModelViewSet):
-    queryset = Options.objects.all()
+class MenuItemOptionsViewSet(viewsets.ModelViewSet):
+    queryset = MenuItemChoices.objects.all()
+    serializer_class = MenuItemChoicesSerializer
+
+def get_items_by_account_and_menuitem(request, account_id, menuitem_id, option_id):
+    items = MenuItemChoices.objects.filter(account=account_id, menuitem=menuitem_id, option=option_id)
+    serializer = MenuItemChoicesSerializer(items, many=True)  
+    return JsonResponse(serializer.data, safe=False)
+
+class MenuOptionsViewSet(viewsets.ModelViewSet):
+    queryset = Option.objects.all()
     serializer_class = OptionsSerializer
 
-def get_items_by_account_and_menuitem(request, account_id, menuitem_id):
-    items = Options.objects.filter(account=account_id, menuitem=menuitem_id)
+def get_option_by_account_and_menuitem(request, account_id, menuitem_id):
+    items = Option.objects.filter(account=account_id, Item=menuitem_id)
     serializer = OptionsSerializer(items, many=True)  
     return JsonResponse(serializer.data, safe=False)
+
+
+class MakeOrderView(APIView):
+    def get(self, request, format=None):
+        orders = ShopOrder.objects.all()
+        serializer = ShopOrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        if not isinstance(request.data, list):
+            return Response({'error': 'Invalid data format. Please provide a list of orders.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        account = Account.objects.get(user=request.data[0]["account"])
+
+        # Check for existing client based on phone number (consider username too)
+        client, created = Clients.objects.get_or_create(
+            account=account,
+            phone=request.data[0]["phone"],
+            defaults={'numberOfOrders': 0, 'email': request.data[0]["email"]},  # Set defaults for new clients
+        )
+        if created:
+            client.numberOfOrders = 0  # Initialize numberOfOrders if creating a new client
+
+        orders = []
+        for order_data in request.data:
+            serializer = ShopOrderSerializer(data=order_data)
+
+            # Validate order data before saving
+            #if not serializer.is_valid():
+            #    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Retrieve or create ShopOrder object
+            print("client")
+            print(client)
+            order, created = ShopOrder.objects.get_or_create(
+                account=account,
+                client=client.id,
+                Item_id=order_data["Item"],  # Use foreign key field name (e.g., Item_id)
+                quantity=order_data["quantity"],
+                date=order_data.get("date", datetime.now()),  # Use default for missing date
+            )
+
+            # Handle options based on your model design:
+            if "options" in order_data:
+                # Option 1: Directly associate options with `ShopOrder` using a ManyToManyField
+                # (Update `Option` model with a `ShopOrder` relationship if needed)
+                for option_data in order_data["options"]:
+                    order.options.add(Option.objects.get(pk=option_data["optionId"]))
+
+                # Option 2: Save additional information about chosen options
+                # (Update `ShopOrder` model if needed to store chosen option details)
+                order.chosen_options = order_data["options"]  # Replace with actual field name
+
+            # Save the order
+            order.save()
+            orders.append(order)
+
+        # Update client's number of orders if necessary
+        client.numberOfOrders += len(orders)
+        client.save()
+
+    def put(self, request, pk, format=None):  
+
+        order = ShopOrder.objects.get(pk=pk)
+        serializer = ShopOrderSerializer(order, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):  
+
+        order = ShopOrder.objects.get(pk=pk)
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

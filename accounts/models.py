@@ -154,14 +154,47 @@ class SizeModifier(models.Model):
     def __str__(self):
         return self.menuitem.item
 
+
+
+
+class ShopMenu(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    title = models.CharField(max_length=500, default=_("Menu Title"))
+    logo = models.FileField(upload_to='accounts/static/img/logos')
+    def __str__(self):
+        return 'Menu'
+
+class ShopCategory(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE , null=True)
+    name = models.CharField(max_length=500, unique=True)
+    def __str__(self):
+        return self.name
+
+
 class Offers(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     message = models.CharField(max_length=500, default="")
     photo = models.FileField(upload_to='static/img/offers/',blank=True )
 
-class Options(models.Model):
+class Option(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    Item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    type = models.CharField(max_length=20, choices=[('text', 'Text'), ('number', 'Number'), ('date', 'Date'), ('checkbox', 'Checkbox')])
+    required = models.BooleanField(default=False)
+
+class MenuItemChoices(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_Options")
+    option = models.ForeignKey(Option, on_delete=models.CASCADE,default=1)
     name = models.CharField(max_length=500)
     Popular = models.BooleanField(default=False)
 
+class ShopOrder(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    client = models.ForeignKey(Clients, on_delete=models.CASCADE)
+    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    date = models.DateTimeField(default=datetime.now)
+    order_status = models.CharField(max_length=30, default='pending')
+    options = models.ManyToManyField(Option, blank=True)

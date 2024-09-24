@@ -91,10 +91,32 @@ class MenuItemSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = ('__all__')
 
-
 class OptionsSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Options
+        model = Option
+        fields = ('__all__')
+
+
+class MenuItemChoicesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MenuItemChoices
+        fields = ('__all__')
+
+
+
+class ShopOrderSerializer(serializers.ModelSerializer):
+    
+
+    class Meta:
+        model = ShopOrder
+        fields = ('__all__')
+
+
+class ShopCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShopCategory
         fields = ('__all__')
 
