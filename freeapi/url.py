@@ -13,7 +13,9 @@ router2.register('options',  views.MenuOptionsViewSet)
 
 
 urlpatterns = [
+    path('accounts/', views.AccountCreateAPIView.as_view(), name='account-create'),
     path('dashboard', views.IndexView.as_view(), name='index'),
+    path('category',views.CategoryAPIView.as_view(), name='category'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('chart',views.ChartIndex.as_view(), name='Chart' ),
     path('lastClient',views.LastClientView.as_view(), name='lastClient' ),

@@ -28,6 +28,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'password')
 
+class AccountPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ('__all__')  # Replace with specific fields you want to expose
+
+
 class AccountSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)  # Assuming one-to-one with User
     orders_count = serializers.SerializerMethodField()
@@ -51,6 +57,12 @@ class AccountSerializer(serializers.ModelSerializer):
 
     def get_offers_count(self, obj):
         return Offers.objects.filter(account=obj).count()
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('__all__')  # Replace with specific fields you want to expose
+
 
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:

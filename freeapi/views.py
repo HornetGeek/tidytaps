@@ -14,7 +14,12 @@ from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import viewsets
+from rest_framework import generics
 
+
+class AccountCreateAPIView(generics.CreateAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountPostSerializer
 
 class IndexView(APIView):
     permission_classes = [IsAuthenticated]
@@ -82,6 +87,8 @@ class LoginView(APIView):
         token = RefreshToken.for_user(user)
         return Response({'token': str(token.access_token)}, status=status.HTTP_200_OK)
 
+
+
 class RegisterView(APIView):
     permission_classes = [BasePermission]
     def post(self, request):
@@ -92,6 +99,10 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+class CategoryAPIView(generics.CreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 class LastClientView(APIView):
     def get(self, request):
