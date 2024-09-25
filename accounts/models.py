@@ -34,7 +34,6 @@ class Account(models.Model):
     idnumber = models.IntegerField(blank=True, null=True)
     picture = models.CharField(max_length=200, blank=True)
     telegramId = models.CharField(max_length=150, default="", blank=True)
-
     
     #objects = CustomUserManager()
 
@@ -120,7 +119,6 @@ class Menu(models.Model):
 
 class Category(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="Category_account", null=True)
-    menu = models.ForeignKey(Menu, on_delete=models.CASCADE, related_name="category_menu")
     name = models.CharField(max_length=500, unique=True)
     def __str__(self):
         return self.name
@@ -198,3 +196,5 @@ class ShopOrder(models.Model):
     date = models.DateTimeField(default=datetime.now)
     order_status = models.CharField(max_length=30, default='pending')
     options = models.ManyToManyField(Option, blank=True)
+
+
