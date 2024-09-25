@@ -32,7 +32,7 @@ def login_user(request):
         password = request.POST["password"]
 
         # Check if username and password are correct, returning User object if so
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=username, password=str(password))
 
         # If user object is returned, log in and route to index page:
         if user:
