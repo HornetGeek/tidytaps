@@ -83,6 +83,7 @@ class LoginView(APIView):
         return Response({'token': str(token.access_token)}, status=status.HTTP_200_OK)
 
 class RegisterView(APIView):
+    permission_classes = [BasePermission]
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
