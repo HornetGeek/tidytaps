@@ -104,6 +104,26 @@ class CategoryAPIView(generics.CreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+class CategoryGetAPIView(generics.ListAPIView):
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        account_id = self.kwargs.get('account_id')  # Get account_id from the URL
+        if account_id:
+            return Category.objects.filter(account__id=account_id)  # Filter by account_id
+        return Category.objects.all()  # Return all if account_id is not provided
+
+
+class CategoryWithItemsAPIView(generics.ListAPIView):
+    serializer_class = CategoryWithItemsSerializer
+
+    def get_queryset(self):
+        account_id = self.kwargs.get('account_id')  # Get account_id from the URL
+        if account_id:
+            return Category.objects.filter(account__id=account_id).prefetch_related('menuitem_categgory')  # Use the correct related name
+        return Category.objects.none()
+
+
 class LastClientView(APIView):
     def get(self, request):
         account = Account.objects.get(user=request.user)

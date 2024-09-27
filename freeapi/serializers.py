@@ -64,6 +64,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('__all__')  # Replace with specific fields you want to expose
 
 
+
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Clients
@@ -102,6 +103,15 @@ class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuItem
         fields = ('__all__')
+
+
+class CategoryWithItemsSerializer(serializers.ModelSerializer):
+    menuitem_categgory = MenuItemSerializer(many=True, read_only=True)  # Use the correct related name
+
+    class Meta:
+        model = Category
+        fields = ('id', 'name', 'menuitem_categgory')  # Update the fields list accordingly
+
 
 class OptionsSerializer(serializers.ModelSerializer):
 
