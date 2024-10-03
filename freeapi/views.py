@@ -195,9 +195,9 @@ class MenuItemDetailView(APIView):
         except MenuItem.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, pk, format=None):
+    def delete(self, request, pk,itemId, format=None):
         try:
-            menu_item = MenuItem.objects.get(account=pk)
+            menu_item = MenuItem.objects.get(account=pk, id=itemId)
             menu_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except MenuItem.DoesNotExist:
