@@ -14,6 +14,7 @@ router2.register('options',  views.MenuOptionsViewSet)
 
 urlpatterns = [
     path('accounts/', views.AccountCreateAPIView.as_view(), name='account-create'),
+    path('accounts/<str:username>/', views.AccountRetrieveByUsernameAPIView.as_view(), name='account-retrieve-by-username'),
     path('dashboard', views.IndexView.as_view(), name='index'),
     path('category',views.CategoryAPIView.as_view(), name='category'),
     path('category/<int:account_id>/', views.CategoryGetAPIView.as_view(), name='category-get'),

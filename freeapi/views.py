@@ -17,9 +17,15 @@ from rest_framework import viewsets
 from rest_framework import generics
 
 
-class AccountCreateAPIView(generics.CreateAPIView):
+class AccountCreateAPIView(generics.ListCreateAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountPostSerializer
+
+class AccountRetrieveByUsernameAPIView(generics.RetrieveAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountPostSerializer
+    lookup_field = 'username'  # Specify that the lookup field is 'username'
+
 
 class IndexView(APIView):
     permission_classes = [IsAuthenticated]
