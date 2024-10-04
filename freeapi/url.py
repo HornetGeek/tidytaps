@@ -16,6 +16,20 @@ urlpatterns = [
     path('accounts/', views.AccountCreateAPIView.as_view(), name='account-create'),
     path('accounts/username/<str:username>/', views.AccountRetrieveByUsernameAPIView.as_view(), name='account-retrieve-by-username'),
     path('accounts/id/<int:id>/', views.AccountUpdateAPIView.as_view(), name='account-update'),  # Account by ID
+    path('contacts/', views.ContactsListCreateAPIView.as_view(), name='contacts-list-create'),
+    path('contacts/<int:account_id>/', views.ContactsListCreateAPIView.as_view(), name='contacts-list-create'),
+    path('contacts/<int:account_id>/<int:pk>/', views.ContactsRetrieveUpdateDestroyAPIView.as_view(), name='contacts-detail'),
+
+    # Adresses
+    path('adresses/', views.AdressesListCreateAPIView.as_view(), name='adresses-list-create'),
+    path('adresses/<int:account_id>/', views.AdressesListCreateAPIView.as_view(), name='adresses-list-create'),
+    path('adresses/<int:account_id>/<int:pk>/', views.AdressesRetrieveUpdateDestroyAPIView.as_view(), name='adresses-detail'),
+
+    # SocialMedia
+    path('social-media/', views.SocialMediaListCreateAPIView.as_view(), name='social-media-list-create'),
+    path('social-media/<int:account_id>/', views.SocialMediaListCreateAPIView.as_view(), name='social-media-list-create'),
+    path('social-media/<int:account_id>/<int:pk>/', views.SocialMediaRetrieveUpdateDestroyAPIView.as_view(), name='social-media-detail'),
+
     path('dashboard', views.IndexView.as_view(), name='index'),
     path('category',views.CategoryAPIView.as_view(), name='category'),
     path('category/<int:account_id>/', views.CategoryGetAPIView.as_view(), name='category-get'),

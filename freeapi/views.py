@@ -31,6 +31,46 @@ class AccountUpdateAPIView(generics.RetrieveUpdateAPIView):
     serializer_class = AccountPostSerializer
     lookup_field = 'id'  # This tells Django to look for 'id' in the URL
 
+class ContactsListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Contacts.objects.all()
+    serializer_class = ContactsSerializer
+
+    def get_queryset(self):
+        account_id = self.kwargs.get('account_id')  # Get the account_id from the URL
+        return Contacts.objects.filter(account__id=account_id)  # Filter contacts by account_id
+
+
+class ContactsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Contacts.objects.all()
+    serializer_class = ContactsSerializer
+
+# CRUD for Adresses
+class AdressesListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Adresses.objects.all()
+    serializer_class = AdressesSerializer
+
+    def get_queryset(self):
+        account_id = self.kwargs.get('account_id')
+        return Adresses.objects.filter(account__id=account_id)  # Filter addresses by account_id
+
+
+class AdressesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Adresses.objects.all()
+    serializer_class = AdressesSerializer
+
+# CRUD for SocialMedia
+class SocialMediaListCreateAPIView(generics.ListCreateAPIView):
+    queryset = SocialMedia.objects.all()
+    serializer_class = SocialMediaSerializer
+
+    def get_queryset(self):
+        account_id = self.kwargs.get('account_id')
+        return SocialMedia.objects.filter(account__id=account_id)  # Filter social media by account_id
+
+
+class SocialMediaRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SocialMedia.objects.all()
+    serializer_class = SocialMediaSerializer
 
 class IndexView(APIView):
     permission_classes = [IsAuthenticated]

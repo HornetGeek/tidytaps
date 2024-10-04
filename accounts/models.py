@@ -41,6 +41,22 @@ class Account(models.Model):
     def __str__(self):
         return self.username
 
+class Contacts(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="conatcts_account")
+    phone = models.IntegerField(default=0)
+    emails = models.CharField(max_length=150, default="")
+
+class Adresses(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="adress_account")
+    address = models.CharField(max_length=150, default="")
+
+class SocialMedia(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="socialMedia_account")
+    facebook = models.CharField(max_length=150, default="")
+    youtube = models.CharField(max_length=150, default="")
+    instagram = models.CharField(max_length=150, default="")
+    tiktok = models.CharField(max_length=150, default="")
+
 class OneLink(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="onelink_account")
     link = models.CharField(max_length=500, default="")

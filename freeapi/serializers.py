@@ -58,6 +58,22 @@ class AccountSerializer(serializers.ModelSerializer):
     def get_offers_count(self, obj):
         return Offers.objects.filter(account=obj).count()
 
+class ContactsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contacts
+        fields = '__all__'
+
+class AdressesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Adresses
+        fields = '__all__'
+
+class SocialMediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SocialMedia
+        fields = '__all__'
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
