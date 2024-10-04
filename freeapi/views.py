@@ -26,6 +26,11 @@ class AccountRetrieveByUsernameAPIView(generics.RetrieveAPIView):
     serializer_class = AccountPostSerializer
     lookup_field = 'username'  # Specify that the lookup field is 'username'
 
+class AccountUpdateAPIView(generics.RetrieveUpdateAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountPostSerializer
+    lookup_field = 'id'  # This tells Django to look for 'id' in the URL
+
 
 class IndexView(APIView):
     permission_classes = [IsAuthenticated]
