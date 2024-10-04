@@ -34,7 +34,7 @@ class Account(models.Model):
     idnumber = models.IntegerField(blank=True, null=True)
     picture = models.CharField(max_length=200, blank=True)
     telegramId = models.CharField(max_length=150, default="", blank=True)
-    logo = models.FileField(upload_to='accounts/static/img/logos', default="static/img/logos/Defaultlogo.png")
+    logo = models.FileField(upload_to='static/img/logos', default="static/img/logos/Defaultlogo.png")
     title = models.CharField(max_length=150, default="", blank=True)
     #objects = CustomUserManager()
 
