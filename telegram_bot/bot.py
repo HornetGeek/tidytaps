@@ -251,6 +251,10 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data['state'] = 'awaiting_image'
 
 # Handle product image step
+import qrcode
+from io import BytesIO
+
+# Handle product image step
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.photo:
         await update.message.reply_text('Please upload an image of the product.')
@@ -259,12 +263,13 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
     await update.message.reply_text('Downloading your product image, this may take a few moments...')
 
     try:
+        # Download the product image
         product_image_file = await update.message.photo[-1].get_file()
         product_image_path = f"static/img/items/{context.user_data['chat_id']}_product_{int(time.time())}.jpg"
         await product_image_file.download_to_drive(product_image_path)
         await update.message.reply_text('Product image downloaded successfully.')
 
-        # Now save the menu item with all the information
+        # Save the menu item with all the information
         account = context.user_data['account']
         menu_item_data = {
             'account': account,
@@ -277,18 +282,42 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         menu_item = MenuItem(**menu_item_data)
         await sync_to_async(menu_item.save)()
-        
+
+        # Get the website URL for the account
         username = account.username  # Get the username from the cached account
         website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
+
+        # Generate the QR code for the website URL
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(website_url)
+        qr.make(fit=True)
+
+        # Save the QR code image in memory
+        qr_img = qr.make_image(fill='black', back_color='white')
+        qr_bytes = BytesIO()
+        qr_img.save(qr_bytes, format='PNG')
+        qr_bytes.seek(0)
+
+        # Send the success message with the website link
         await update.message.reply_text(
-                f"🎉 Product '{menu_item.item}' added successfully! You can add another product by typing /add_product.\n"
-                f"Visit your product page at: {website_url}"
-            )
+            f"🎉 Product '{menu_item.item}' added successfully! You can add another product by typing /add_product.\n"
+            f"Visit your product page at: {website_url}"
+        )
+
+        # Send the QR code image as a photo
+        await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your product page: {website_url}")
+
         # Clear user data for the next flow
         context.user_data.clear()
 
     except Exception as e:
         await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
+
 
 # Main function to start the bot
 if __name__ == '__main__':
