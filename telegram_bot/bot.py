@@ -194,15 +194,22 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle product category step
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category_name = update.message.text
+
     try:
-        category = await sync_to_async(Category.objects.get)(name=category_name)
+        # Fetch the account associated with the user's chat ID
+        account = await sync_to_async(Account.objects.get)(telegramId=context.user_data['chat_id'])
+
+        # Check if the category exists and belongs to this account
+        category = await sync_to_async(Category.objects.get)(name=category_name, account=account)
         context.user_data['category'] = category
         await update.message.reply_text('Please provide the item name.')
         context.user_data['state'] = 'awaiting_item_name'
+
     except Category.DoesNotExist:
+        # The category does not exist or does not belong to the account
         context.user_data['category_name'] = category_name
         await update.message.reply_text(
-            f"Category '{category_name}' does not exist. Do you want to create it? (yes/no)"
+            f"Category '{category_name}' does not exist for this account. Do you want to create it? (yes/no)"
         )
         context.user_data['state'] = 'awaiting_category_confirmation'
 
