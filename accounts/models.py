@@ -136,7 +136,11 @@ class Menu(models.Model):
 
 class Category(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="Category_account", null=True)
-    name = models.CharField(max_length=500, unique=True)
+    name = models.CharField(max_length=500)
+
+    class Meta:
+        unique_together = ('account', 'name')  # Enforce uniqueness per account
+
     def __str__(self):
         return self.name
 
