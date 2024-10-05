@@ -255,9 +255,9 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     # Create a new MenuItem with the gathered information
     item_data = {
-        'name': context.user_data['item_name'],
+        'item': context.user_data['item_name'],
         'price': context.user_data['price'],
-        'description': context.user_data['description'],
+        'desc': context.user_data['description'],
         'category': context.user_data['category'],  # Already cached
         'account': context.user_data.get('account'),  # Use the cached account
     }
@@ -283,7 +283,9 @@ def main():
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    application.run_polling()
+
+    print("Telegram Bot started! Listening for updates...", flush=True)
+    application.run_polling()   
 
 if __name__ == '__main__':
     main()
