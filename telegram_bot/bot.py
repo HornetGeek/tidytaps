@@ -266,9 +266,9 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await sync_to_async(new_menu_item.save)()
 
     await update.message.reply_text(
-        f"Product '{new_menu_item.name}' added successfully! 🎉\n"
+        f"Product '{new_menu_item.item}' added successfully! 🎉\n"
         f"Price: ${new_menu_item.price}\n"
-        f"Description: {new_menu_item.description}"
+        f"Description: {new_menu_item.desc}"
     )
 
     # Clear user data after finishing the product addition
