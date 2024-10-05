@@ -270,7 +270,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
 # Main function to start the bot
 if __name__ == '__main__':
-    application = Application.builder().token('YOUR_BOT_TOKEN').build()
+    application = Application.builder().token('6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8').build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("add_account", add_account))
