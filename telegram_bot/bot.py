@@ -5,6 +5,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from asgiref.sync import sync_to_async
 import re
+import time
+
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -90,13 +92,45 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = 'awaiting_logo'
 
 # Handle account logo step
+
+# Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logo_file = await update.message.photo[-1].get_file()
-    logo_path = f"static/img/logos/{context.user_data['chat_id']}_logo.jpg"
-    await logo_file.download_to_drive(logo_path)
-    context.user_data['logo'] = logo_path
-    await update.message.reply_text('Now please send the title for the account.')
-    context.user_data['state'] = 'awaiting_title'
+    # Check if there's a photo in the message
+    if not update.message.photo:
+        await update.message.reply_text('Please upload an image as the logo.')
+        return
+    
+    # Inform the user that the download has started
+    await update.message.reply_text('Downloading your logo, this may take a few moments...')
+
+    try:
+        # Get the largest size of the photo uploaded
+        logo_file = await update.message.photo[-1].get_file()
+
+        # Measure download time
+        start_time = time.time()
+
+        # Download the photo
+        logo_path = f"static/img/logos/{context.user_data['chat_id']}_logo.jpg"
+        await logo_file.download_to_drive(logo_path)
+
+        # Calculate the time taken for the download
+        download_duration = time.time() - start_time
+
+        # Notify the user that the download is complete and give insights on the duration
+        await update.message.reply_text(f'Logo downloaded successfully in {download_duration:.2f} seconds.')
+
+        # Store the logo path in user_data
+        context.user_data['logo'] = logo_path
+
+        # Proceed to the next step
+        await update.message.reply_text('Now please send the title for the account.')
+        context.user_data['state'] = 'awaiting_title'
+
+    except Exception as e:
+        # Handle any potential errors during download
+        await update.message.reply_text(f'An error occurred while downloading the logo: {str(e)}')
+
 
 # Handle account title step
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
