@@ -268,6 +268,8 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
         'price': context.user_data['price'],
         'desc': context.user_data['description'],
     }
+    print("product_data")
+    print(product_data)
 
     new_product = MenuItem(**product_data)
     await sync_to_async(new_product.save)()
