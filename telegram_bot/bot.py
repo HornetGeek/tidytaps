@@ -261,7 +261,8 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
         'category': context.user_data['category'],  # Already cached
         'account': context.user_data.get('account'),  # Use the cached account
     }
-
+    print("item_data")
+    print(item_data)
     new_menu_item = MenuItem(**item_data)
     await sync_to_async(new_menu_item.save)()
 
