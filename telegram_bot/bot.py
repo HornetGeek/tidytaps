@@ -29,7 +29,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Check if there's an account associated with this chat ID (telegramId)
         account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-        
+        context.user_data['account'] = account  # Cache the account for future use
+
         # Personalized welcome message for existing account
         welcome_message = (
             f"Welcome back, {account.username}! 🎉\n\n"
@@ -92,8 +93,6 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = 'awaiting_logo'
 
 # Handle account logo step
-
-# Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if there's a photo in the message
     if not update.message.photo:
@@ -130,7 +129,6 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         # Handle any potential errors during download
         await update.message.reply_text(f'An error occurred while downloading the logo: {str(e)}')
-
 
 # Handle account title step
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -194,11 +192,9 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle product category step
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category_name = update.message.text
+    account = context.user_data.get('account')  # Get the cached account
 
     try:
-        # Fetch the account associated with the user's chat ID
-        account = await sync_to_async(Account.objects.get)(telegramId=context.user_data['chat_id'])
-
         # Check if the category exists and belongs to this account
         category = await sync_to_async(Category.objects.get)(name=category_name, account=account)
         context.user_data['category'] = category
@@ -216,9 +212,11 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle category creation confirmation
 async def handle_category_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_response = update.message.text.lower()
+    account = context.user_data.get('account')  # Get the cached account
+
     if user_response == 'yes':
         category_name = context.user_data['category_name']
-        new_category = Category(name=category_name)
+        new_category = Category(name=category_name, account=account)  # Associate the category with the account
         await sync_to_async(new_category.save)()
         context.user_data['category'] = new_category
         await update.message.reply_text(f"Category '{category_name}' created successfully! Please provide the item name.")
@@ -230,67 +228,61 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
         await update.message.reply_text("Please respond with 'yes' or 'no'. Do you want to create the category?")
         context.user_data['state'] = 'awaiting_category_confirmation'
 
-# Handle product item name step
+# Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     item_name = update.message.text
     context.user_data['item_name'] = item_name
-    await update.message.reply_text('Please provide the price for the item.')
+    await update.message.reply_text('Please provide the price for the product.')
     context.user_data['state'] = 'awaiting_price'
 
-# Handle product price step
+# Handle price step
 async def handle_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    price = update.message.text
-    if not price.isdigit():
-        await update.message.reply_text('Invalid price. Please enter a valid numeric value.')
+    price_text = update.message.text
+    
+    # Validate price input
+    if not price_text.isdigit() or int(price_text) <= 0:
+        await update.message.reply_text("Please enter a valid price (greater than 0).")
         return
 
-    context.user_data['price'] = price
-    await update.message.reply_text('Please provide a description for the item (optional).')
+    context.user_data['price'] = float(price_text)
+    await update.message.reply_text('Please provide a description for the product.')
     context.user_data['state'] = 'awaiting_description'
 
-# Handle product description step
+# Handle description step
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     description = update.message.text
     context.user_data['description'] = description
 
-    # Fetch the account associated with the user
-    try:
-        account = await sync_to_async(Account.objects.get)(telegramId=context.user_data['chat_id'])
-    except Account.DoesNotExist:
-        await update.message.reply_text('Account not found.')
-        return
-
-    # Save the product
-    product_data = {
-        'account': account,
-        'category': context.user_data['category'],
-        'item': context.user_data['item_name'],
+    # Create a new MenuItem with the gathered information
+    item_data = {
+        'name': context.user_data['item_name'],
         'price': context.user_data['price'],
-        'desc': context.user_data['description'],
+        'description': context.user_data['description'],
+        'category': context.user_data['category'],  # Already cached
+        'account': context.user_data.get('account'),  # Use the cached account
     }
-    print("product_data")
-    print(product_data)
 
-    new_product = MenuItem(**product_data)
-    await sync_to_async(new_product.save)()
-    await update.message.reply_text('Product added successfully!')
+    new_menu_item = MenuItem(**item_data)
+    await sync_to_async(new_menu_item.save)()
+
+    await update.message.reply_text(
+        f"Product '{new_menu_item.name}' added successfully! 🎉\n"
+        f"Price: ${new_menu_item.price}\n"
+        f"Description: {new_menu_item.description}"
+    )
+
+    # Clear user data after finishing the product addition
     context.user_data.clear()
 
-# Main bot function
+# Main function to set up the bot
 def main():
-    token = '6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8'
-    application = Application.builder().token(token).concurrent_updates(True).read_timeout(30).write_timeout(30).build()
+    application = Application.builder().token('6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8').build()
 
-    # Command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
-
-    # Message handlers for the bot
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    application.add_handler(MessageHandler(filters.PHOTO, handle_message))  # Handle logo upload
 
-    print("Telegram Bot started!", flush=True)
     application.run_polling()
 
 if __name__ == '__main__':
