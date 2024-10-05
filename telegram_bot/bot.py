@@ -172,13 +172,22 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     new_account = Account(**account_data)
     await sync_to_async(new_account.save)()
-    await update.message.reply_text('Account added successfully!')
+
+    # Send a success message with guidance on the next steps
+    await update.message.reply_text(
+        '🎉 Account added successfully!\n\n'
+        'You can now add a new product for your account by typing /add_product.\n'
+        'Follow the prompts to specify the product category, name, price, and description.'
+    )
 
     # Clear user data
     context.user_data.clear()
 
 # Product flow
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.chat.id  # Get the chat ID
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
     await update.message.reply_text('Please provide the category for the product.')
     context.user_data['state'] = 'awaiting_category'
 
