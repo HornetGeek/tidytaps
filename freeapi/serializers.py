@@ -122,12 +122,15 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
 
 class CategoryWithItemsSerializer(serializers.ModelSerializer):
-    menuitem_categgory = MenuItemSerializer(many=True, read_only=True)  # Use the correct related name
+    menuitem_categgory = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'menuitem_categgory')  # Update the fields list accordingly
+        fields = ('id', 'name', 'menuitem_categgory')
 
+    def get_menuitem_categgory(self, obj):
+        account_id = self.context['request'].parser_context['kwargs']['account_id']
+        return MenuItemSerializer(obj.menuitem_categgory.filter(account__id=account_id), many=True).data
 
 class OptionsSerializer(serializers.ModelSerializer):
 

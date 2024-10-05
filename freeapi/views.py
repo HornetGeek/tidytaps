@@ -174,7 +174,6 @@ class CategoryWithItemsAPIView(generics.ListAPIView):
             return Category.objects.filter(account__id=account_id).prefetch_related('menuitem_categgory')  # Use the correct related name
         return Category.objects.none()
 
-
 class LastClientView(APIView):
     def get(self, request):
         account = Account.objects.get(user=request.user)
@@ -234,10 +233,16 @@ class MenuItemDetailView(APIView):
         except MenuItem.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-
-    def put(self, request, pk,itemId, format=None):
+    def put(self, request, pk, itemId, format=None):
         try:
             menu_item = MenuItem.objects.get(account=pk, pk=itemId)
+            category_id = request.data.get('category')
+
+            # Validate that the category belongs to the account
+            if not Category.objects.filter(id=category_id, account=pk).exists():
+                return Response({"error": "The category does not belong to this account."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
             serializer = MenuItemSerializer(menu_item, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -245,21 +250,49 @@ class MenuItemDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except MenuItem.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
-    def delete(self, request, pk,itemId, format=None):
+        
+    def patch(self, request, pk, itemId, format=None):
+        try:
+            menu_item = MenuItem.objects.get(account=pk, pk=itemId)
+            serializer = MenuItemSerializer(menu_item, data=request.data, partial=True)  # Partial update
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except MenuItem.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request, pk, itemId, format=None):
         try:
             menu_item = MenuItem.objects.get(account=pk, id=itemId)
+            category_id = menu_item.category.id
+
+            # Validate that the category belongs to the account
+            if not Category.objects.filter(id=category_id, account=pk).exists():
+                return Response({"error": "The category does not belong to this account."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
             menu_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except MenuItem.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request, format=None):
+        # Extract account_id (pk) from the request body
+        account_id = request.data.get('account')
+        category_id = request.data.get('category')
+
+        # Validate that the account_id and category_id exist
+        if not account_id or not Category.objects.filter(id=category_id, account=account_id).exists():
+            return Response({"error": "The category does not belong to this account."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         serializer = MenuItemSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 class MenuItemOptionsViewSet(viewsets.ModelViewSet):
