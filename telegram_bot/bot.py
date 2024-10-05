@@ -135,20 +135,26 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle account phone number step
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone_number = update.message.text
+    
+    # Regex pattern to ensure phone starts with 01 and contains exactly 11 digits
     phone_pattern = r'^01[0-9]{9}$'
 
+    # Validate the phone number format
     if not re.match(phone_pattern, phone_number):
-        await update.message.reply_text("Invalid phone number. Please enter a valid phone number in the format 012XXXXXXXX.")
+        await update.message.reply_text("Invalid phone number. Please enter a valid phone number in the format 01XXXXXXXXX.")
         return
 
+    # Store valid phone number in context
     context.user_data['phone_number'] = phone_number
 
     try:
+        # Fetch the user with ID 1 (change this ID if needed)
         user = await sync_to_async(User.objects.get)(id=1)
     except User.DoesNotExist:
         await update.message.reply_text("User with ID 1 does not exist.")
         return
 
+    # Prepare account data for saving
     account_data = {
         'user': user,
         'username': context.user_data['username'],
@@ -158,15 +164,18 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'telegramId': context.user_data['chat_id'],
     }
 
+    # Create and save the new account
     new_account = Account(**account_data)
     await sync_to_async(new_account.save)()
 
+    # Confirmation message
     await update.message.reply_text(
         '🎉 Account added successfully!\n\n'
         'You can now add a new product for your account by typing /add_product.\n'
         'Follow the prompts to specify the product category, name, price, description, and image.'
     )
 
+    # Clear user data for the next flow
     context.user_data.clear()
 
 # Product flow
@@ -310,7 +319,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         )
 
         # Send the QR code image as a photo
-        await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your product page: {website_url}")
+        await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
 
         # Clear user data for the next flow
         context.user_data.clear()
