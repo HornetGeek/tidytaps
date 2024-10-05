@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_message = (
             f"Welcome back, {account.username}! 🎉\n\n"
             "You can use the following commands:\n"
-            "/add_product - Add a new product by providing details like category, item name, price, and description.\n"
+            "/add_product - Add a new product by providing details like category, item name, price, description, and image.\n"
             "\nFeel free to start by typing /add_product."
         )
 
@@ -41,7 +41,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Welcome to the bot! 🎉\n\n"
             "You can use the following commands:\n"
             "/add_account - Add a new account by providing details like username, logo, title, and phone number.\n"
-            "/add_product - Add a new product by providing details like category, item name, price, and description.\n"
+            "/add_product - Add a new product by providing details like category, item name, price, description, and image.\n"
             "\nStart by typing /add_account to begin adding a new account."
         )
 
@@ -72,6 +72,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_price(update, context)
     elif user_state == 'awaiting_description':
         await handle_description(update, context)
+    elif user_state == 'awaiting_image':
+        await handle_product_image(update, context)
     elif user_state == 'awaiting_category_confirmation':
         await handle_category_confirmation(update, context)
     else:
@@ -144,7 +146,7 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         '🎉 Account added successfully!\n\n'
         'You can now add a new product for your account by typing /add_product.\n'
-        'Follow the prompts to specify the product category, name, price, and description.'
+        'Follow the prompts to specify the product category, name, price, description, and image.'
     )
 
     context.user_data.clear()
@@ -226,35 +228,54 @@ async def handle_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle description step
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     description = update.message.text
-    account = context.user_data.get('account')  # Fetch the account again to ensure it's available
+    context.user_data['description'] = description  # Store the description for the next step
+    await update.message.reply_text('Please send an image of the product.')
+    context.user_data['state'] = 'awaiting_image'
 
-    if not account:
-        await update.message.reply_text("No account found. Please create an account first using /add_account.")
+# Handle product image step
+async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.photo:
+        await update.message.reply_text('Please upload an image of the product.')
         return
 
-    menu_item_data = {
-        'account': account,
-        'item': context.user_data['item_name'],
-        'price': context.user_data['price'],
-        'desc': description,
-        'category': context.user_data['category'],  # Assuming the category was set in previous steps
-    }
+    await update.message.reply_text('Downloading your product image, this may take a few moments...')
 
-    menu_item = MenuItem(**menu_item_data)
-    await sync_to_async(menu_item.save)()
+    try:
+        product_image_file = await update.message.photo[-1].get_file()
+        product_image_path = f"static/img/products/{context.user_data['chat_id']}_product_{int(time.time())}.jpg"
+        await product_image_file.download_to_drive(product_image_path)
+        await update.message.reply_text('Product image downloaded successfully.')
 
-    await update.message.reply_text('🎉 Product added successfully! You can add another product by typing /add_product.')
+        # Now save the menu item with all the information
+        account = context.user_data['account']
+        menu_item_data = {
+            'account': account,
+            'item': context.user_data['item_name'],
+            'price': context.user_data['price'],
+            'desc': context.user_data['description'],
+            'category': context.user_data['category'],
+            'image': product_image_path  # Save the image path here
+        }
 
-    # Clear user data for the next flow
-    context.user_data.clear()
+        menu_item = MenuItem(**menu_item_data)
+        await sync_to_async(menu_item.save)()
+
+        await update.message.reply_text('🎉 Product added successfully! You can add another product by typing /add_product.')
+
+        # Clear user data for the next flow
+        context.user_data.clear()
+
+    except Exception as e:
+        await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
 # Main function to start the bot
 if __name__ == '__main__':
-    application = Application.builder().token('6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8').build()
+    application = Application.builder().token('YOUR_BOT_TOKEN').build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("Telegram Bot Started!!")
+    application.add_handler(MessageHandler(filters.PHOTO, handle_message))  # Add this line to handle photo uploads
+    print("Telegram Bot Started !!")
     application.run_polling()
