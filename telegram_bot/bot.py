@@ -254,7 +254,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
             'price': context.user_data['price'],
             'desc': context.user_data['description'],
             'category': context.user_data['category'],
-            'image': product_image_path  # Save the image path here
+            'picture': product_image_path  # Save the image path here
         }
 
         menu_item = MenuItem(**menu_item_data)
