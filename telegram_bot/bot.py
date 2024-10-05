@@ -65,24 +65,32 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Edit product flow
 async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    account = context.user_data.get('account')
-
-    if not account:
-        try:
-            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-            context.user_data['account'] = account
-        except Account.DoesNotExist:
-            await update.message.reply_text("You need to create an account first using /add_account.")
-            return
-
-    products = await sync_to_async(MenuItem.objects.filter)(account=account)
-    if not products:
-        await update.message.reply_text("You have no products to edit.")
+    
+    # Ensure account is fetched asynchronously
+    try:
+        account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+    except Account.DoesNotExist:
+        await update.message.reply_text("You don't have an account yet.")
         return
 
-    product_list = "\n".join([f"{p.id}. {p.item}" for p in products])
-    await update.message.reply_text(f"Choose a product to edit:\n\n{product_list}")
-    context.user_data['state'] = 'awaiting_product_choice'
+    # Fetch products asynchronously
+    products = await sync_to_async(MenuItem.objects.filter)(account=account)
+
+    # Convert the QuerySet to a list (since this is inside an async context)
+    products = await sync_to_async(list)(products)
+
+    if not products:
+        await update.message.reply_text("You don't have any products to edit.")
+        return
+
+    # List the products for the user to choose from
+    product_list = "\n".join([f"{idx + 1}. {item.item}" for idx, item in enumerate(products)])
+    await update.message.reply_text(f"Please select a product to edit by its number:\n\n{product_list}")
+
+    # Store products in user_data for future access
+    context.user_data['products'] = products
+    context.user_data['state'] = 'awaiting_edit_choice'
+
 
 # Handle product selection for editing
 async def handle_edit_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
