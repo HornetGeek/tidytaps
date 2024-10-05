@@ -259,9 +259,13 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         menu_item = MenuItem(**menu_item_data)
         await sync_to_async(menu_item.save)()
-
-        await update.message.reply_text('🎉 Product added successfully! You can add another product by typing /add_product.')
-
+        
+        username = account.username  # Get the username from the cached account
+        website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
+        await update.message.reply_text(
+                f"🎉 Product '{menu_item.item}' added successfully! You can add another product by typing /add_product.\n"
+                f"Visit your product page at: {website_url}"
+            )
         # Clear user data for the next flow
         context.user_data.clear()
 
