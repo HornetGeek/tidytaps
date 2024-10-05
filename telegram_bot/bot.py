@@ -242,7 +242,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         product_image_file = await update.message.photo[-1].get_file()
-        product_image_path = f"static/img/products/{context.user_data['chat_id']}_product_{int(time.time())}.jpg"
+        product_image_path = f"static/img/items/{context.user_data['chat_id']}_product_{int(time.time())}.jpg"
         await product_image_file.download_to_drive(product_image_path)
         await update.message.reply_text('Product image downloaded successfully.')
 
