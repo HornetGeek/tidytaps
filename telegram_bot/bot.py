@@ -88,24 +88,42 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check if there's a photo in the message
     if not update.message.photo:
         await update.message.reply_text('Please upload an image as the logo.')
         return
     
+    # Inform the user that the download has started
     await update.message.reply_text('Downloading your logo, this may take a few moments...')
 
+    # Retry mechanism to get chat_id
+    chat_id = context.user_data.get('chat_id')
+    if not chat_id:
+        chat_id = update.message.chat.id  # Get the chat ID again if it's not found in user_data
+        context.user_data['chat_id'] = chat_id  # Cache it for future use
+
     try:
+        # Get the largest size of the photo uploaded
         logo_file = await update.message.photo[-1].get_file()
-        logo_path = f"static/img/logos/{context.user_data['chat_id']}_logo.jpg"
+
+        # Download the photo
+        logo_path = f"static/img/logos/{chat_id}_logo.jpg"  # Use the retrieved chat_id
         await logo_file.download_to_drive(logo_path)
+
+        # Notify the user that the download is complete
         await update.message.reply_text('Logo downloaded successfully.')
 
+        # Store the logo path in user_data
         context.user_data['logo'] = logo_path
+
+        # Proceed to the next step
         await update.message.reply_text('Now please send the title for the account.')
         context.user_data['state'] = 'awaiting_title'
 
     except Exception as e:
+        # Handle any potential errors during download
         await update.message.reply_text(f'An error occurred while downloading the logo: {str(e)}')
+
 
 # Handle account title step
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
