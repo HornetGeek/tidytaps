@@ -214,24 +214,50 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         context.user_data['state'] = 'awaiting_category_confirmation'
 
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 # Handle category creation confirmation
 async def handle_category_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_response = update.message.text.lower()
     account = context.user_data.get('account')
 
-    if user_response == 'yes':
+    # Add buttons for "Yes" and "No"
+    keyboard = [
+        [
+            InlineKeyboardButton("Yes", callback_data="yes"),
+            InlineKeyboardButton("No", callback_data="no"),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        f"Category '{context.user_data['category_name']}' does not exist for this account. Do you want to create it?",
+        reply_markup=reply_markup
+    )
+from telegram.ext import CallbackQueryHandler
+
+# Handle button clicks
+async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "yes":
+        # User chose "Yes", create the category
+        account = context.user_data.get('account')
         category_name = context.user_data['category_name']
         new_category = Category(name=category_name, account=account)
         await sync_to_async(new_category.save)()
         context.user_data['category'] = new_category
-        await update.message.reply_text(f"Category '{category_name}' created successfully! Please provide the item name.")
+
+        await query.edit_message_text(
+            text=f"Category '{category_name}' created successfully! Please provide the item name."
+        )
         context.user_data['state'] = 'awaiting_item_name'
-    elif user_response == 'no':
-        await update.message.reply_text('Category creation canceled. Please provide an existing category.')
+
+    elif query.data == "no":
+        # User chose "No"
+        await query.edit_message_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'
-    else:
-        await update.message.reply_text("Please respond with 'yes' or 'no'. Do you want to create the category?")
-        context.user_data['state'] = 'awaiting_category_confirmation'
+
 
 # Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
