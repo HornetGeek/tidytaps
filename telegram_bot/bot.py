@@ -209,17 +209,13 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Category.DoesNotExist:
         context.user_data['category_name'] = category_name
-        await update.message.reply_text(
-            f"Category '{category_name}' does not exist for this account. Do you want to create it? (yes/no)"
-        )
-        context.user_data['state'] = 'awaiting_category_confirmation'
-
+        await handle_category_confirmation(update, context)  # Call the confirmation function
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 # Handle category creation confirmation
 async def handle_category_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    account = context.user_data.get('account')
-
+    category_name = context.user_data['category_name']
+    
     # Add buttons for "Yes" and "No"
     keyboard = [
         [
@@ -230,9 +226,10 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"Category '{context.user_data['category_name']}' does not exist for this account. Do you want to create it?",
+        f"Category '{category_name}' does not exist for this account. Do you want to create it?",
         reply_markup=reply_markup
     )
+
 from telegram.ext import CallbackQueryHandler
 
 # Handle button clicks
@@ -248,14 +245,14 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await sync_to_async(new_category.save)()
         context.user_data['category'] = new_category
 
-        await query.edit_message_text(
+        await query.message.reply_text(
             text=f"Category '{category_name}' created successfully! Please provide the item name."
         )
         context.user_data['state'] = 'awaiting_item_name'
 
     elif query.data == "no":
         # User chose "No"
-        await query.edit_message_text(text='Category creation canceled. Please provide an existing category.')
+        await query.message.reply_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'
 
 
