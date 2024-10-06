@@ -247,6 +247,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data['state'] = 'awaiting_image'
 
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     if not update.message.photo:
         await update.message.reply_text('Please upload an image of the product.')
         return
@@ -299,17 +300,15 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
             f"🎉 Product '{menu_item.item}' added successfully! You can add another product by typing /add_product.\n"
             f"Visit your product page at: {website_url}"
         )
-
-        # Send the QR code image as a photo
         await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
 
-        # Clear user data for the next flow
         context.user_data.clear()
 
     except Exception as e:
+
         await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
-
+        
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
