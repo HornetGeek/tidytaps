@@ -181,7 +181,15 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Product flow
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat.id
+    # Check if the update is a message or a callback query
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+    else:
+        await update.message.reply_text("Unable to determine chat ID.")
+        return
+
     context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
 
     # Fetch and cache account again to ensure it's available
@@ -255,7 +263,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # User chose "No"
         await query.message.reply_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'
-        
+
     if query.data == "add_account":
         await add_account(update, context)  # Call add_account function
     elif query.data == "add_product":
