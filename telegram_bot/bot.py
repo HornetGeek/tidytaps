@@ -30,23 +30,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
         context.user_data['account'] = account  # Cache the account for future use
         welcome_message = f"Welcome back, {account.username}! 🎉\n\n"
+        
+        # No Add Account button since the account already exists
+        keyboard = [
+            [InlineKeyboardButton("Add Product", callback_data="add_product")]
+        ]
     except Account.DoesNotExist:
         welcome_message = "Welcome to the bot! 🎉\n\n"
-
-    # Create buttons
-    keyboard = [
-        [
-            InlineKeyboardButton("Add Account", callback_data="add_account"),
-            InlineKeyboardButton("Add Product", callback_data="add_product"),
+        
+        # Show Add Account button since no account exists
+        keyboard = [
+            [InlineKeyboardButton("Add Account", callback_data="add_account")]
         ]
-    ]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
         welcome_message + "You can use the following commands:", 
         reply_markup=reply_markup
     )
-
 # Add account flow
 async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Please send the username for the account.')
@@ -206,7 +208,13 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if query.data == "yes":
+    if query.data == "add_account":
+        await add_account(update, context)
+
+    elif query.data == "add_product":
+        await add_product(update, context)
+
+    elif query.data == "yes":
         account = context.user_data.get('account')
         category_name = context.user_data['category_name']
         new_category = Category(name=category_name, account=account)
@@ -221,6 +229,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "no":
         await query.message.reply_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'
+
 
 # Main function to start the bot
 if __name__ == '__main__':
