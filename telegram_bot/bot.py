@@ -29,23 +29,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['account'] = account  # Cache the account for future use
 
         # Personalized welcome message for existing account
-        welcome_message = (
-            f"Welcome back, {account.username}! 🎉\n\n"
-            "You can use the following commands:\n"
-            "/add_product - Add a new product by providing details like category, item name, price, description, and image.\n"
-            "\nFeel free to start by typing /add_product."
-        )
+        welcome_message = f"Welcome back, {account.username}! 🎉\n\n"
 
     except Account.DoesNotExist:
-        welcome_message = (
-            "Welcome to the bot! 🎉\n\n"
-            "You can use the following commands:\n"
-            "/add_account - Add a new account by providing details like username, logo, title, and phone number.\n"
-            "/add_product - Add a new product by providing details like category, item name, price, description, and image.\n"
-            "\nStart by typing /add_account to begin adding a new account."
-        )
+        welcome_message = "Welcome to the bot! 🎉\n\n"
 
-    await update.message.reply_text(welcome_message)
+    # Create buttons
+    keyboard = [
+        [
+            InlineKeyboardButton("/add_account", callback_data="add_account"),
+            InlineKeyboardButton("/add_product", callback_data="add_product"),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        welcome_message + "You can use the following commands:", 
+        reply_markup=reply_markup
+    )
 
 # Add account flow
 async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -254,7 +255,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # User chose "No"
         await query.message.reply_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'
-
+        
+    if query.data == "add_account":
+        await add_account(update, context)  # Call add_account function
+    elif query.data == "add_product":
+        await add_product(update, context)  
 
 # Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
