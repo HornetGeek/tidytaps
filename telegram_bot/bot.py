@@ -363,5 +363,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(MessageHandler(filters.PHOTO, handle_message))  # Add this line to handle photo uploads
+    application.add_handler(CallbackQueryHandler(button_click))
     print("Telegram Bot Started !!")
     application.run_polling()
