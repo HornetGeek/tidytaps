@@ -157,20 +157,37 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Product flow
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat.id if update.message else update.callback_query.message.chat.id
-    context.user_data['chat_id'] = chat_id
+    # Check if the update is a message or a callback query
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text("Unable to determine chat ID.")
+        return
 
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
     account = context.user_data.get('account')
     if not account:
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-            context.user_data['account'] = account
+            context.user_data['account'] = account  # Cache the account for future use
         except Account.DoesNotExist:
             await update.message.reply_text("You need to create an account first using /add_account.")
             return
 
-    await update.message.reply_text('Please provide the category for the product.')
+    # Now use the correct update object to reply
+    if update.message:
+        await update.message.reply_text('Please provide the category for the product.')
+    else:
+        await update.callback_query.message.reply_text('Please provide the category for the product.')
+
     context.user_data['state'] = 'awaiting_category'
+
 
 # Handle product category step
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
