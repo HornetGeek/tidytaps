@@ -12,6 +12,7 @@ import time
 import qrcode
 from io import BytesIO
 import asyncio
+from telegram.constants import ChatAction
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -207,16 +208,27 @@ async def update_product_price(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Assuming you handle image uploads differently, adjust this function accordingly
-    product = context.user_data.get('product')
-    new_image = update.message.photo[-1].file_id  # Example of how to get image (Telegram file ID)
-    product.image = new_image
+    product_id = context.user_data.get('product_id')
+
+    if not product:
+        await update.message.reply_text("No product found to update. Please start the process again.")
+        return
+    
+    await update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
+    new_image = await update.message.photo[-1].get_file()
+    file_path = f'static/img/items/{product.item}_new_image.jpg'
+    await new_image.download(file_path)
+
+
+    product = await sync_to_async(MenuItem.objects.get)(id=product_id)
+    await sync_to_async(product.delete)()
+
+    product.picture = new_image
     await sync_to_async(product.save)()
 
     await update.message.reply_text("Product image updated successfully.")
     context.user_data.pop('product')
     context.user_data.pop('state')
-
-
 
 
 # Handle account username step
