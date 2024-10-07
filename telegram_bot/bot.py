@@ -39,7 +39,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 InlineKeyboardButton("Edit Product", callback_data='edit_product'),
                 InlineKeyboardButton("Delete Product", callback_data='delete_product')
             ],
-                [InlineKeyboardButton("Edit Store Info", callback_data="edit_store_info")]  # New button on a separate line
+            [
+                InlineKeyboardButton("Delete Category", callback_data="delete_category")  # New button for deleting category
+            ],
+            [
+                    InlineKeyboardButton("Edit Store Info", callback_data="edit_store_info")
+            ]  
             
         ]
     except Account.DoesNotExist:
@@ -355,6 +360,52 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
         f"Category '{category_name}' does not exist for this account. Do you want to create it?",
         reply_markup=reply_markup
     )
+
+
+async def show_categories_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.callback_query.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text("No account found. Please add an account first.")
+            return
+
+    # Fetch categories related to the account
+    categories = await sync_to_async(Category.objects.filter)(account=account)  # Adjust according to your model
+
+    if not categories:
+        await update.callback_query.message.reply_text("No categories available to delete.")
+        return
+
+    # Create InlineKeyboard with category names as options
+    keyboard = []
+    for category in categories:
+        keyboard.append([InlineKeyboardButton(category.name, callback_data=f"delete_category_{category.id}")])
+
+    keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])  # Add a cancel button
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.callback_query.message.reply_text(
+        "Select the category you want to delete:",
+        reply_markup=reply_markup
+    )
+
+async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    category_id = query.data.split("_")[2]  # Extract the category ID from the callback data
+
+    try:
+        category = await sync_to_async(Category.objects.get)(id=category_id)
+        await sync_to_async(category.delete)()  # Delete the category
+
+        await query.message.reply_text(f"Category '{category.name}' has been deleted successfully.")
+    except Exception as e:
+        await query.message.reply_text(f"An error occurred while deleting the category: {str(e)}")
 
 # Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -678,6 +729,12 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data.startswith("edit_store_info"):
         await edit_store_info(update, context)
+
+    elif query.data == "delete_category":
+        await show_categories_for_deletion(update, context)  # Call the function to show categories for deletion
+        
+    elif query.data.startswith("delete_category_"):
+        await delete_category(update, context)
 
     elif query.data.startswith("edit_logo"):
         await edit_logo(update, context)
