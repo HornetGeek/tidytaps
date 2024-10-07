@@ -44,7 +44,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             [
                     InlineKeyboardButton("Edit Store Info", callback_data="edit_store_info")
-            ]  
+            ],
+            [
+                InlineKeyboardButton("Get Website & QR Code", callback_data="get_website_qr")  # New button for website and QR code
+            ]
             
         ]
     except Account.DoesNotExist:
@@ -629,6 +632,41 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
         await update.callback_query.message.reply_text("The selected product does not exist.")
 
 
+async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        account = context.user_data.get('account')
+        if not account:
+            await update.callback_query.message.reply_text("No account found.")
+            return
+
+        # Generate the website URL
+        username = account.username
+        website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
+
+        # Generate the QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(website_url)
+        qr.make(fit=True)
+
+        # Save the QR code image in memory
+        qr_img = qr.make_image(fill='black', back_color='white')
+        qr_bytes = BytesIO()
+        qr_img.save(qr_bytes, format='PNG')
+        qr_bytes.seek(0)
+
+        # Send the website URL and QR code
+        await update.callback_query.message.reply_text(f"Your website URL is: {website_url}")
+        await update.callback_query.message.reply_photo(photo=qr_bytes, caption="Here is your QR code.")
+    
+    except Exception as e:
+        await update.callback_query.message.reply_text(f"An error occurred: {str(e)}")
+
+
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Handle video upload scenario
     if context.user_data.get('state') == "awaiting_logo":
@@ -734,6 +772,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "delete_category":
         await show_categories_for_deletion(update, context)  # Call the function to show categories for deletion
 
+    elif query.data == "get_website_qr":  # New handler for the QR code
+        await send_website_qr(update, context)
+        
     elif query.data.startswith("delete_category_"):
         await delete_category(update, context)
 
