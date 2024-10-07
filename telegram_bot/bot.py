@@ -3,6 +3,7 @@ import os
 import sys
 import django
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import error  # This is needed for error handling like telegram.error.TimedOut
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from asgiref.sync import sync_to_async
 import re
@@ -128,21 +129,27 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.message.text
     context.user_data['username'] = username
-    await update.message.reply_text('Now please send the logo (as an image).')
+    await update.message.reply_text('Now please send the logo (as an image) for the Store.')
     context.user_data['state'] = 'awaiting_logo'
 
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if the upload is an image
     if not update.message.photo:
-        # Check if the user uploaded a video or another file type
-        if update.message.video:
-            await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.')
-        elif update.message.document:
-            await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.')
-        else:
-            await update.message.reply_text('Please upload an image as the logo for the Store.')
+        try:
+            # Check if the user uploaded a video or another file type
+            if update.message.video:
+
+                await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.' ,timeout=20)
+            elif update.message.document:
+                await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.', timeout=20)
+            else:
+                await update.message.reply_text('Please upload an image as the logo for the Store.', timeout=20)
+        except telegram.error.TimedOut:
+            await update.message.reply_text('The request timed out. Please try again.')
+
         return
+    
 
     # Acknowledge image upload
     await update.message.reply_text('Downloading your logo, this may take a few moments...')
