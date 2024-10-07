@@ -36,7 +36,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [
                 InlineKeyboardButton("Add Product", callback_data="add_product"),
-                InlineKeyboardButton("Edit Product", callback_data='edit_product')
+                InlineKeyboardButton("Edit Product", callback_data='edit_product'),
+                InlineKeyboardButton("Delete Product", callback_data='delete_product')
             ],
                 [InlineKeyboardButton("Edit Store Info", callback_data="edit_store_info")]  # New button on a separate line
             
@@ -438,6 +439,48 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
 
+async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        account = context.user_data.get('account')
+
+        # Fetch products related to the account using sync_to_async for Django ORM query
+        products = await sync_to_async(list)(MenuItem.objects.filter(account=account))
+
+        if not products:
+            await update.callback_query.message.reply_text("No products available to delete.")
+            return
+
+        # Create InlineKeyboard with product names as options
+        keyboard = []
+        for product in products:
+            keyboard.append([InlineKeyboardButton(product.item, callback_data=f"delete_product_{product.id}")])
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.callback_query.message.reply_text(
+            "Select the product you want to delete:",
+            reply_markup=reply_markup
+        )
+
+    except Exception as e:
+        await update.callback_query.message.reply_text(f"An error occurred: {str(e)}")
+
+async def delete_selected_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query.data
+    product_id = query.split("_")[-1]  # Extract the product ID from the callback data
+
+    try:
+        # Fetch and delete the selected product
+        product = await sync_to_async(MenuItem.objects.get)(id=product_id)
+        await sync_to_async(product.delete)()
+
+        await update.callback_query.message.reply_text(f"Product '{product.item}' has been deleted successfully!")
+
+    except MenuItem.DoesNotExist:
+        await update.callback_query.message.reply_text("The selected product does not exist.")
+    except Exception as e:
+        await update.callback_query.message.reply_text(f"An error occurred: {str(e)}")
+
 
 async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.photo:
@@ -463,7 +506,7 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif context.user_data.get('state') == "awaiting_edit_logo":
         await handle_edit_logo(update, context)
     else:
-        await update.message.reply_text('Please start the process by uploading a logo first.')
+        await update.message.reply_text('Please Read the message Again.')
 
 
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -484,7 +527,8 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
     for product in products:
         keyboard.append([InlineKeyboardButton(product.item, callback_data=f"edit_{product.id}")])
-
+        
+    keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Since this is triggered from a button, you need to use callback_query.message
@@ -579,6 +623,9 @@ async def edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = 'awaiting_title_update'
     await update.callback_query.message.reply_text('Please enter the new title for your store.')
 
+async def cancel_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()  # Clear the current state and any cached data
+    await update.message.reply_text("Process has been canceled. You can start again by using /start.")
 
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -595,7 +642,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text('Please choose a product to edit.')
         await show_products(update, context)
 
-   
+    elif query.data == "cancel":
+        context.user_data.clear()
+        await query.message.reply_text("Process has been canceled. You can start again by using /start.")
+        return
     elif query.data.startswith("edit_name_"):
         product_id = int(query.data.split("_")[2])  # Extract the product ID
         await start_editing_name(update, context, product_id)
@@ -617,6 +667,13 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("edit_title"):
         await edit_title(update, context)
 
+    elif query.data == 'delete_product':
+        await query.message.reply_text('Please choose a product to edit.')
+        await show_products_for_deletion(update, context)
+
+    elif query.data.startswith('delete_product_'):
+        await delete_selected_product(update, context)
+
     elif query.data.startswith("edit_"):
         product_id = int(query.data.split("_")[1])  # Extract the product ID from the callback data
         await edit_product(update, context, product_id)
@@ -636,6 +693,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "no":
         await query.message.reply_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'
+    else:
+        print(query.data)
+        print("nothinngg")
+
 
 
 # Main function to start the bot
@@ -648,6 +709,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(CommandHandler("edit_product", show_products))
+    application.add_handler(CommandHandler("cancel", cancel_process))
     application.add_handler(MessageHandler(filters.PHOTO, handle_image_upload))  # Expecting a logo first
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
