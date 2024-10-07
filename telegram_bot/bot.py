@@ -10,7 +10,7 @@ import re
 import time
 import qrcode
 from io import BytesIO
-
+import asyncio
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -139,13 +139,24 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             # Check if the user uploaded a video or another file type
             if update.message.video:
+                await asyncio.wait_for(
+                    await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.'),
+                    timeout=20
 
-                await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.' ,timeout=20)
+                )
             elif update.message.document:
-                await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.', timeout=20)
+                await asyncio.wait_for(
+                    await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.'),
+                    timeout=20
+
+                )
             else:
-                await update.message.reply_text('Please upload an image as the logo for the Store.', timeout=20)
-        except telegram.error.TimedOut:
+                await asyncio.wait_for(
+                    await update.message.reply_text('Please upload an image as the logo for the Store.'),
+                    timeout=20
+
+                )
+        except asyncio.TimeoutError:
             await update.message.reply_text('The request timed out. Please try again.')
 
         return
