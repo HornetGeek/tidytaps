@@ -296,9 +296,8 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'Follow the prompts to specify the product category, name, price, description, and image.'
         )
     except IntegrityError:
-        await update.message.reply_text(
-            "The username you provided is already taken. Please choose a different username and try again."
-        )
+        await start(update, context)  # Replace 'start' with your actual start function name
+
         context.user_data.clear()  # Clear user data to restart the process
         return
 
