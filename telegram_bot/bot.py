@@ -346,7 +346,7 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
         [
             InlineKeyboardButton("Yes", callback_data="yes"),
             InlineKeyboardButton("No", callback_data="no"),
-            [InlineKeyboardButton("Cancel", callback_data="cancel")]
+            InlineKeyboardButton("Cancel", callback_data="cancel")
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
