@@ -105,7 +105,8 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("Edit Logo", callback_data="edit_logo")],
         [InlineKeyboardButton("Edit Title", callback_data="edit_title")],
-        [InlineKeyboardButton("Edit Color", callback_data="edit_color")]
+        [InlineKeyboardButton("Edit Color", callback_data="edit_color")],
+        [InlineKeyboardButton("Cancel", callback_data="cancel")]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -345,6 +346,7 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
         [
             InlineKeyboardButton("Yes", callback_data="yes"),
             InlineKeyboardButton("No", callback_data="no"),
+            [InlineKeyboardButton("Cancel", callback_data="cancel")]
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -454,7 +456,8 @@ async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAU
         keyboard = []
         for product in products:
             keyboard.append([InlineKeyboardButton(product.item, callback_data=f"delete_product_{product.id}")])
-
+            
+        keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.callback_query.message.reply_text(
@@ -527,7 +530,7 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
     for product in products:
         keyboard.append([InlineKeyboardButton(product.item, callback_data=f"edit_{product.id}")])
-        
+
     keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     
