@@ -34,8 +34,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # No Add Account button since the account already exists
         keyboard = [
-            [InlineKeyboardButton("Add Product", callback_data="add_product")],
-            [InlineKeyboardButton("Edit Product", callback_data='edit_product')]
+            [
+                [InlineKeyboardButton("Add Product", callback_data="add_product")],
+                [InlineKeyboardButton("Edit Product", callback_data='edit_product')]
+            ],
+            
         ]
     except Account.DoesNotExist:
         welcome_message = "Welcome to the bot! 🎉\n\n"
