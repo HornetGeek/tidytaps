@@ -139,24 +139,15 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             # Check if the user uploaded a video or another file type
             if update.message.video:
-                await asyncio.wait_for(
-                    await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.'),
-                    timeout=20
-
-                )
+                await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.'),
+           
             elif update.message.document:
-                await asyncio.wait_for(
-                    await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.'),
-                    timeout=20
-
-                )
+                await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.'),
+                   
             else:
-                await asyncio.wait_for(
-                    await update.message.reply_text('Please upload an image as the logo for the Store.'),
-                    timeout=20
-
-                )
-        except asyncio.TimeoutError:
+                await update.message.reply_text('Please upload an image as the logo for the Store.'),
+                   
+        except Exception as e:
             await update.message.reply_text('The request timed out. Please try again.')
 
         return
@@ -436,6 +427,9 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
         await update.callback_query.message.reply_text("The selected product does not exist.")
 
 
+async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Handle video upload scenario
+    await update.message.reply_text('You uploaded a video. Please upload an image instead if you intended to upload a logo or product image.')
 
 
 async def handle_product_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -580,6 +574,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(CommandHandler("edit_product", show_products))
     application.add_handler(MessageHandler(filters.PHOTO, handle_product_image))
+    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(button_click))
     print("Telegram Bot Started !!")
