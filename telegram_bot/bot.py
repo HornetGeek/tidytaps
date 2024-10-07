@@ -140,17 +140,17 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Check if the user uploaded a video or another file type
             if update.message.video:
                 await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.'),
-           
+                context.user_data['state'] = 'awaiting_logo'
             elif update.message.document:
                 await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.'),
-                   
+                context.user_data['state'] = 'awaiting_logo'
+
             else:
                 await update.message.reply_text('Please upload an image as the logo for the Store.'),
                    
         except Exception as e:
             await update.message.reply_text('The request timed out. Please try again.')
 
-        return
     
 
     # Acknowledge image upload
