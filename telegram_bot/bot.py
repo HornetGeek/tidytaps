@@ -125,6 +125,9 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data.pop('product')
     context.user_data.pop('state')
 
+
+
+
 # Handle account username step
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.message.text
@@ -368,10 +371,13 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
             return
 
     # Check the state and handle accordingly
+    print(context.user_data.get('state'))
     if context.user_data.get('state') == 'awaiting_logo':
         await handle_logo(update, context)
-    elif context.user_data.get('state') == 'awaiting_product_image':
+    elif context.user_data.get('state') == 'awaiting_product_image' or context.user_data.get('state') == "awaiting_image" :
         await handle_product_image(update, context)
+    elif context.user_data.get('state') == "awaiting_new_image":
+        await update_product_image(update, context)
     else:
         await update.message.reply_text('Please start the process by uploading a logo first.')
 
@@ -462,61 +468,26 @@ async def start_editing_price(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         await update.callback_query.message.reply_text("Product not found.")
 
+async def edit_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()  # Acknowledge the callback
+
+    # Extract the product ID from the callback data
+    _, product_id = query.data.split('_')
+    context.user_data['editing_product_id'] = int(product_id)  # Store the product ID in user data
+
+    await query.edit_message_text(text="Please upload the new image for the product.")
+
+
 async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
     try:
-        if not update.message.photo:
-            await update.message.reply_text('Please upload an image of the product.')
-            return
-
-        await update.message.reply_text('Downloading your product image, this may take a few moments...')
-
-        # Download the product image
-        product_image_file = await update.message.photo[-1].get_file()
-        product_image_path = f"static/img/items/{context.user_data['chat_id']}_product_{int(time.time())}.jpg"
-        await product_image_file.download_to_drive(product_image_path)
-        await update.message.reply_text('Product image downloaded successfully.')
-
-        # Save the menu item with all the information
-        product_id = context.user_data['editing_product_id']  # Get the product ID from user data
-        menu_item = await sync_to_async(MenuItem.objects.get)(id=product_id)  # Get the existing product
-
-        # Update the picture path
-        menu_item.picture = product_image_path
-        await sync_to_async(menu_item.save)()  # Save the updated menu item
-
-        # Generate and send the QR code, just like before
-        account = context.user_data['account']
-        username = account.username  # Get the username from the cached account
-        website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
-
-        # Generate the QR code
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(website_url)
-        qr.make(fit=True)
-
-        # Save the QR code image in memory
-        qr_img = qr.make_image(fill='black', back_color='white')
-        qr_bytes = BytesIO()
-        qr_img.save(qr_bytes, format='PNG')
-        qr_bytes.seek(0)
-
-        # Send the success message with the website link
-        await update.message.reply_text(
-            f"🎉 Product '{menu_item.item}' image updated successfully! You can add another product by typing /add_product.\n"
-            f"Visit your product page at: {website_url}"
-        )
-        await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
-
-        context.user_data.clear()  # Clear user data after processing
+        
+        await update.callback_query.message.reply_text('Please upload an image of the product.')
+        context.user_data['state'] = 'awaiting_new_image'
 
     except Exception as e:
-        await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
-
+        print(e)
+        await update.callback_query.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
 
 # Handle button clicks
