@@ -35,15 +35,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # No Add Account button since the account already exists
         keyboard = [
             [
-                InlineKeyboardButton("🛒 Add Product", callback_data="add_product"),
-                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product'),
-                InlineKeyboardButton("🗑️ Delete Product", callback_data='delete_product')
+                InlineKeyboardButton("➕ Add Product", callback_data="add_product"),  # Frequently used actions together
+                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product')
             ],
             [
-                InlineKeyboardButton("📂 Edit Store Info", callback_data="edit_store_info")
+                InlineKeyboardButton("❌ Delete Product", callback_data='delete_product')  # Isolated action
             ],
             [
-                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")
+                InlineKeyboardButton("🗑️ Delete Category", callback_data="delete_category"),  # Actions related to categories together
+                InlineKeyboardButton("🛠️ Edit Store Info", callback_data="edit_store_info")
+            ],
+            [
+                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")  # Isolated utility action
             ]
         ]
     except Account.DoesNotExist:
@@ -770,7 +773,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "get_website_qr":  # New handler for the QR code
         await send_website_qr(update, context)
-
+        
     elif query.data.startswith("delete_category_"):
         await delete_category(update, context)
 
