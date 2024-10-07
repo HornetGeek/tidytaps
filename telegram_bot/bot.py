@@ -357,7 +357,10 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account  # Cache the account for future use
         except Account.DoesNotExist:
-            await update.message.reply_text("You need to create an account first using /add_account.")
+            if update.message:
+                await update.message.reply_text("You need to create an account first using /add_account.")
+            elif update.callback_query:
+                await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
             return
 
     # Now use the correct update object to reply
