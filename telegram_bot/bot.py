@@ -220,7 +220,7 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         await new_image.download_to_drive(file_path)
 
 
-        product.picture = new_image
+        product.picture = file_path
         await sync_to_async(product.save)()
 
         await update.message.reply_text("Product image updated successfully.")
