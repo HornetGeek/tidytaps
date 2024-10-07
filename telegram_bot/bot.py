@@ -33,7 +33,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # No Add Account button since the account already exists
         keyboard = [
-            [InlineKeyboardButton("Add Product", callback_data="add_product")]
+            [InlineKeyboardButton("Add Product", callback_data="add_product")],
+            [InlineKeyboardButton("Edit Product", callback_data='edit_product')]
         ]
     except Account.DoesNotExist:
         welcome_message = "Welcome to the bot! 🎉\n\n"
@@ -78,8 +79,46 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_product_image(update, context)
     elif user_state == 'awaiting_category_confirmation':
         await handle_category_confirmation(update, context)
+    elif user_state == 'awaiting_new_name':
+        await update_product_name(update, context)
+    elif user_state == 'awaiting_new_price':
+        await update_product_price(update, context)
+    elif user_state == 'awaiting_new_image':
+        await update_product_image(update, context)
     else:
         await update.message.reply_text("I don't understand that command. Use /add_product or /add_account to begin.")
+
+
+async def update_product_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    product = context.user_data.get('product')
+    new_name = update.message.text
+    product.item = new_name
+    await sync_to_async(product.save)()
+
+    await update.message.reply_text(f"Product name updated to: {product.item}")
+    context.user_data.pop('product')
+    context.user_data.pop('state')
+
+async def update_product_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    product = context.user_data.get('product')
+    new_price = update.message.text
+    product.price = new_price
+    await sync_to_async(product.save)()
+
+    await update.message.reply_text(f"Product price updated to: {product.price}")
+    context.user_data.pop('product')
+    context.user_data.pop('state')
+
+async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Assuming you handle image uploads differently, adjust this function accordingly
+    product = context.user_data.get('product')
+    new_image = update.message.photo[-1].file_id  # Example of how to get image (Telegram file ID)
+    product.image = new_image
+    await sync_to_async(product.save)()
+
+    await update.message.reply_text("Product image updated successfully.")
+    context.user_data.pop('product')
+    context.user_data.pop('state')
 
 # Handle account username step
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -247,13 +286,15 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data['state'] = 'awaiting_image'
 
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not update.message.photo:
-        await update.message.reply_text('Please upload an image of the product.')
-        return
-
-    await update.message.reply_text('Downloading your product image, this may take a few moments...')
-
+    try:
+        print("start")
+        if not update.message.photo:
+            await update.message.reply_text('Please upload an image of the product.')
+            return
+        print("we")
+        await update.message.reply_text('Downloading your product image, this may take a few moments...')
+    except Exception as e:
+        print(e)
     try:
         # Download the product image
         product_image_file = await update.message.photo[-1].get_file()
@@ -305,10 +346,143 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         context.user_data.clear()
 
     except Exception as e:
-
+        print(e)
         await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
-        
+async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Assuming context.user_data['account'] has the logged-in account details
+    account = context.user_data.get('account')
+    if not account:
+        await update.callback_query.message.reply_text("No account found.")
+        return
+
+    # Fetch the products for the account using sync_to_async to avoid the synchronous operation error
+    products = await sync_to_async(list)(MenuItem.objects.filter(account=account))  # Ensure it's converted to a list
+
+    if not products:
+        await update.callback_query.message.reply_text("No products found for editing.")
+        return
+
+    # Create inline buttons for each product
+    keyboard = []
+    for product in products:
+        keyboard.append([InlineKeyboardButton(product.item, callback_data=f"edit_{product.id}")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Since this is triggered from a button, you need to use callback_query.message
+    await update.callback_query.message.reply_text("Choose a product to edit:", reply_markup=reply_markup)
+
+
+
+async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    # Fetch the selected product by ID
+    try:
+        product = await sync_to_async(MenuItem.objects.get)(id=product_id)
+        context.user_data['product'] = product  # Cache the product in user_data
+
+        # Show buttons for editing options: Name, Price, Image
+        keyboard = [
+            [InlineKeyboardButton("Edit Name", callback_data=f"edit_name_{product.id}")],
+            [InlineKeyboardButton("Edit Price", callback_data=f"edit_price_{product.id}")],
+            [InlineKeyboardButton("Edit Image", callback_data=f"edit_image_{product.id}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.callback_query.message.reply_text(
+            f"You selected: {product.item}\nChoose what you want to edit:",
+            reply_markup=reply_markup
+        )
+
+    except MenuItem.DoesNotExist:
+        await update.callback_query.message.reply_text("The selected product does not exist.")
+
+
+
+
+async def handle_product_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    product = context.user_data.get('product')
+    
+    # Example: handle updating the product name (similarly handle other fields)
+    product.item = update.message.text
+    await sync_to_async(product.save)()
+
+    await update.message.reply_text(f"Product '{product.item}' updated successfully.")
+    context.user_data.pop('product')  # Clear product from context after update
+
+async def start_editing_name(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    product = context.user_data.get('product')
+    if product and product.id == product_id:
+        await update.callback_query.message.reply_text("Please send the new name for the product.")
+        context.user_data['state'] = 'awaiting_new_name'
+    else:
+        await update.callback_query.message.reply_text("Product not found.")
+
+async def start_editing_price(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    product = context.user_data.get('product')
+    if product and product.id == product_id:
+        await update.callback_query.message.reply_text("Please send the new price for the product.")
+        context.user_data['state'] = 'awaiting_new_price'
+    else:
+        await update.callback_query.message.reply_text("Product not found.")
+
+async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    try:
+        if not update.message.photo:
+            await update.message.reply_text('Please upload an image of the product.')
+            return
+
+        await update.message.reply_text('Downloading your product image, this may take a few moments...')
+
+        # Download the product image
+        product_image_file = await update.message.photo[-1].get_file()
+        product_image_path = f"static/img/items/{context.user_data['chat_id']}_product_{int(time.time())}.jpg"
+        await product_image_file.download_to_drive(product_image_path)
+        await update.message.reply_text('Product image downloaded successfully.')
+
+        # Save the menu item with all the information
+        product_id = context.user_data['editing_product_id']  # Get the product ID from user data
+        menu_item = await sync_to_async(MenuItem.objects.get)(id=product_id)  # Get the existing product
+
+        # Update the picture path
+        menu_item.picture = product_image_path
+        await sync_to_async(menu_item.save)()  # Save the updated menu item
+
+        # Generate and send the QR code, just like before
+        account = context.user_data['account']
+        username = account.username  # Get the username from the cached account
+        website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
+
+        # Generate the QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(website_url)
+        qr.make(fit=True)
+
+        # Save the QR code image in memory
+        qr_img = qr.make_image(fill='black', back_color='white')
+        qr_bytes = BytesIO()
+        qr_img.save(qr_bytes, format='PNG')
+        qr_bytes.seek(0)
+
+        # Send the success message with the website link
+        await update.message.reply_text(
+            f"🎉 Product '{menu_item.item}' image updated successfully! You can add another product by typing /add_product.\n"
+            f"Visit your product page at: {website_url}"
+        )
+        await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
+
+        context.user_data.clear()  # Clear user data after processing
+
+    except Exception as e:
+        await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
+
+
+
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -319,6 +493,27 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "add_product":
         await add_product(update, context)
+
+    elif query.data == 'edit_product':
+        await query.message.reply_text('Please choose a product to edit.')
+        await show_products(update, context)
+
+   
+    elif query.data.startswith("edit_name_"):
+        product_id = int(query.data.split("_")[2])  # Extract the product ID
+        await start_editing_name(update, context, product_id)
+
+    elif query.data.startswith("edit_price_"):
+        product_id = int(query.data.split("_")[2])  # Extract the product ID
+        await start_editing_price(update, context, product_id)
+
+    elif query.data.startswith("edit_image_"):
+        product_id = int(query.data.split("_")[2])  # Extract the product ID
+        await start_editing_image(update, context, product_id)
+
+    elif query.data.startswith("edit_"):
+        product_id = int(query.data.split("_")[1])  # Extract the product ID from the callback data
+        await edit_product(update, context, product_id)
 
     elif query.data == "yes":
         account = context.user_data.get('account')
@@ -345,6 +540,8 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
+    application.add_handler(CommandHandler("edit_product", show_products))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_product_image))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(button_click))
     print("Telegram Bot Started !!")
