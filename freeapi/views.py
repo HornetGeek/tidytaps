@@ -261,6 +261,7 @@ class MenuItemDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except MenuItem.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        
     def delete(self, request, pk, itemId, format=None):
         try:
             menu_item = MenuItem.objects.get(account=pk, id=itemId)
