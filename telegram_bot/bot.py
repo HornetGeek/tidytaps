@@ -777,7 +777,8 @@ async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         await update.callback_query.message.reply_text('Please upload an image of the product.')
         context.user_data['state'] = 'awaiting_new_image'
-
+        context.user_data['product_id'] = product_id
+ 
     except Exception as e:
         print(e)
         await update.callback_query.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
