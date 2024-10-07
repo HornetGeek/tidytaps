@@ -431,8 +431,11 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Handle video upload scenario
     if context.user_data.get('state') == "awaiting_logo":
         await update.message.reply_text('You uploaded a video for the logo. Please upload an image as the logo for the Store.')
+        context.user_data['state'] = 'awaiting_logo'
+
     elif context.user_data.get('state') == "awaiting_product_image":
         await update.message.reply_text('You uploaded a video for the product image. Please upload an image for the product instead.')
+        context.user_data['state'] = 'awaiting_product_image'
     else:
         await update.message.reply_text('You uploaded a video. Please upload an image instead if you intended to upload a logo or product image.')
 
