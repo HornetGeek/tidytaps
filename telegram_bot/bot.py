@@ -323,7 +323,8 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
-    except IntegrityError:
+    except IntegrityError as e:
+        print(e)
         await update.message.reply_text(
             "The username you provided is already taken. Please choose a different username and try again."
         )
