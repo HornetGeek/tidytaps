@@ -382,6 +382,7 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
 
     # Fetch and cache account again to ensure it's available
+    account = context.user_data.get('account')
     if not account:
         try:
             chat_id = context.user_data.get('chat_id', update.message.chat.id)
@@ -394,7 +395,7 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
             return
         
-    account = context.user_data.get('account')
+    
     
 
     # Now use the correct update object to reply
@@ -523,6 +524,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text('Product image downloaded successfully.')
 
         # Save the menu item with all the information
+        account = context.user_data['account']
         if not account:
             try:
                 chat_id = context.user_data.get('chat_id', update.message.chat.id)
@@ -534,7 +536,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
                 elif update.callback_query:
                     await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
                 return
-        account = context.user_data['account']
+        
         menu_item_data = {
             'account': account,
             'item': context.user_data['item_name'],
@@ -613,6 +615,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        account = context.user_data.get('account')
         if not account:
             try:
 
@@ -629,7 +632,7 @@ async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAU
                 elif update.callback_query:
                     await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
                 return
-        account = context.user_data.get('account')
+        
 
         # Fetch products related to the account using sync_to_async for Django ORM query
         products = await sync_to_async(list)(MenuItem.objects.filter(account=account))
@@ -701,6 +704,7 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.callback_query.message.chat.id
     # Assuming context.user_data['account'] has the logged-in account details
+    account = context.user_data.get('account')
     if not account:
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
@@ -717,8 +721,6 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
             return
-    account = context.user_data.get('account')
-
     
 
     # Fetch the products for the account using sync_to_async to avoid the synchronous operation error
@@ -766,6 +768,7 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
 
 async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        account = context.user_data.get('account')
         if not account:
             try:
                 if update.message:
@@ -788,8 +791,6 @@ async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
             
-        account = context.user_data.get('account')
-        
 
         # Generate the website URL
         username = account.username
