@@ -144,7 +144,7 @@ async def handle_edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logo_file = await update.message.photo[-1].get_file()
 
         # Define a path to save the new logo
-        logo_path = f"static/img/logos/{context.user_data['chat_id']}_logo_{int(time.time())}.jpg"
+        logo_path = f"static/img/logos/{context.user_data.get('chat_id', update.message.chat.id)}_logo_{int(time.time())}.jpg"
 
         # Download the image to the server
         await logo_file.download_to_drive(logo_path)
