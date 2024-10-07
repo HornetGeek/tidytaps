@@ -602,7 +602,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         reply_markup = InlineKeyboardMarkup(keyboard)
             #await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
-        await update.callback_query.message.reply_text(
+        await update.message.reply_text(
             welcome_message,
             reply_markup=reply_markup
         )
