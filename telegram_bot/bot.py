@@ -389,6 +389,32 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         print(e)
         await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
+
+
+async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.photo:
+        if update.message.video:
+            await update.message.reply_text('You uploaded a video. Please upload an image instead.')
+            return
+        elif update.message.document:
+            await update.message.reply_text('You uploaded a document. Please upload an image instead.')
+            return
+        else:
+            await update.message.reply_text('Please upload an image.')
+            return
+
+    await update.message.reply_text('Downloading your image, this may take a few moments...')
+    try:
+        if context.user_data['state'] == 'awaiting_product_image':
+            await handle_product_image(update, context)
+
+
+        elif context.user_data['state'] == 'awaiting_logo':
+            await handle_logo(update, context)
+    except Exception as e:
+        await update.message.reply_text(f'An error occurred while downloading the image: {str(e)}')
+
+
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Assuming context.user_data['account'] has the logged-in account details
     account = context.user_data.get('account')
@@ -591,8 +617,10 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(CommandHandler("edit_product", show_products))
+
     application.add_handler(MessageHandler(filters.PHOTO, handle_logo))  # Expecting a logo first
     application.add_handler(MessageHandler(filters.PHOTO, handle_product_image))
+
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(button_click))
     print("Telegram Bot Started !!")
