@@ -375,8 +375,8 @@ async def show_categories_for_deletion(update: Update, context: ContextTypes.DEF
             await update.callback_query.message.reply_text("No account found. Please add an account first.")
             return
 
-    # Fetch categories related to the account
-    categories = await sync_to_async(Category.objects.filter)(account=account)  # Adjust according to your model
+    # Fetch categories related to the account asynchronously
+    categories = await sync_to_async(list)(Category.objects.filter(account=account))  # Ensure it's a list
 
     if not categories:
         await update.callback_query.message.reply_text("No categories available to delete.")
@@ -394,6 +394,7 @@ async def show_categories_for_deletion(update: Update, context: ContextTypes.DEF
         "Select the category you want to delete:",
         reply_markup=reply_markup
     )
+
 
 async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -732,7 +733,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "delete_category":
         await show_categories_for_deletion(update, context)  # Call the function to show categories for deletion
-        
+
     elif query.data.startswith("delete_category_"):
         await delete_category(update, context)
 
