@@ -134,22 +134,31 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.photo:
-        await update.message.reply_text('Please upload an image as the logo.')
+        await update.message.reply_text('Please upload an image as the logo for the Store.')
         return
 
+    # Acknowledge image upload
     await update.message.reply_text('Downloading your logo, this may take a few moments...')
 
     chat_id = context.user_data.get('chat_id', update.message.chat.id)
     context.user_data['chat_id'] = chat_id  # Cache chat ID
 
     try:
+        # Get the highest resolution photo (last one in the list)
         logo_file = await update.message.photo[-1].get_file()
-        logo_path = f"static/img/logos/{chat_id}_logo.jpg"
-        await logo_file.download_to_drive(logo_path)
-        await update.message.reply_text('Logo downloaded successfully.')
-        context.user_data['logo'] = logo_path
-        await update.message.reply_text('Now please send the title for the account.')
-        context.user_data['state'] = 'awaiting_title'
+
+        # Get file metadata to ensure it's an image (Telegram will provide only valid image files in update.message.photo)
+        if logo_file.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+            logo_path = f"static/img/logos/{chat_id}_logo.jpg"
+            await logo_file.download_to_drive(logo_path)
+
+            # Confirm successful download and update state
+            await update.message.reply_text('Logo downloaded successfully.')
+            context.user_data['logo'] = logo_path
+            await update.message.reply_text('Now please send the title for the account.')
+            context.user_data['state'] = 'awaiting_title'
+        else:
+            await update.message.reply_text('The file uploaded is not a valid image format. Please upload a .jpg, .jpeg, .png, or .gif file.')
 
     except Exception as e:
         await update.message.reply_text(f'An error occurred while downloading the logo: {str(e)}')
