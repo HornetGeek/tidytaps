@@ -94,7 +94,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif user_state == 'awaiting_new_image':
         await update_product_image(update, context)
     else:
-        await update.message.reply_text("I don't understand that command. Use /add_product or /add_account to begin.")
+        await start(update, context)
 
 
 async def update_product_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
