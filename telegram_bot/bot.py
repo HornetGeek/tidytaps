@@ -596,9 +596,6 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         ]
 
         # Show Add Account button since no account exists
-        keyboard = [
-            [InlineKeyboardButton("Add Account", callback_data="add_account")]
-        ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
             #await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
