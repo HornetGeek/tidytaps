@@ -217,7 +217,7 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         new_image = await update.message.photo[-1].get_file()
         file_path = f'static/img/items/{product.item}_new_image.jpg'
-        await new_image.download(file_path)
+        await new_image.download_to_drive(file_path)
 
 
         
