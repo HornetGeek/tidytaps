@@ -214,7 +214,7 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         product = await sync_to_async(MenuItem.objects.get)(id=product_id)
 
         await update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
-        
+
         new_image = await update.message.photo[-1].get_file()
         file_path = f'static/img/items/{product.item}_new_image.jpg'
         await new_image.download(file_path)
@@ -232,7 +232,7 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
     except MenuItem.DoesNotExist:
         await update.message.reply_text("Product not found.")
 
-    context.user_data.pop('product')
+    context.user_data.pop('product_id')
     context.user_data.pop('state')
 
 
