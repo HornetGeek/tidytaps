@@ -170,6 +170,15 @@ async def handle_title_update(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         new_title = update.message.text
 
+        if 'account' not in context.user_data:
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)  # Assuming you identify accounts by the Telegram ID
+            try:
+                account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+                context.user_data['account'] = account
+            except Account.DoesNotExist:
+                await update.message.reply_text("⚠️ Account not found. Please ensure your account is registered.")
+                return
+            
         # Update the Account's title field
         account = context.user_data['account']
         account.title = new_title
