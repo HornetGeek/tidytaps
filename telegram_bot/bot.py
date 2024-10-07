@@ -38,6 +38,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 InlineKeyboardButton("Add Product", callback_data="add_product"),
                 InlineKeyboardButton("Edit Product", callback_data='edit_product')
             ],
+                [InlineKeyboardButton("Edit Store Info", callback_data="edit_store_info")]  # New button on a separate line
             
         ]
     except Account.DoesNotExist:
@@ -91,10 +92,87 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update_product_name(update, context)
     elif user_state == 'awaiting_new_price':
         await update_product_price(update, context)
+    elif user_state =="awaiting_title_update":
+        await handle_title_update(update, context)
     elif user_state == 'awaiting_new_image':
         await update_product_image(update, context)
     else:
         await start(update, context)
+
+async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()  # Acknowledge the callback
+    keyboard = [
+        [InlineKeyboardButton("Edit Logo", callback_data="edit_logo")],
+        [InlineKeyboardButton("Edit Title", callback_data="edit_title")],
+        [InlineKeyboardButton("Edit Color", callback_data="edit_color")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.callback_query.message.reply_text(
+        "What would you like to edit?",
+        reply_markup=reply_markup
+    )
+
+async def edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['state'] = 'awaiting_edit_logo'
+    await update.callback_query.answer()  # Acknowledge the callback
+    # Set the state to indicate the user is uploading a new logo
+    print("context.user_data['state'] ")
+    print(context.user_data['state'] )
+    await update.callback_query.message.reply_text("Please upload the new logo image.")
+
+async def handle_edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        # Ensure that the user uploaded a photo
+        if not update.message.photo:
+            await update.message.reply_text('Please upload an image of the logo.')
+            return
+
+        # Get the file from the uploaded photo
+        logo_file = await update.message.photo[-1].get_file()
+
+        # Define a path to save the new logo
+        logo_path = f"static/img/logos/{context.user_data['chat_id']}_logo_{int(time.time())}.jpg"
+
+        # Download the image to the server
+        await logo_file.download_to_drive(logo_path)
+
+        # Get the user's account from the cached data
+        account = context.user_data['account']
+
+        # Update the account's logo
+        account.logo = logo_path
+        await sync_to_async(account.save)()
+
+        # Confirm the update
+        await update.message.reply_text("Your logo has been updated successfully! 🎉")
+        
+        # Clear the user state after the logo has been updated
+        context.user_data['state'] = None
+
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred while updating the logo: {str(e)}")
+
+
+async def handle_title_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        new_title = update.message.text
+
+        # Update the Account's title field
+        account = context.user_data['account']
+        account.title = new_title
+        await sync_to_async(account.save)()
+
+        # Confirm the update to the user
+        await update.message.reply_text(f"✅ Your title has been updated to '{new_title}' successfully!")
+
+        # Clear the user state
+        context.user_data['state'] = None
+
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred while updating the title: {str(e)}")
+
 
 
 async def update_product_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -381,6 +459,9 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
         await handle_product_image(update, context)
     elif context.user_data.get('state') == "awaiting_new_image":
         await update_product_image(update, context)
+
+    elif context.user_data.get('state') == "awaiting_edit_logo":
+        await handle_edit_logo(update, context)
     else:
         await update.message.reply_text('Please start the process by uploading a logo first.')
 
@@ -493,6 +574,12 @@ async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.callback_query.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
 
 
+async def edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()  # Acknowledge the callback
+    context.user_data['state'] = 'awaiting_title_update'
+    await update.callback_query.message.reply_text('Please enter the new title for your store.')
+
+
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -520,6 +607,15 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("edit_image_"):
         product_id = int(query.data.split("_")[2])  # Extract the product ID
         await start_editing_image(update, context, product_id)
+
+    elif query.data.startswith("edit_store_info"):
+        await edit_store_info(update, context)
+
+    elif query.data.startswith("edit_logo"):
+        await edit_logo(update, context)
+
+    elif query.data.startswith("edit_title"):
+        await edit_title(update, context)
 
     elif query.data.startswith("edit_"):
         product_id = int(query.data.split("_")[1])  # Extract the product ID from the callback data
@@ -552,7 +648,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(CommandHandler("edit_product", show_products))
-
     application.add_handler(MessageHandler(filters.PHOTO, handle_image_upload))  # Expecting a logo first
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
