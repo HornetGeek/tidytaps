@@ -549,31 +549,61 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # Get the website URL for the account
         username = account.username  # Get the username from the cached account
+
         website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
 
         # Generate the QR code for the website URL
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(website_url)
-        qr.make(fit=True)
+        #qr = qrcode.QRCode(
+        #    version=1,
+        #    error_correction=qrcode.constants.ERROR_CORRECT_L,
+        #    box_size=10,
+        #    border=4,
+        #)
+        #qr.add_data(website_url)
+        #qr.make(fit=True)
 
         # Save the QR code image in memory
-        qr_img = qr.make_image(fill='black', back_color='white')
-        qr_bytes = BytesIO()
-        qr_img.save(qr_bytes, format='PNG')
-        qr_bytes.seek(0)
+        #qr_img = qr.make_image(fill='black', back_color='white')
+        #qr_bytes = BytesIO()
+        #qr_img.save(qr_bytes, format='PNG')
+        #qr_bytes.seek(0)
 
         # Send the success message with the website link
         await update.message.reply_text(
             f"🎉 Product '{menu_item.item}' added successfully! You can add another product by typing /add_product.\n"
             f"Visit your product page at: {website_url}"
         )
-        await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
+        welcome_message = f"Controll Over All Things ! 🎉\n\n"
+        
+        # No Add Account button since the account already exists
+        keyboard = [
+            [
+                InlineKeyboardButton("➕ Add Product", callback_data="add_product"),  # Frequently used actions together
+                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product')
+            ],
+            [
+                InlineKeyboardButton("❌ Delete Product", callback_data='delete_product')  # Isolated action
+            ],
+            [
+                InlineKeyboardButton("🗑️ Delete Category", callback_data="delete_category"),  # Actions related to categories together
+                InlineKeyboardButton("🛠️ Edit Store Info", callback_data="edit_store_info")
+            ],
+            [
+                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")  # Isolated utility action
+            ]
+        ]
 
+        # Show Add Account button since no account exists
+        keyboard = [
+            [InlineKeyboardButton("Add Account", callback_data="add_account")]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+            #await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
+        await update.callback_query.message.reply_text(
+            welcome_message,
+            reply_markup=reply_markup
+        )
         context.user_data.clear()
 
     except Exception as e:
@@ -590,7 +620,7 @@ async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAU
                     chat_id = context.user_data.get('chat_id', update.message.chat.id)
                 elif update.callback_query:
                     chat_id = context.user_data.get('chat_id', update.callback_query.message.chat.id)
-                    
+
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
                 context.user_data['account'] = account  # Cache the account for future use
             except Account.DoesNotExist:
