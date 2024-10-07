@@ -155,7 +155,7 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Confirm successful download and update state
             await update.message.reply_text('Logo downloaded successfully.')
             context.user_data['logo'] = logo_path
-            await update.message.reply_text('Now please send the title for the account.')
+            await update.message.reply_text('Now please send the title for the Store.')
             context.user_data['state'] = 'awaiting_title'
         else:
             await update.message.reply_text('The file uploaded is not a valid image format. Please upload a .jpg, .jpeg, .png, or .gif file.')
