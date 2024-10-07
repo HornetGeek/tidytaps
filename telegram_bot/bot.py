@@ -135,25 +135,6 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if the upload is an image
-    if not update.message.photo:
-        try:
-            # Check if the user uploaded a video or another file type
-            if update.message.video:
-                await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.'),
-                context.user_data['state'] = 'awaiting_logo'
-            elif update.message.document:
-                await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.'),
-                context.user_data['state'] = 'awaiting_logo'
-
-            else:
-                await update.message.reply_text('Please upload an image as the logo for the Store.'),
-                   
-        except Exception as e:
-            await update.message.reply_text('The request timed out. Please try again.')
-
-    
-
-    # Acknowledge image upload
     await update.message.reply_text('Downloading your logo, this may take a few moments...')
 
     chat_id = context.user_data.get('chat_id', update.message.chat.id)
@@ -315,26 +296,9 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data['state'] = 'awaiting_image'
 
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        print("start")
-        if not update.message.photo:
-            if update.message.video:
-                if context.user_data.get('state') == "awaiting_product_image":
-                    await update.message.reply_text('You uploaded a video. Please upload an image for the product instead.')
-                else:
-                    await update.message.reply_text('You uploaded a video. Please upload an image instead if you intended to upload a product image.')
-                return
-            elif update.message.document:
-                await update.message.reply_text('You uploaded a document. Please upload an image for the product.')
-                return  
-        
-            await update.message.reply_text('Please upload an image for the product.')
-            return
+  
+    await update.message.reply_text('Downloading your product image, this may take a few moments...')
 
-        print("we")
-        await update.message.reply_text('Downloading your product image, this may take a few moments...')
-    except Exception as e:
-        print(e)
     try:
         # Download the product image
         product_image_file = await update.message.photo[-1].get_file()
@@ -403,16 +367,13 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
             await update.message.reply_text('Please upload an image.')
             return
 
-    await update.message.reply_text('Downloading your image, this may take a few moments...')
-    try:
-        if context.user_data['state'] == 'awaiting_product_image':
-            await handle_product_image(update, context)
-
-
-        elif context.user_data['state'] == 'awaiting_logo':
-            await handle_logo(update, context)
-    except Exception as e:
-        await update.message.reply_text(f'An error occurred while downloading the image: {str(e)}')
+    # Check the state and handle accordingly
+    if context.user_data.get('state') == 'awaiting_logo':
+        await handle_logo(update, context)
+    elif context.user_data.get('state') == 'awaiting_product_image':
+        await handle_product_image(update, context)
+    else:
+        await update.message.reply_text('Please start the process by uploading a logo first.')
 
 
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
