@@ -263,7 +263,7 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle account phone number step
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone_number = update.message.text
-    phone_pattern = r'^01[0-9]{9}$'
+    phone_pattern = r'^01\d{9}$'  # This will match 11 characters starting with 01
 
     if not re.match(phone_pattern, phone_number):
         await update.message.reply_text("Invalid phone number. Please enter a valid phone number in the format 01XXXXXXXXX.")
