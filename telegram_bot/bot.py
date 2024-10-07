@@ -210,23 +210,28 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
     # Assuming you handle image uploads differently, adjust this function accordingly
     product_id = context.user_data.get('product_id')
 
-    if not product:
-        await update.message.reply_text("No product found to update. Please start the process again.")
-        return
-    
-    await update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
-    new_image = await update.message.photo[-1].get_file()
-    file_path = f'static/img/items/{product.item}_new_image.jpg'
-    await new_image.download(file_path)
+    try:
+        product = await sync_to_async(MenuItem.objects.get)(id=product_id)
+
+        await update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
+        
+        new_image = await update.message.photo[-1].get_file()
+        file_path = f'static/img/items/{product.item}_new_image.jpg'
+        await new_image.download(file_path)
 
 
-    product = await sync_to_async(MenuItem.objects.get)(id=product_id)
-    await sync_to_async(product.delete)()
+        
 
-    product.picture = new_image
-    await sync_to_async(product.save)()
+        await sync_to_async(product.delete)()
 
-    await update.message.reply_text("Product image updated successfully.")
+        product.picture = new_image
+        await sync_to_async(product.save)()
+
+        await update.message.reply_text("Product image updated successfully.")
+
+    except MenuItem.DoesNotExist:
+        await update.message.reply_text("Product not found.")
+
     context.user_data.pop('product')
     context.user_data.pop('state')
 
