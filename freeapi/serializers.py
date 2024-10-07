@@ -5,7 +5,7 @@ from rest_framework import status
 from django.db.models import Sum
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as JwtTokenObtainPairSerializer
 from django.contrib.auth import get_user_model
-
+from django.db import IntegrityError
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,6 +33,15 @@ class AccountPostSerializer(serializers.ModelSerializer):
         model = Account
         fields = ('__all__')  # Replace with specific fields you want to expose
 
+    def create(self, validated_data):
+        while True:
+            try:
+                account = Account(**validated_data)
+                account.save()
+                return account
+            except IntegrityError:
+                # Regenerate accountId if there is a conflict
+                validated_data['accountId'] = str(uuid.uuid4())
 
 class AccountSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)  # Assuming one-to-one with User
