@@ -572,7 +572,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # Send the success message with the website link
         await update.message.reply_text(
-            f"🎉 Product '{menu_item.item}' added successfully! You can add another product by typing /add_product.\n"
+            f"🎉 Product '{menu_item.item}' added successfully!.\n"
             f"Visit your product page at: {website_url}"
         )
         welcome_message = f"Controll Over All Things ! 🎉\n\n"
