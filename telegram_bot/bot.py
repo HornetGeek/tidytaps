@@ -295,6 +295,34 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'You can now add a new product for your account by typing /add_product.\n'
             'Follow the prompts to specify the product category, name, price, description, and image.'
         )
+        welcome_message = f"You Can Controll over All Thing! 🎉\n\n"
+        
+        # No Add Account button since the account already exists
+        keyboard = [
+            [
+                InlineKeyboardButton("➕ Add Product", callback_data="add_product"),  # Frequently used actions together
+                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product')
+            ],
+            [
+                InlineKeyboardButton("❌ Delete Product", callback_data='delete_product')  # Isolated action
+            ],
+            [
+                InlineKeyboardButton("🗑️ Delete Category", callback_data="delete_category"),  # Actions related to categories together
+                InlineKeyboardButton("🛠️ Edit Store Info", callback_data="edit_store_info")
+            ],
+            [
+                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")  # Isolated utility action
+            ]
+        ]
+     
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text(
+            welcome_message + "You can use the following commands:", 
+            reply_markup=reply_markup
+        )
+
     except IntegrityError:
         await update.message.reply_text(
             "The username you provided is already taken. Please choose a different username and try again."
