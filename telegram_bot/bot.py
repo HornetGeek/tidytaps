@@ -456,7 +456,7 @@ async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAU
         keyboard = []
         for product in products:
             keyboard.append([InlineKeyboardButton(product.item, callback_data=f"delete_product_{product.id}")])
-            
+
         keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -513,11 +513,26 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.callback_query.message.chat.id
     # Assuming context.user_data['account'] has the logged-in account details
     account = context.user_data.get('account')
+
     if not account:
-        await update.callback_query.message.reply_text("No account found.")
-        return
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account in user_data
+        except Account.DoesNotExist:
+            keyboard = [
+                [InlineKeyboardButton("Add Account", callback_data="add_account")],
+                [InlineKeyboardButton("Cancel", callback_data="cancel")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.callback_query.message.reply_text(
+                "No account found associated with your Telegram ID. Please create an account first.",
+                reply_markup=reply_markup
+            )
+            return
 
     # Fetch the products for the account using sync_to_async to avoid the synchronous operation error
     products = await sync_to_async(list)(MenuItem.objects.filter(account=account))  # Ensure it's converted to a list
