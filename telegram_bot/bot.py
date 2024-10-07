@@ -133,8 +133,15 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check if the upload is an image
     if not update.message.photo:
-        await update.message.reply_text('Please upload an image as the logo for the Store.')
+        # Check if the user uploaded a video or another file type
+        if update.message.video:
+            await update.message.reply_text('You uploaded a video. Please upload an image as the logo for the Store.')
+        elif update.message.document:
+            await update.message.reply_text('You uploaded a document. Please upload an image as the logo for the Store.')
+        else:
+            await update.message.reply_text('Please upload an image as the logo for the Store.')
         return
 
     # Acknowledge image upload
