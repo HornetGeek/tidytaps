@@ -150,6 +150,15 @@ async def handle_edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await logo_file.download_to_drive(logo_path)
 
         # Get the user's account from the cached data
+        if 'account' not in context.user_data:
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)  # Assuming you identify accounts by the Telegram ID
+            try:
+                account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+                context.user_data['account'] = account
+            except Account.DoesNotExist:
+                await update.message.reply_text("⚠️ Account not found. Please ensure your account is registered.")
+                return
+            
         account = context.user_data['account']
 
         # Update the account's logo
