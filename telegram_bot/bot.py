@@ -2,6 +2,7 @@
 import os
 import sys
 import django
+from django.db import IntegrityError  # Import IntegrityError
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import error  # This is needed for error handling like telegram.error.TimedOut
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
@@ -287,13 +288,19 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     new_account = Account(**account_data)
-    await sync_to_async(new_account.save)()
-
-    await update.message.reply_text(
-        '🎉 Account added successfully!\n\n'
-        'You can now add a new product for your account by typing /add_product.\n'
-        'Follow the prompts to specify the product category, name, price, description, and image.'
-    )
+    try:
+        await sync_to_async(new_account.save)()
+        await update.message.reply_text(
+            '🎉 Account added successfully!\n\n'
+            'You can now add a new product for your account by typing /add_product.\n'
+            'Follow the prompts to specify the product category, name, price, description, and image.'
+        )
+    except IntegrityError:
+        await update.message.reply_text(
+            "The username you provided is already taken. Please choose a different username and try again."
+        )
+        context.user_data.clear()  # Clear user data to restart the process
+        return
 
     context.user_data.clear()
 
