@@ -591,6 +591,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(CommandHandler("edit_product", show_products))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_logo))  # Expecting a logo first
     application.add_handler(MessageHandler(filters.PHOTO, handle_product_image))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(button_click))
