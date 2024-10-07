@@ -318,8 +318,19 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
     try:
         print("start")
         if not update.message.photo:
-            await update.message.reply_text('Please upload an image of the product.')
+            if update.message.video:
+                if context.user_data.get('state') == "awaiting_product_image":
+                    await update.message.reply_text('You uploaded a video. Please upload an image for the product instead.')
+                else:
+                    await update.message.reply_text('You uploaded a video. Please upload an image instead if you intended to upload a product image.')
+                return
+            elif update.message.document:
+                await update.message.reply_text('You uploaded a document. Please upload an image for the product.')
+                return  
+        
+            await update.message.reply_text('Please upload an image for the product.')
             return
+
         print("we")
         await update.message.reply_text('Downloading your product image, this may take a few moments...')
     except Exception as e:
@@ -431,11 +442,9 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Handle video upload scenario
     if context.user_data.get('state') == "awaiting_logo":
         await update.message.reply_text('You uploaded a video for the logo. Please upload an image as the logo for the Store.')
-        context.user_data['state'] = 'awaiting_logo'
 
     elif context.user_data.get('state') == "awaiting_product_image":
         await update.message.reply_text('You uploaded a video for the product image. Please upload an image for the product instead.')
-        context.user_data['state'] = 'awaiting_product_image'
     else:
         await update.message.reply_text('You uploaded a video. Please upload an image instead if you intended to upload a logo or product image.')
 
