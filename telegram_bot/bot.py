@@ -655,7 +655,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         # Get the website URL for the account
         username = account.username  # Get the username from the cached account
 
-        website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
+        website_url = f"tidy-taps.com/f/{username}"
 
         # Generate the QR code for the website URL
         #qr = qrcode.QRCode(
@@ -894,7 +894,7 @@ async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Generate the website URL
         username = account.username
-        website_url = f"https://tidytaps-r92c.vercel.app/f/{username}"
+        website_url = f"tidy-taps.com/f/{username}"
 
         # Generate the QR code
         qr = qrcode.QRCode(
