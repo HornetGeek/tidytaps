@@ -106,6 +106,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_title_update(update, context)
     elif user_state == 'awaiting_new_image':
         await update_product_image(update, context)
+    elif user_state =="waiting_for_primary_color":
+        await handle_primary_color_response(update, context)
+    elif user_state =="waiting_for_secondary_color":
+        await handle_secondary_color_response(update, context)
     else:
         await start(update, context)
 
@@ -124,6 +128,105 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "What would you like to edit?",
         reply_markup=reply_markup
     )
+
+async def handle_edit_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()  # Acknowledge the callback
+    
+    # Create buttons for Primary and Secondary colors
+    keyboard = [
+        [InlineKeyboardButton("Edit Primary Color", callback_data="edit_primary_color")],
+        [InlineKeyboardButton("Edit Secondary Color", callback_data="edit_secondary_color")],
+        [InlineKeyboardButton("Cancel", callback_data="cancel")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.callback_query.message.reply_text(
+        "Primary color is used for the footer and navbar. Secondary color is used for text.\n\nWhich color would you like to edit?",
+        reply_markup=reply_markup
+    )
+async def edit_primary_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()  # Acknowledge the callback
+    
+    # Ask the user to send the new primary color in hex format
+    await update.callback_query.message.reply_text("Please send the new primary color in hex format (e.g., #0E214B).")
+    
+    # Set a state to track that we are expecting a primary color update
+    context.user_data['state'] = 'waiting_for_primary_color'
+
+async def handle_primary_color_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the entered hex color from the user's message
+    new_color = update.message.text
+    
+    # Validate hex color format (optional)
+    if not new_color.startswith("#") or len(new_color) != 7:
+        await update.message.reply_text("Invalid hex format! Please send the color in hex format (e.g., #0E214B).")
+        return
+    
+    # Get the account from context or database
+    account = context.user_data.get('account')
+    if not account:
+        try:
+            # Get chat ID and fetch account based on the Telegram ID
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            await update.message.reply_text("No account found. Please create an account first using /add_account.")
+            return
+
+    # Update the primary color in the account
+    account.primary_color = new_color
+    await sync_to_async(account.save)()  # Save the changes in the database
+
+    # Confirm the update to the user
+    await update.message.reply_text(f"✅ Your primary color has been updated to {new_color} successfully!")
+
+    # Clear the state
+    context.user_data['state'] = None
+
+
+
+async def edit_secondary_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()  # Acknowledge the callback
+    
+    # Ask the user to send the new secondary color in hex format
+    await update.callback_query.message.reply_text("Please send the new secondary color in hex format (e.g., #3F68DE).")
+    
+    # Set a state to track that we are expecting a secondary color update
+    context.user_data['state'] = 'waiting_for_secondary_color'
+
+async def handle_secondary_color_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the entered hex color from the user's message
+    new_color = update.message.text
+    
+    # Validate hex color format (optional)
+    if not new_color.startswith("#") or len(new_color) != 7:
+        await update.message.reply_text("Invalid hex format! Please send the color in hex format (e.g., #3F68DE).")
+        return
+    
+    # Get the account from context or database
+    account = context.user_data.get('account')
+    if not account:
+        try:
+            # Get chat ID and fetch account based on the Telegram ID
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            await update.message.reply_text("No account found. Please create an account first using /add_account.")
+            return
+
+    # Update the secondary color in the account
+    account.second_color = new_color
+    await sync_to_async(account.save)()  # Save the changes in the database
+
+    # Confirm the update to the user
+    await update.message.reply_text(f"✅ Your secondary color has been updated to {new_color} successfully!")
+
+    # Clear the state
+    context.user_data['state'] = None
+
 
 async def edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = 'awaiting_edit_logo'
@@ -934,6 +1037,14 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data.startswith("edit_title"):
         await edit_title(update, context)
+
+    elif query.data == "edit_color":
+        await handle_edit_color(update, context)
+    elif query.data == "edit_primary_color":
+        await edit_primary_color(update, context)
+
+    elif query.data == "edit_secondary_color":
+        await edit_secondary_color(update, context)
 
     elif query.data == 'delete_product':
         await query.message.reply_text('Please choose a product to edit.')
