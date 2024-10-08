@@ -37,7 +37,7 @@ class Account(models.Model):
     logo = models.FileField(upload_to='static/img/logos', default="static/img/logos/Defaultlogo.png")
     title = models.CharField(max_length=150, default="", blank=True)
     primary_color = models.CharField(max_length=7, default="#0E214B", blank=True)
-    second_color = models.CharField(max_length=7, default="#3F68DE", blank=True)
+    second_color = models.CharField(max_length=7, default="#3F68DE",blank=True)
     #objects = CustomUserManager()
 
     def __str__(self):
