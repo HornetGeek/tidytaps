@@ -40,6 +40,7 @@ class AccountPostSerializer(serializers.ModelSerializer):
                 account.save()
                 return account
             except IntegrityError:
+                print("inside Integrity Error of AccountId")
                 # Regenerate accountId if there is a conflict
                 validated_data['accountId'] = str(uuid.uuid4())
 
