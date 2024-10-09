@@ -12,6 +12,7 @@ import time
 import qrcode
 from io import BytesIO
 import asyncio
+from urllib.parse import quote
 from telegram.constants import ChatAction
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -666,7 +667,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         # Get the website URL for the account
         username = account.username  # Get the username from the cached account
 
-        website_url = f"tidy-taps.com/f/{username}"
+        website_url = f"tidy-taps.com/f/{quote(username)}"
 
         # Generate the QR code for the website URL
         #qr = qrcode.QRCode(
@@ -905,7 +906,7 @@ async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Generate the website URL
         username = account.username
-        website_url = f"tidy-taps.com/f/{username}"
+        website_url = f"tidy-taps.com/f/{quote(username)}"
 
         # Generate the QR code
         qr = qrcode.QRCode(
