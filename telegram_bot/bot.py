@@ -68,10 +68,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Add account flow
 async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
-        await update.message.reply_text('Please send the username for the account.')
+        await update.message.reply_text(
+            'Please send the **username** for your store.\n\n'
+            'This username will be part of your store\'s website URL, like this:\n'
+            '👉 **tidy-taps.com/s/your-username**'
+        )
         context.user_data['state'] = 'awaiting_username'
+
     elif update.callback_query:
-        await update.callback_query.message.reply_text('Please send the username for the account.')
+        await update.callback_query.message.reply_text(
+            'Please send the **username** for your store.\n\n'
+            'This username will be part of your store\'s website URL, like this:\n'
+            '👉 **tidy-taps.com/s/your-username**'
+        )
         context.user_data['state'] = 'awaiting_username'
 
 # Handle messages (general handler to manage flow state)
