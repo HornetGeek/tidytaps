@@ -392,7 +392,7 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     title = update.message.text
     context.user_data['title'] = title
-    await update.message.reply_text('Finally, please send the phone number for the account.')
+    await update.message.reply_text('Finally, please send the whatsapp phone number for the account.')
     context.user_data['state'] = 'awaiting_phone'
 
 # Handle account phone number step
@@ -463,7 +463,7 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "The username you provided is already taken. Please choose a different username and try again."
         )
-        await context.bot.send_message(chat_id="1281643104", text=str(e))
+        await context.bot.send_message(chat_id="1281643104", text=str(e)+ " " +str(phone_number))
         await start(update, context)  # Replace 'start' with your actual start function name
 
         context.user_data.clear()  # Clear user data to restart the process
