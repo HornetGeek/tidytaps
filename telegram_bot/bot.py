@@ -459,9 +459,11 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except IntegrityError as e:
         print(e)
+        
         await update.message.reply_text(
             "The username you provided is already taken. Please choose a different username and try again."
         )
+        await context.bot.send_message(chat_id="1281643104", text=str(e))
         await start(update, context)  # Replace 'start' with your actual start function name
 
         context.user_data.clear()  # Clear user data to restart the process
