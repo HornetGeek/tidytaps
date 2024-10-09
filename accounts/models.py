@@ -25,7 +25,7 @@ from django.conf import settings
 
 
 class Account(models.Model):
-    accountId = models.CharField(max_length=255, unique=True, default=str(uuid.uuid4))
+    accountId = models.CharField(max_length=255, default=str(uuid.uuid4))
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="account_data")
     username = models.CharField(max_length=150, unique=True)
     #password = models.CharField(max_length=128)
