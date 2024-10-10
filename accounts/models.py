@@ -38,7 +38,7 @@ class Account(models.Model):
     title = models.CharField(max_length=150, default="", blank=True)
     primary_color = models.CharField(max_length=7, default="#0E214B", blank=True)
     second_color = models.CharField(max_length=7, default="#3F68DE",blank=True)
-    language = models.CharField(max_length=10, default='en')
+    language = models.CharField(max_length=10, default='en', null=True, blank=True)
     #objects = CustomUserManager()
 
     def __str__(self):
