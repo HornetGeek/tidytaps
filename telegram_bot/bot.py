@@ -1241,7 +1241,7 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
 
 async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Get the user's selected language
-    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
 
     try:
         account = context.user_data.get('account')
