@@ -14,6 +14,7 @@ from io import BytesIO
 import asyncio
 from urllib.parse import quote
 from telegram.constants import ChatAction
+from telegram.ext import CallbackContext
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -25,48 +26,271 @@ django.setup()
 from accounts.models import Account, MenuItem, Category
 from django.contrib.auth.models import User
 
-# Start command - sends a welcome message and instructions
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat.id
-    context.user_data['chat_id'] = chat_id
+LANGUAGES = {
+    'en': 'English',
+    'ar': 'العربية'
+}
 
-    try:
-        account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-        context.user_data['account'] = account  # Cache the account for future use
-        welcome_message = f"Welcome back, {account.username}! 🎉\n\n"
-        
-        # No Add Account button since the account already exists
-        keyboard = [
-            [
-                InlineKeyboardButton("➕ Add Product", callback_data="add_product"),  # Frequently used actions together
-                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product')
-            ],
-            [
-                InlineKeyboardButton("❌ Delete Product", callback_data='delete_product')  # Isolated action
-            ],
-            [
-                InlineKeyboardButton("🗑️ Delete Category", callback_data="delete_category"),  # Actions related to categories together
-                InlineKeyboardButton("🛠️ Edit Store Info", callback_data="edit_store_info")
-            ],
-            [
-                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")  # Isolated utility action
-            ]
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Send a message asking the user to choose a language
+    keyboard = [
+        [InlineKeyboardButton(LANGUAGES['en'], callback_data='lang_en')],
+        [InlineKeyboardButton(LANGUAGES['ar'], callback_data='lang_ar')]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Please choose your language / يرجى اختيار لغتك", reply_markup=reply_markup)
+
+async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE, account):
+    # Fetch the selected language
+    selected_lang = account.language
+
+    # Use the get_message function to fetch the appropriate text
+    welcome_message = get_message(account, 'welcome_back').format(username=account.username)
+    commands_message = get_message(account, 'commands')
+
+    # Buttons with translations
+    buttons = MESSAGES[selected_lang]['buttons']
+    keyboard = [
+        [
+            InlineKeyboardButton(buttons['add_product'], callback_data="add_product"),
+            InlineKeyboardButton(buttons['edit_product'], callback_data='edit_product')
+        ],
+        [
+            InlineKeyboardButton(buttons['delete_product'], callback_data='delete_product')
+        ],
+        [
+            InlineKeyboardButton(buttons['delete_category'], callback_data="delete_category"),
+            InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
+        ],
+        [
+            InlineKeyboardButton(buttons['get_website_qr'], callback_data="get_website_qr")
         ]
-    except Account.DoesNotExist:
-        welcome_message = "Welcome to the bot! 🎉\n\n"
-        
-        # Show Add Account button since no account exists
-        keyboard = [
-            [InlineKeyboardButton("Add Account", callback_data="add_account")]
-        ]
+    ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
-        welcome_message + "You can use the following commands:", 
-        reply_markup=reply_markup
-    )
-# Add account flow
+    # Check if the message comes from a callback query or a regular message
+    if update.callback_query:
+        await update.callback_query.message.reply_text(
+            welcome_message + commands_message, 
+            reply_markup=reply_markup
+        )
+    else:
+        await update.message.reply_text(
+            welcome_message + commands_message, 
+            reply_markup=reply_markup
+        )
+
+MESSAGES = {
+    'en': {
+        'welcome_back': "Welcome back, {username}! 🎉\n\n",
+        'welcome_new': "Welcome to the bot! 🎉\n\n",
+        'commands': "You can use the following commands:",
+        'no_account': "You need to create an account first using /add_account.",
+        'provide_category': "Please provide the category for the product.",
+        'unable_to_determine_chat_id': "Unable to determine chat ID.",
+        'category_confirmation': "Category '{category_name}' does not exist for this account. Do you want to create it?",
+        'category_creation_success': "Category '{category_name}' created successfully! Please provide the item name.",
+        'item_name_prompt': "Please provide the item name.",
+        'item_price_prompt': "Please provide the price for the product.",
+        'invalid_price': "Invalid price. Please enter a numeric value.",
+        'awaiting_description': "Please provide a description for the product.",
+        'awaiting_image': "Please send an image of the product.",
+        'create_account_first': "You need to create an account first using /add_account.",
+        'no_products_available': "No products available to delete.",
+        'select_product_to_delete': "Select the product you want to delete:",
+        'cancel': "Cancel",
+        'error_occurred': "An error occurred: {error}",
+        'get_website_qr': "🌐 Get Website & QR Code",
+        'image_download_error': 'An error occurred while downloading the product image: {error}',
+        'add_product': "➕ Add Product",
+        'edit_product': "✏️ Edit Product",
+        'delete_product': "❌ Delete Product",
+        'delete_category': "🗑️ Delete Category",
+        'edit_store_info': "🛠️ Edit Store Info",
+        'downloading_image': "Downloading your product image, this may take a few moments...",
+        'image_downloaded_successfully': "Product image downloaded successfully.",
+        'product_added_successfully': "🎉 Product '{item}' added successfully!",
+        'visit_product_page': "Visit your product page at: {url}",
+        'control_over_all_things': "Control Over All Things! 🎉\n\n",
+        'product_deleted': "Product '{product_name}' has been deleted successfully!",
+        'product_not_exist': "The selected product does not exist.",
+        'video_upload': "You uploaded a video. Please upload an image instead.",
+        'document_upload': "You uploaded a document. Please upload an image instead.",
+        'no_image_upload': "Please upload an image.",
+        'read_message_again': "Please read the message again.",
+        'no_account_found': "No account found. Please add an account first.",
+        'add_account': "Add Account",
+        'website_url': "Your website URL is: {website_url}",
+        'qr_code_caption': "Here is your QR code.",
+        'no_categories_available': "No categories available to delete.",
+        'select_category_to_delete': "Select the category you want to delete:",
+        'edit_name': "Edit Name",
+        'edit_price': "Edit Price",
+        'edit_image': "Edit Image",
+        'selected_product': "You selected: {}. Choose what you want to edit:",
+        'video_for_logo': 'You uploaded a video for the logo. Please upload an image as the logo for the Store.',
+        'video_for_product_image': 'You uploaded a video for the product image. Please upload an image for the product instead.',
+        'general_video_upload': 'You uploaded a video. Please upload an image instead if you intended to upload a logo or product image.',
+        'product_update_success': "Product '{0}' updated successfully.",
+        'edit_product_name': "Please send the new name for the product.",
+        'edit_product_price': "Please send the new price for the product.",
+        'edit_product_image': "Please upload the new image for the product.",
+        'upload_product_image': "Please upload an image of the product.",
+        'product_not_found': "Product not found.",
+        'error_message': "An error occurred: {0}",
+        'enter_new_title': "Please enter the new title for your store.",
+        'process_canceled': "Process has been canceled. You can start again by using /start.",
+        'price_updated': "Product price updated to: {new_price}",
+        'edit_logo': "Edit Logo",
+        'edit_title': "Edit Title",
+        'edit_color': "Edit Color",
+        'edit_primary_color': "Edit Primary Color",
+        'edit_secondary_color': "Edit Secondary Color",
+        'which_color_to_edit': "Which color would you like to edit?",
+        'send_primary_color': "Please send the new primary color in hex format (e.g., #0E214B).",
+        'send_secondary_color': "Please send the new secondary color in hex format (e.g., #3F68DE).",
+        'invalid_hex_format': "Invalid hex format! Please send the color in hex format (e.g., #0E214B).",
+        'account_not_found': "No account found. Please create an account first using /add_account.",
+        'primary_color_updated': "✅ Your primary color has been updated to {new_color} successfully!",
+        'secondary_color_updated': "✅ Your secondary color has been updated to {new_color} successfully!",
+        'upload_logo': "Please upload the new logo image.",
+        'upload_logo_image': "Please upload an image of the logo.",
+        'logo_updated': "Your logo has been updated successfully! 🎉",
+        'error_updating_logo': "An error occurred while updating the logo",
+        'title_updated': "✅ Your title has been updated to '{new_title}' successfully!",
+        'error_updating_title': "An error occurred while updating the title",
+        'product_name_updated': "Product name updated to: {new_name}",
+        'product_image_updated': "Product image updated successfully.",
+        'product_not_found': "Product not found.",
+        'category_deleted': "Category '{category_name}' has been deleted successfully.",
+        'category_delete_error': "An error occurred while deleting the category: {error_message}",
+        'buttons': {
+            'add_product': "➕ Add Product",
+            'edit_product': "✏️ Edit Product",
+            'delete_product': "❌ Delete Product",
+            'delete_category': "🗑️ Delete Category",
+            'edit_store_info': "🛠️ Edit Store Info",
+            'get_website_qr': "🌐 Get Website & QR Code",
+            'add_account': "Add Account",
+            'choose_product': "Choose a product to edit:",
+            'yes': "Yes",
+            'no': "No",
+            'cancel': "Cancel"
+        }
+    },
+    'ar': {
+        'welcome_back': "مرحبًا بك مجددًا، {username}! 🎉\n\n",
+        'welcome_new': "مرحبًا بك في البوت! 🎉\n\n",
+        'commands': "يمكنك استخدام الأوامر التالية:",
+        'no_account': "يجب عليك إنشاء حساب أولاً باستخدام /add_account.",
+        'provide_category': "يرجى تقديم الفئة للمنتج.",
+        'unable_to_determine_chat_id': "غير قادر على تحديد معرف المحادثة.",
+        'category_confirmation': "الفئة '{category_name}' غير موجودة لهذا الحساب. هل تريد إنشاءها؟",
+        'category_creation_success': "تم إنشاء الفئة '{category_name}' بنجاح! يرجى تقديم اسم العنصر.",
+        'item_name_prompt': "يرجى تقديم اسم المنتج.",
+        'item_price_prompt': "يرجى تقديم السعر للمنتج.",
+        'invalid_price': "سعر غير صالح. يرجى إدخال قيمة رقمية.",
+        'awaiting_description': "يرجى تقديم وصف للمنتج.",
+        'awaiting_image': "يرجى إرسال صورة للمنتج.",
+        'create_account_first': "تحتاج إلى إنشاء حساب أولاً باستخدام /add_account.",
+        'no_products_available': "لا توجد منتجات متاحة للحذف.",
+        'select_product_to_delete': "اختر المنتج الذي تريد حذفه:",
+        'cancel': "إلغاء",
+        'error_occurred': "حدث خطأ: {error}",
+        'downloading_image': "جاري تنزيل صورة المنتج، قد يستغرق هذا بضع لحظات...",
+        'image_downloaded_successfully': "تم تنزيل صورة المنتج بنجاح.",
+        'product_added_successfully': "🎉 تم إضافة المنتج '{item}' بنجاح!",
+        'visit_product_page': "قم بزيارة صفحة منتجك على: {url}",
+        'control_over_all_things': "تحكم في كل شيء! 🎉\n\n",
+        'add_product': "➕ إضافة منتج",
+        'edit_product': "✏️ تعديل منتج",
+        'delete_product': "❌ حذف منتج",
+        'delete_category': "🗑️ حذف فئة",
+        'edit_store_info': "🛠️ تعديل معلومات المتجر",
+        'get_website_qr': "🌐 الحصول على الموقع ورمز QR",
+        'image_download_error': 'حدث خطأ أثناء تنزيل صورة المنتج: {error}',
+        'product_deleted': "تم حذف المنتج '{product_name}' بنجاح!",
+        'product_not_exist': "المنتج المحدد غير موجود.",
+        'video_upload': "لقد قمت بتحميل فيديو. يرجى تحميل صورة بدلاً من ذلك.",
+        'document_upload': "لقد قمت بتحميل مستند. يرجى تحميل صورة بدلاً من ذلك.",
+        'no_image_upload': "يرجى تحميل صورة.",
+        'read_message_again': "يرجى قراءة الرسالة مرة أخرى.",
+        'add_account': "إضافة حساب",
+        'website_url': "رابط موقعك هو: {website_url}",
+        'qr_code_caption': "إليك رمز الاستجابة السريعة الخاص بك.",
+        'no_account_found': "لم يتم العثور على حساب. يرجى إضافة حساب أولاً.",
+        'no_categories_available': "لا توجد فئات متاحة للحذف.",
+        'select_category_to_delete': "حدد الفئة التي تريد حذفها:",
+        'edit_name': "تعديل الاسم",
+        'edit_price': "تعديل السعر",
+        'edit_image': "تعديل الصورة",
+        'selected_product': "لقد اخترت: {}. اختر ما تريد تعديله:",
+        'video_for_logo': 'لقد قمت بتحميل فيديو للشعار. يرجى تحميل صورة كشعار للمحل.',
+        'video_for_product_image': 'لقد قمت بتحميل فيديو لصورة المنتج. يرجى تحميل صورة للمنتج بدلاً من ذلك.',
+        'general_video_upload': 'لقد قمت بتحميل فيديو. يرجى تحميل صورة بدلاً من ذلك إذا كنت تنوي تحميل شعار أو صورة منتج.',
+        'product_update_success': "تم تحديث المنتج '{0}' بنجاح.",
+        'edit_product_name': "يرجى إرسال الاسم الجديد للمنتج.",
+        'edit_product_price': "يرجى إرسال السعر الجديد للمنتج.",
+        'edit_product_image': "يرجى تحميل الصورة الجديدة للمنتج.",
+        'upload_product_image': "يرجى تحميل صورة المنتج.",
+        'product_not_found': "لم يتم العثور على المنتج.",
+        'error_message': "حدث خطأ: {0}",
+        'enter_new_title': "يرجى إدخال العنوان الجديد لمتجرك.",
+        'process_canceled': "تم إلغاء العملية. يمكنك البدء مرة أخرى باستخدام /start.",
+        'price_updated': "تم تحديث سعر المنتج إلى: {new_price}",
+        'edit_logo': "تعديل الشعار",
+        'edit_title': "تعديل العنوان",
+        'edit_color': "تعديل اللون",
+        'cancel': "إلغاء",
+        'what_to_edit': "ماذا تريد أن تعدل؟",
+        'edit_primary_color': "تعديل اللون الأساسي",
+        'edit_secondary_color': "تعديل اللون الثانوي",
+        'which_color_to_edit': "أي لون تريد تعديله؟",
+        'send_primary_color': "يرجى إرسال اللون الأساسي الجديد بصيغة هكس (مثل: #0E214B).",
+        'send_secondary_color': "يرجى إرسال اللون الثانوي الجديد بصيغة هكس (مثل: #3F68DE).",
+        'invalid_hex_format': "تنسيق هكس غير صالح! يرجى إرسال اللون بصيغة هكس (مثل: #0E214B).",
+        'account_not_found': "لا يوجد حساب. يرجى إنشاء حساب أولاً باستخدام /add_account.",
+        'primary_color_updated': "✅ تم تحديث لونك الأساسي إلى {new_color} بنجاح!",
+        'secondary_color_updated': "✅ تم تحديث لونك الثانوي إلى {new_color} بنجاح!",
+        'upload_logo': "يرجى تحميل صورة الشعار الجديد.",
+        'upload_logo_image': "يرجى تحميل صورة الشعار.",
+        'logo_updated': "تم تحديث الشعار بنجاح! 🎉",
+        'error_updating_logo': "حدث خطأ أثناء تحديث الشعار",
+        'title_updated': "✅ تم تحديث عنوانك إلى '{new_title}' بنجاح!",
+        'error_updating_title': "حدث خطأ أثناء تحديث العنوان",
+        'product_name_updated': "تم تحديث اسم المنتج إلى: {new_name}",
+        'product_image_updated': "تم تحديث صورة المنتج بنجاح.",
+        'product_not_found': "المنتج غير موجود.",
+        'category_deleted': "تم حذف الفئة '{category_name}' بنجاح.",
+        'category_delete_error': "حدث خطأ أثناء حذف الفئة: {error_message}",
+        'buttons': {
+            'add_product': "➕ إضافة منتج",
+            'edit_product': "✏️ تعديل منتج",
+            'delete_product': "❌ حذف منتج",
+            'delete_category': "🗑️ حذف فئة",
+            'edit_store_info': "🛠️ تعديل معلومات المتجر",
+            'get_website_qr': "🌐 الحصول على الموقع ورمز QR",
+            'add_account': "إضافة حساب",
+            'choose_product': "اختر منتجًا لتعديله:",
+            'yes': "نعم",
+            'no': "لا",
+            'cancel': "إلغاء"
+        }
+    }
+    # Add more languages as needed
+}
+
+
+
+
+def get_message(user, key):
+    # Fallback to English if no translation exists
+    lang = user.language or 'en'
+    return MESSAGES.get(lang, MESSAGES['en']).get(key, MESSAGES['en'][key])
+
+
 async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
         await update.message.reply_text(
@@ -87,7 +311,19 @@ async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle messages (general handler to manage flow state)
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state = context.user_data.get('state')
-
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+    if not account:
+        chat_id = context.user_data.get('chat_id', update.message.chat.id)
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
+            return
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+        
     if user_state == 'awaiting_username':
         await handle_username(update, context)
     elif user_state == 'awaiting_logo':
@@ -121,225 +357,254 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif user_state =="waiting_for_secondary_color":
         await handle_secondary_color_response(update, context)
     else:
-        await start(update, context)
+        await show_start_message(update, context, account)
+
+
 
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.answer()  # Acknowledge the callback
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await update.callback_query.answer()
     keyboard = [
-        [InlineKeyboardButton("Edit Logo", callback_data="edit_logo")],
-        [InlineKeyboardButton("Edit Title", callback_data="edit_title")],
-        [InlineKeyboardButton("Edit Color", callback_data="edit_color")],
-        [InlineKeyboardButton("Cancel", callback_data="cancel")]
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_logo'], callback_data="edit_logo")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_title'], callback_data="edit_title")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_color'], callback_data="edit_color")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.callback_query.message.reply_text(
-        "What would you like to edit?",
-        reply_markup=reply_markup
-    )
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['what_to_edit'], reply_markup=reply_markup)
+
 
 async def handle_edit_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.answer()  # Acknowledge the callback
-    
-    # Create buttons for Primary and Secondary colors
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await update.callback_query.answer()
     keyboard = [
-        [InlineKeyboardButton("Edit Primary Color", callback_data="edit_primary_color")],
-        [InlineKeyboardButton("Edit Secondary Color", callback_data="edit_secondary_color")],
-        [InlineKeyboardButton("Cancel", callback_data="cancel")]
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_primary_color'], callback_data="edit_primary_color")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_secondary_color'], callback_data="edit_secondary_color")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.callback_query.message.reply_text(
-        "Primary color is used for the footer and navbar. Secondary color is used for text.\n\nWhich color would you like to edit?",
-        reply_markup=reply_markup
-    )
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['which_color_to_edit'], reply_markup=reply_markup)
+
+
 async def edit_primary_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.answer()  # Acknowledge the callback
-    
-    # Ask the user to send the new primary color in hex format
-    await update.callback_query.message.reply_text("Please send the new primary color in hex format (e.g., #0E214B).")
-    
-    # Set a state to track that we are expecting a primary color update
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await update.callback_query.answer()
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['send_primary_color'])
     context.user_data['state'] = 'waiting_for_primary_color'
 
+
 async def handle_primary_color_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Get the entered hex color from the user's message
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     new_color = update.message.text
     
-    # Validate hex color format (optional)
     if not new_color.startswith("#") or len(new_color) != 7:
-        await update.message.reply_text("Invalid hex format! Please send the color in hex format (e.g., #0E214B).")
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_hex_format'])
         return
-    
-    # Get the account from context or database
+
     account = context.user_data.get('account')
     if not account:
+        chat_id = context.user_data.get('chat_id', update.message.chat.id)
         try:
-            # Get chat ID and fetch account based on the Telegram ID
-            chat_id = context.user_data.get('chat_id', update.message.chat.id)
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-            context.user_data['account'] = account  # Cache the account for future use
+            context.user_data['account'] = account
         except Account.DoesNotExist:
-            await update.message.reply_text("No account found. Please create an account first using /add_account.")
+            await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
             return
 
-    # Update the primary color in the account
     account.primary_color = new_color
-    await sync_to_async(account.save)()  # Save the changes in the database
-
-    # Confirm the update to the user
-    await update.message.reply_text(f"✅ Your primary color has been updated to {new_color} successfully!")
-
-    # Clear the state
+    await sync_to_async(account.save)()
+    await update.message.reply_text(MESSAGES[selected_lang]['primary_color_updated'].format(new_color=new_color))
     context.user_data['state'] = None
 
 
-
 async def edit_secondary_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.answer()  # Acknowledge the callback
-    
-    # Ask the user to send the new secondary color in hex format
-    await update.callback_query.message.reply_text("Please send the new secondary color in hex format (e.g., #3F68DE).")
-    
-    # Set a state to track that we are expecting a secondary color update
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await update.callback_query.answer()
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['send_secondary_color'])
     context.user_data['state'] = 'waiting_for_secondary_color'
 
+
 async def handle_secondary_color_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Get the entered hex color from the user's message
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     new_color = update.message.text
     
-    # Validate hex color format (optional)
     if not new_color.startswith("#") or len(new_color) != 7:
-        await update.message.reply_text("Invalid hex format! Please send the color in hex format (e.g., #3F68DE).")
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_hex_format'])
         return
-    
-    # Get the account from context or database
+
     account = context.user_data.get('account')
     if not account:
+        chat_id = context.user_data.get('chat_id', update.message.chat.id)
         try:
-            # Get chat ID and fetch account based on the Telegram ID
-            chat_id = context.user_data.get('chat_id', update.message.chat.id)
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-            context.user_data['account'] = account  # Cache the account for future use
+            context.user_data['account'] = account
         except Account.DoesNotExist:
-            await update.message.reply_text("No account found. Please create an account first using /add_account.")
+            await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
             return
 
-    # Update the secondary color in the account
     account.second_color = new_color
-    await sync_to_async(account.save)()  # Save the changes in the database
-
-    # Confirm the update to the user
-    await update.message.reply_text(f"✅ Your secondary color has been updated to {new_color} successfully!")
-
-    # Clear the state
+    await sync_to_async(account.save)()
+    await update.message.reply_text(MESSAGES[selected_lang]['secondary_color_updated'].format(new_color=new_color))
     context.user_data['state'] = None
 
 
 async def edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     context.user_data['state'] = 'awaiting_edit_logo'
-    await update.callback_query.answer()  # Acknowledge the callback
-    # Set the state to indicate the user is uploading a new logo
-    print("context.user_data['state'] ")
-    print(context.user_data['state'] )
-    await update.callback_query.message.reply_text("Please upload the new logo image.")
+    await update.callback_query.answer()
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['upload_logo'])
+
 
 async def handle_edit_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    
     try:
-        # Ensure that the user uploaded a photo
         if not update.message.photo:
-            await update.message.reply_text('Please upload an image of the logo.')
+            await update.message.reply_text(MESSAGES[selected_lang]['upload_logo_image'])
             return
 
-        # Get the file from the uploaded photo
         logo_file = await update.message.photo[-1].get_file()
-
-        # Define a path to save the new logo
         logo_path = f"static/img/logos/{context.user_data.get('chat_id', update.message.chat.id)}_logo_{int(time.time())}.jpg"
-
-        # Download the image to the server
         await logo_file.download_to_drive(logo_path)
 
-        # Get the user's account from the cached data
         if 'account' not in context.user_data:
-            chat_id = context.user_data.get('chat_id', update.message.chat.id)  # Assuming you identify accounts by the Telegram ID
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)
             try:
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
                 context.user_data['account'] = account
             except Account.DoesNotExist:
-                await update.message.reply_text("⚠️ Account not found. Please ensure your account is registered.")
+                await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
                 return
             
         account = context.user_data['account']
 
-        # Update the account's logo
+        if not selected_lang and account:
+            selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
         account.logo = logo_path
         await sync_to_async(account.save)()
+        await update.message.reply_text(MESSAGES[selected_lang]['logo_updated'])
 
-        # Confirm the update
-        await update.message.reply_text("Your logo has been updated successfully! 🎉")
-        
-        # Clear the user state after the logo has been updated
         context.user_data['state'] = None
 
     except Exception as e:
-        await update.message.reply_text(f"An error occurred while updating the logo: {str(e)}")
+        await update.message.reply_text(f"{MESSAGES[selected_lang]['error_updating_logo']}: {str(e)}")
 
 
 async def handle_title_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
     try:
         new_title = update.message.text
-
         if 'account' not in context.user_data:
-            chat_id = context.user_data.get('chat_id', update.message.chat.id)  # Assuming you identify accounts by the Telegram ID
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)
             try:
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
                 context.user_data['account'] = account
             except Account.DoesNotExist:
-                await update.message.reply_text("⚠️ Account not found. Please ensure your account is registered.")
+                await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
                 return
-            
-        # Update the Account's title field
+
         account = context.user_data['account']
+        if not selected_lang and account:
+            selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
         account.title = new_title
         await sync_to_async(account.save)()
-
-        # Confirm the update to the user
-        await update.message.reply_text(f"✅ Your title has been updated to '{new_title}' successfully!")
-
-        # Clear the user state
+        await update.message.reply_text(MESSAGES[selected_lang]['title_updated'].format(new_title=new_title))
         context.user_data['state'] = None
 
     except Exception as e:
-        await update.message.reply_text(f"An error occurred while updating the title: {str(e)}")
-
+        await update.message.reply_text(f"{MESSAGES[selected_lang]['error_updating_title']}: {str(e)}")
 
 
 async def update_product_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     product = context.user_data.get('product')
     new_name = update.message.text
     product.item = new_name
     await sync_to_async(product.save)()
 
-    await update.message.reply_text(f"Product name updated to: {product.item}")
-    context.user_data.pop('product')
-    context.user_data.pop('state')
+    # Update the product in context without deleting it
+    context.user_data['product'] = product
+
+    await update.message.reply_text(MESSAGES[selected_lang]['product_name_updated'].format(new_name=new_name))
+
+    # Clear the state without removing the product
+    context.user_data.pop('state', None)
+
+
 
 async def update_product_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     product = context.user_data.get('product')
+
     new_price = update.message.text
+
+    # Update the product price
     product.price = new_price
     await sync_to_async(product.save)()
 
-    await update.message.reply_text(f"Product price updated to: {product.price}")
-    context.user_data.pop('product')
-    context.user_data.pop('state')
+    # Send the success message
+    await update.message.reply_text(MESSAGES[selected_lang]['price_updated'].format(new_price=new_price))
+
+    # Clean up user data
+    context.user_data.pop('product', None)
+    context.user_data.pop('state', None)
+
 
 async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Assuming you handle image uploads differently, adjust this function accordingly
     product_id = context.user_data.get('product_id')
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data['account']
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
 
     try:
         product = await sync_to_async(MenuItem.objects.get)(id=product_id)
@@ -350,25 +615,40 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         file_path = f'static/img/items/{product.item}_new_image.jpg'
         await new_image.download_to_drive(file_path)
 
-
         product.picture = file_path
         await sync_to_async(product.save)()
 
-        await update.message.reply_text("Product image updated successfully.")
+        # Send the success message
+          # Get user's language, default to 'en'
+        await update.message.reply_text(MESSAGES[selected_lang]['product_image_updated'])
 
     except MenuItem.DoesNotExist:
-        await update.message.reply_text("Product not found.")
+        lang = context.user_data.get('language', 'en')  # Get user's language, default to 'en'
+        await update.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
 
-    context.user_data.pop('product_id')
-    context.user_data.pop('state')
-
+    context.user_data.pop('product_id', None)
+    context.user_data.pop('state', None)
 
 # Handle account username step
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.message.text
     context.user_data['username'] = username
-    await update.message.reply_text('Now please send the logo (as an image) for the Store.')
+
+    # Retrieve the account to get the language preference
+    chat_id = update.message.chat.id
+    account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+    selected_lang = account.language if account.language else 'en'  # Default to English if no language is set
+
+    # Send message in the user's selected language
+    await update.message.reply_text(MESSAGES[selected_lang]['welcome_back'].format(username=username))
+    
+    # Ask for the store logo in the user's selected language
+    await update.message.reply_text(MESSAGES[selected_lang]['commands'] + " " + MESSAGES[selected_lang]['buttons']['add_product'])
+
+    # Update the state for awaiting logo
     context.user_data['state'] = 'awaiting_logo'
+
+
 
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -483,6 +763,9 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Product flow
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Determine the user's selected language
+    selected_lang = 'en'  # Default to 'en' if language is not set
+
     # Check if the update is a message or a callback query
     if update.message:
         chat_id = update.message.chat.id
@@ -491,7 +774,7 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Acknowledge the callback query
         await update.callback_query.answer()
     else:
-        await update.message.reply_text("Unable to determine chat ID.")
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
         return
 
     context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
@@ -500,26 +783,31 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
     if not account:
         try:
-            chat_id = context.user_data.get('chat_id', update.message.chat.id)
+            if update.message:
+                chat_id = context.user_data.get('chat_id', update.message.chat.id)
+            elif update.callback_query:
+                chat_id = context.user_data.get('chat_id', update.callback_query.message.chat.id)
+
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account  # Cache the account for future use
         except Account.DoesNotExist:
             if update.message:
-                await update.message.reply_text("You need to create an account first using /add_account.")
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
             elif update.callback_query:
-                await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
             return
         
-    
-    
+    if account and account.language:
+        selected_lang = account.language
 
-    # Now use the correct update object to reply
+    # Now use the correct update object to reply with translated text
     if update.message:
-        await update.message.reply_text('Please provide the category for the product.')
+        await update.message.reply_text(MESSAGES[selected_lang]['provide_category'])
     else:
-        await update.callback_query.message.reply_text('Please provide the category for the product.')
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['provide_category'])
 
     context.user_data['state'] = 'awaiting_category'
+
 
 
 # Handle product category step
@@ -527,10 +815,17 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category_name = update.message.text
     account = context.user_data.get('account')
 
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+
+    # If the language is not set, check the account for the preferred language
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     try:
         category = await sync_to_async(Category.objects.get)(name=category_name, account=account)
         context.user_data['category'] = category
-        await update.message.reply_text('Please provide the item name.')
+        await update.message.reply_text(MESSAGES[selected_lang]['item_name_prompt'])
         context.user_data['state'] = 'awaiting_item_name'
 
     except Category.DoesNotExist:
@@ -539,23 +834,36 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handle category creation confirmation
 async def handle_category_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     category_name = context.user_data['category_name']
     keyboard = [
         [
-            InlineKeyboardButton("Yes", callback_data="yes"),
-            InlineKeyboardButton("No", callback_data="no"),
-            InlineKeyboardButton("Cancel", callback_data="cancel")
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data="yes"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data="no"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['cancel'], callback_data="cancel")
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
+    # Use the translated message for category confirmation
     await update.message.reply_text(
-        f"Category '{category_name}' does not exist for this account. Do you want to create it?",
+        MESSAGES[selected_lang]['category_confirmation'].format(category_name=category_name),
         reply_markup=reply_markup
     )
 
 
+
 async def show_categories_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    
     chat_id = update.callback_query.message.chat.id
     account = context.user_data.get('account')
 
@@ -565,14 +873,17 @@ async def show_categories_for_deletion(update: Update, context: ContextTypes.DEF
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account
         except Account.DoesNotExist:
-            await update.callback_query.message.reply_text("No account found. Please add an account first.")
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
             return
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
 
     # Fetch categories related to the account asynchronously
     categories = await sync_to_async(list)(Category.objects.filter(account=account))  # Ensure it's a list
 
     if not categories:
-        await update.callback_query.message.reply_text("No categories available to delete.")
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_categories_available'])
         return
 
     # Create InlineKeyboard with category names as options
@@ -580,11 +891,11 @@ async def show_categories_for_deletion(update: Update, context: ContextTypes.DEF
     for category in categories:
         keyboard.append([InlineKeyboardButton(category.name, callback_data=f"delete_category_{category.id}")])
 
-    keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])  # Add a cancel button
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")])  # Add a cancel button
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.callback_query.message.reply_text(
-        "Select the category you want to delete:",
+        MESSAGES[selected_lang]['select_category_to_delete'],
         reply_markup=reply_markup
     )
 
@@ -593,50 +904,92 @@ async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     category_id = query.data.split("_")[2]  # Extract the category ID from the callback data
 
+    # Fetch the language from context or account
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     try:
         category = await sync_to_async(Category.objects.get)(id=category_id)
+        category_name = category.name
         await sync_to_async(category.delete)()  # Delete the category
 
-        await query.message.reply_text(f"Category '{category.name}' has been deleted successfully.")
+        # Send the success message with translation
+        await query.message.reply_text(
+            MESSAGES[selected_lang]['category_deleted'].format(category_name=category_name)
+        )
     except Exception as e:
-        await query.message.reply_text(f"An error occurred while deleting the category: {str(e)}")
+        # Send the error message with translation
+        await query.message.reply_text(
+            MESSAGES[selected_lang]['category_delete_error'].format(error_message=str(e))
+        )
 
 # Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     item_name = update.message.text
     context.user_data['item_name'] = item_name
-    await update.message.reply_text('Please provide the price for the product.')
+
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+
+    # If the language is not set, check the account for the preferred language
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await update.message.reply_text(MESSAGES[selected_lang]['item_price_prompt'])
     context.user_data['state'] = 'awaiting_price'
 
-
 async def handle_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
 
     price = update.message.text
 
     if not price.isdigit():
-        await update.message.reply_text("Invalid price. Please enter a numeric value.")
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_price'])
         return
 
     context.user_data['price'] = int(price)
-    await update.message.reply_text('Please provide a description for the product.')
+    await update.message.reply_text(MESSAGES[selected_lang]['awaiting_description'])
     context.user_data['state'] = 'awaiting_description'
 
+
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
     description = update.message.text
     context.user_data['description'] = description  # Store the description for the next step
-    await update.message.reply_text('Please send an image of the product.')
+    
+    # Use the translated message for asking for the product image
+    await update.message.reply_text(MESSAGES[selected_lang]['awaiting_image'])
     context.user_data['state'] = 'awaiting_image'
 
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-  
-    await update.message.reply_text('Downloading your product image, this may take a few moments...')
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await update.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
 
     try:
         # Download the product image
         product_image_file = await update.message.photo[-1].get_file()
         product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}.jpg"
         await product_image_file.download_to_drive(product_image_path)
-        await update.message.reply_text('Product image downloaded successfully.')
+        await update.message.reply_text(MESSAGES[selected_lang]['image_downloaded_successfully'])
 
         # Save the menu item with all the information
         account = context.user_data['account']
@@ -646,10 +999,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
                 context.user_data['account'] = account  # Cache the account for future use
             except Account.DoesNotExist:
-                if update.message:
-                    await update.message.reply_text("You need to create an account first using /add_account.")
-                elif update.callback_query:
-                    await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
+                await update.message.reply_text(MESSAGES[selected_lang]['create_account_first'])
                 return
         
         menu_item_data = {
@@ -669,51 +1019,33 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         website_url = f"tidy-taps.com/f/{quote(username)}"
 
-        # Generate the QR code for the website URL
-        #qr = qrcode.QRCode(
-        #    version=1,
-        #    error_correction=qrcode.constants.ERROR_CORRECT_L,
-        #    box_size=10,
-        #    border=4,
-        #)
-        #qr.add_data(website_url)
-        #qr.make(fit=True)
-
-        # Save the QR code image in memory
-        #qr_img = qr.make_image(fill='black', back_color='white')
-        #qr_bytes = BytesIO()
-        #qr_img.save(qr_bytes, format='PNG')
-        #qr_bytes.seek(0)
-
         # Send the success message with the website link
         await update.message.reply_text(
-            f"🎉 Product '{menu_item.item}' added successfully!.\n"
-            f"Visit your product page at: {website_url}"
+            f"🎉 {MESSAGES[selected_lang]['product_added_successfully'].format(item=menu_item.item)}\n"
+            f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
         )
-        welcome_message = f"Controll Over All Things ! 🎉\n\n"
         
-        # No Add Account button since the account already exists
+        welcome_message = MESSAGES[selected_lang]['control_over_all_things']
+        
         keyboard = [
             [
-                InlineKeyboardButton("➕ Add Product", callback_data="add_product"),  # Frequently used actions together
-                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product')
+                InlineKeyboardButton(MESSAGES[selected_lang]['add_product'], callback_data="add_product"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['edit_product'], callback_data='edit_product')
             ],
             [
-                InlineKeyboardButton("❌ Delete Product", callback_data='delete_product')  # Isolated action
+                InlineKeyboardButton(MESSAGES[selected_lang]['delete_product'], callback_data='delete_product')
             ],
             [
-                InlineKeyboardButton("🗑️ Delete Category", callback_data="delete_category"),  # Actions related to categories together
-                InlineKeyboardButton("🛠️ Edit Store Info", callback_data="edit_store_info")
+                InlineKeyboardButton(MESSAGES[selected_lang]['delete_category'], callback_data="delete_category"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['edit_store_info'], callback_data="edit_store_info")
             ],
             [
-                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")  # Isolated utility action
+                InlineKeyboardButton(MESSAGES[selected_lang]['get_website_qr'], callback_data="get_website_qr")
             ]
         ]
 
-        # Show Add Account button since no account exists
-
         reply_markup = InlineKeyboardMarkup(keyboard)
-            #await update.message.reply_photo(photo=qr_bytes, caption=f"Scan the QR code to visit your website page: {website_url}")
+
         await update.message.reply_text(
             welcome_message,
             reply_markup=reply_markup
@@ -722,15 +1054,15 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
     except Exception as e:
         print(e)
-        await update.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
-
+        await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
 
 async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang',)  # Default to 'en' if language is not set
+    
     try:
         account = context.user_data.get('account')
         if not account:
             try:
-
                 if update.message:
                     chat_id = context.user_data.get('chat_id', update.message.chat.id)
                 elif update.callback_query:
@@ -740,17 +1072,19 @@ async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAU
                 context.user_data['account'] = account  # Cache the account for future use
             except Account.DoesNotExist:
                 if update.message:
-                    await update.message.reply_text("You need to create an account first using /add_account.")
+                    await update.message.reply_text(MESSAGES[selected_lang]['create_account_first'])
                 elif update.callback_query:
-                    await update.callback_query.message.reply_text("You need to create an account first using /add_account.")
+                    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['create_account_first'])
                 return
-        
+        account = context.user_data.get('account')
+        if not selected_lang and account:
+            selected_lang = account.language  # Replace with the actual field name for language in your Account model
 
         # Fetch products related to the account using sync_to_async for Django ORM query
         products = await sync_to_async(list)(MenuItem.objects.filter(account=account))
 
         if not products:
-            await update.callback_query.message.reply_text("No products available to delete.")
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_products_available'])
             return
 
         # Create InlineKeyboard with product names as options
@@ -758,18 +1092,25 @@ async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAU
         for product in products:
             keyboard.append([InlineKeyboardButton(product.item, callback_data=f"delete_product_{product.id}")])
 
-        keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])
+        keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.callback_query.message.reply_text(
-            "Select the product you want to delete:",
+            MESSAGES[selected_lang]['select_product_to_delete'],
             reply_markup=reply_markup
         )
 
     except Exception as e:
-        await update.callback_query.message.reply_text(f"An error occurred: {str(e)}")
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['error_occurred'].format(error=str(e)))
+
 
 async def delete_selected_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
     query = update.callback_query.data
     product_id = query.split("_")[-1]  # Extract the product ID from the callback data
 
@@ -778,68 +1119,80 @@ async def delete_selected_product(update: Update, context: ContextTypes.DEFAULT_
         product = await sync_to_async(MenuItem.objects.get)(id=product_id)
         await sync_to_async(product.delete)()
 
-        await update.callback_query.message.reply_text(f"Product '{product.item}' has been deleted successfully!")
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['product_deleted'].format(product_name=product.item)
+        )
 
     except MenuItem.DoesNotExist:
-        await update.callback_query.message.reply_text("The selected product does not exist.")
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_exist'])
     except Exception as e:
-        await update.callback_query.message.reply_text(f"An error occurred: {str(e)}")
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['error_occurred'].format(error=str(e)))
 
 
 async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
+
     if not update.message.photo:
         if update.message.video:
-            await update.message.reply_text('You uploaded a video. Please upload an image instead.')
+            await update.message.reply_text(MESSAGES[selected_lang]['video_upload'])
             return
         elif update.message.document:
-            await update.message.reply_text('You uploaded a document. Please upload an image instead.')
+            await update.message.reply_text(MESSAGES[selected_lang]['document_upload'])
             return
         else:
-            await update.message.reply_text('Please upload an image.')
+            await update.message.reply_text(MESSAGES[selected_lang]['no_image_upload'])
             return
 
     # Check the state and handle accordingly
     print(context.user_data.get('state'))
     if context.user_data.get('state') == 'awaiting_logo':
         await handle_logo(update, context)
-    elif context.user_data.get('state') == 'awaiting_product_image' or context.user_data.get('state') == "awaiting_image" :
+    elif context.user_data.get('state') in ['awaiting_product_image', 'awaiting_image']:
         await handle_product_image(update, context)
-    elif context.user_data.get('state') == "awaiting_new_image":
+    elif context.user_data.get('state') == 'awaiting_new_image':
         await update_product_image(update, context)
-
-    elif context.user_data.get('state') == "awaiting_edit_logo":
+    elif context.user_data.get('state') == 'awaiting_edit_logo':
         await handle_edit_logo(update, context)
     else:
-        await update.message.reply_text('Please Read the message Again.')
+        await update.message.reply_text(MESSAGES[selected_lang]['read_message_again'])
 
 
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.callback_query.message.chat.id
+    
+    # Set default language to English ('en') initially
+    selected_lang = 'en'
+
     # Assuming context.user_data['account'] has the logged-in account details
     account = context.user_data.get('account')
+    
     if not account:
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account  # Cache the account in user_data
         except Account.DoesNotExist:
             keyboard = [
-                [InlineKeyboardButton("Add Account", callback_data="add_account")],
-                [InlineKeyboardButton("Cancel", callback_data="cancel")]
+                [InlineKeyboardButton(MESSAGES['en']['buttons']['add_account'], callback_data="add_account")],
+                [InlineKeyboardButton(MESSAGES['en']['buttons']['cancel'], callback_data="cancel")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await update.callback_query.message.reply_text(
-                "No account found associated with your Telegram ID. Please create an account first.",
+                MESSAGES['en']['no_account'],
                 reply_markup=reply_markup
             )
             return
-    
 
-    # Fetch the products for the account using sync_to_async to avoid the synchronous operation error
-    products = await sync_to_async(list)(MenuItem.objects.filter(account=account))  # Ensure it's converted to a list
+    # Set the user's language if available in the account, otherwise use 'en' (English)
+    if account and account.language:
+        selected_lang = account.language
+
+    # Fetch the products for the account using sync_to_async to avoid synchronous operation errors
+    products = await sync_to_async(list)(MenuItem.objects.filter(account=account))
 
     if not products:
-        await update.callback_query.message.reply_text("No products found for editing.")
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_products'])
         return
 
     # Create inline buttons for each product
@@ -847,15 +1200,23 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for product in products:
         keyboard.append([InlineKeyboardButton(product.item, callback_data=f"edit_{product.id}")])
 
-    keyboard.append([InlineKeyboardButton("Cancel", callback_data="cancel")])
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['cancel'], callback_data="cancel")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Since this is triggered from a button, you need to use callback_query.message
-    await update.callback_query.message.reply_text("Choose a product to edit:", reply_markup=reply_markup)
-
+    # Send translated message based on the selected language
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['buttons']['choose_product'],  # Translated message
+        reply_markup=reply_markup
+    )
 
 
 async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
+
     # Fetch the selected product by ID
     try:
         product = await sync_to_async(MenuItem.objects.get)(id=product_id)
@@ -863,22 +1224,25 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
 
         # Show buttons for editing options: Name, Price, Image
         keyboard = [
-            [InlineKeyboardButton("Edit Name", callback_data=f"edit_name_{product.id}")],
-            [InlineKeyboardButton("Edit Price", callback_data=f"edit_price_{product.id}")],
-            [InlineKeyboardButton("Edit Image", callback_data=f"edit_image_{product.id}")]
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_name'], callback_data=f"edit_name_{product.id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_price'], callback_data=f"edit_price_{product.id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_image'], callback_data=f"edit_image_{product.id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.callback_query.message.reply_text(
-            f"You selected: {product.item}\nChoose what you want to edit:",
+            MESSAGES[selected_lang]['selected_product'].format(product.item),
             reply_markup=reply_markup
         )
 
     except MenuItem.DoesNotExist:
-        await update.callback_query.message.reply_text("The selected product does not exist.")
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_exist'])
 
 
 async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
+
     try:
         account = context.user_data.get('account')
         if not account:
@@ -887,22 +1251,23 @@ async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     chat_id = context.user_data.get('chat_id', update.message.chat.id)
                 elif update.callback_query:
                     chat_id = context.user_data.get('chat_id', update.callback_query.message.chat.id)
-                    
+
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
                 context.user_data['account'] = account  # Cache the account in user_data
             except Account.DoesNotExist:
                 keyboard = [
-                    [InlineKeyboardButton("Add Account", callback_data="add_account")],
-                    [InlineKeyboardButton("Cancel", callback_data="cancel")]
+                    [InlineKeyboardButton(MESSAGES[selected_lang]['add_account'], callback_data="add_account")],
+                    [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
 
                 await update.callback_query.message.reply_text(
-                    "No account found associated with your Telegram ID. Please create an account first.",
+                    MESSAGES[selected_lang]['no_account_found'],
                     reply_markup=reply_markup
                 )
                 return
-            
+        if account and account.language:
+            selected_lang = account.language
 
         # Generate the website URL
         username = account.username
@@ -925,49 +1290,74 @@ async def send_website_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
         qr_bytes.seek(0)
 
         # Send the website URL and QR code
-        await update.callback_query.message.reply_text(f"Your website URL is: {website_url}")
-        await update.callback_query.message.reply_photo(photo=qr_bytes, caption="Here is your QR code.")
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['website_url'].format(website_url=website_url)
+        )
+        await update.callback_query.message.reply_photo(photo=qr_bytes, caption=MESSAGES[selected_lang]['qr_code_caption'])
     
     except Exception as e:
         await update.callback_query.message.reply_text(f"An error occurred: {str(e)}")
 
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
     # Handle video upload scenario
     if context.user_data.get('state') == "awaiting_logo":
-        await update.message.reply_text('You uploaded a video for the logo. Please upload an image as the logo for the Store.')
-
+        await update.message.reply_text(MESSAGES[selected_lang]['video_for_logo'])
+    
     elif context.user_data.get('state') == "awaiting_product_image":
-        await update.message.reply_text('You uploaded a video for the product image. Please upload an image for the product instead.')
+        await update.message.reply_text(MESSAGES[selected_lang]['video_for_product_image'])
+    
     else:
-        await update.message.reply_text('You uploaded a video. Please upload an image instead if you intended to upload a logo or product image.')
+        await update.message.reply_text(MESSAGES[selected_lang]['general_video_upload'])
 
 
 async def handle_product_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
     product = context.user_data.get('product')
-    
-    # Example: handle updating the product name (similarly handle other fields)
-    product.item = update.message.text
-    await sync_to_async(product.save)()
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
+    if product:
+        # Example: handle updating the product name (similarly handle other fields)
+        product.item = update.message.text
+        await sync_to_async(product.save)()
 
-    await update.message.reply_text(f"Product '{product.item}' updated successfully.")
-    context.user_data.pop('product')  # Clear product from context after update
+        await update.message.reply_text(MESSAGES[selected_lang]['product_update_success'].format(product.item))
+        context.user_data.pop('product')  # Clear product from context after update
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
 
 async def start_editing_name(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
-    product = context.user_data.get('product')
-    if product and product.id == product_id:
-        await update.callback_query.message.reply_text("Please send the new name for the product.")
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
+
+    try:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['edit_product_name'])
         context.user_data['state'] = 'awaiting_new_name'
-    else:
-        await update.callback_query.message.reply_text("Product not found.")
+    except Exception as e:
+        print(e)
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
+
 
 async def start_editing_price(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
     product = context.user_data.get('product')
-    if product and product.id == product_id:
-        await update.callback_query.message.reply_text("Please send the new price for the product.")
+
+    try:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['edit_product_price'])
         context.user_data['state'] = 'awaiting_new_price'
-    else:
-        await update.callback_query.message.reply_text("Product not found.")
+    except Exception as e:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
 
 async def edit_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -977,43 +1367,87 @@ async def edit_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     _, product_id = query.data.split('_')
     context.user_data['editing_product_id'] = int(product_id)  # Store the product ID in user data
 
-    await query.edit_message_text(text="Please upload the new image for the product.")
-
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
+    await query.edit_message_text(text=MESSAGES[selected_lang]['edit_product_image'])
 
 async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
     try:
-        
-        await update.callback_query.message.reply_text('Please upload an image of the product.')
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['upload_product_image'])
         context.user_data['state'] = 'awaiting_new_image'
         context.user_data['product_id'] = product_id
- 
     except Exception as e:
         print(e)
-        await update.callback_query.message.reply_text(f'An error occurred while downloading the product image: {str(e)}')
-
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['error_message'].format(str(e)))
 
 async def edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()  # Acknowledge the callback
     context.user_data['state'] = 'awaiting_title_update'
-    await update.callback_query.message.reply_text('Please enter the new title for your store.')
+    
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_new_title'])
 
 async def cancel_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()  # Clear the current state and any cached data
-    await update.message.reply_text("Process has been canceled. You can start again by using /start.")
+    
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    if account and account.language:
+        selected_lang = account.language
+    await update.message.reply_text(MESSAGES[selected_lang]['process_canceled'])
+
 
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+
+    selected_lang = 'en'  # Default to 'en'
+
+    # Try to get the user's account and their language preference
+    chat_id = query.message.chat.id
+    try:
+        account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+        selected_lang = account.language if account.language else 'en'  # Use the user's preferred language
+    except Account.DoesNotExist:
+        # If the account does not exist, continue with the default language ('en')
+        pass
+
+
     if query.data == "add_account":
         await add_account(update, context)
+
+    elif query.data.startswith("lang_"):
+        selected_lang = query.data.split('_')[1]  # Get the language code (e.g., 'en', 'ar')
+        chat_id = query.message.chat.id
+
+        if query.data == 'lang_en':
+            context.user_data['lang'] = 'en'
+        elif query.data == 'lang_ar':
+            context.user_data['lang'] = 'ar'
+        # Fetch or create the user's account and save the language
+        account, created = await sync_to_async(Account.objects.get_or_create)(telegramId=chat_id)
+        account.language = selected_lang
+        await sync_to_async(account.save)()
+
+        # Show the welcome message in the selected language
+        await show_start_message(update, context, account)
 
     elif query.data == "add_product":
         await add_product(update, context)
 
     elif query.data == 'edit_product':
-        await query.message.reply_text('Please choose a product to edit.')
+        await query.message.reply_text(MESSAGES[selected_lang]['buttons']['edit_product'])
         await show_products(update, context)
 
     elif query.data == "cancel":
@@ -1059,7 +1493,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_secondary_color(update, context)
 
     elif query.data == 'delete_product':
-        await query.message.reply_text('Please choose a product to edit.')
         await show_products_for_deletion(update, context)
 
     elif query.data.startswith('delete_product_'):
@@ -1076,8 +1509,15 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await sync_to_async(new_category.save)()
         context.user_data['category'] = new_category
 
+        # Get the user's selected language
+        selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+
+        # If the language is not set, check the account for the preferred language
+        if not selected_lang and account:
+            selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
         await query.message.reply_text(
-            text=f"Category '{category_name}' created successfully! Please provide the item name."
+            text=MESSAGES[selected_lang]['category_creation_success'].format(category_name=category_name)
         )
         context.user_data['state'] = 'awaiting_item_name'
 
@@ -1092,7 +1532,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token
+    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
