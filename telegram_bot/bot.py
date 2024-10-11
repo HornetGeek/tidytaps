@@ -166,6 +166,22 @@ MESSAGES = {
         'product_not_found': "Product not found.",
         'category_deleted': "Category '{category_name}' has been deleted successfully.",
         'category_delete_error': "An error occurred while deleting the category: {error_message}",
+        'send_username': 'Please send the **username** for your store.\n\n'
+                         'This username will be part of your store\'s website URL, like this:\n'
+                          '👉 tidy-taps.c*m/s/your-username\n\n',
+        'send_logo': 'Now please send the **logo** (as an image) for the store.',
+        'downloading_logo': 'Downloading your logo, this may take a few moments...',
+        'logo_downloaded': 'Logo downloaded successfully.',
+        'ask_title': 'Now please send the **title** for the Store.',
+        'invalid_image_format': 'The file uploaded is not a valid image format. Please upload a .jpg, .jpeg, .png, or .gif file.',
+        'error_downloading_logo': 'An error occurred while downloading the logo: {}',
+        'ask_phone_number': 'Finally, please send the WhatsApp phone number for the account.',
+        'invalid_phone_number': 'Invalid phone number. Please enter a valid phone number in the format 01XXXXXXXXX.',
+        'user_not_found': 'User with ID 1 does not exist.',
+        'account_added_success': '🎉 Account added successfully!\n\nYou can now add a new product for your account by typing /add_product.\nFollow the prompts to specify the product category, name, price, description, and image.',
+        'welcome_message': 'You can control everything! 🎉\n\n',
+        'commands_prompt': 'You can use the following commands:',
+        'username_taken': 'The username you provided is already taken. Please choose a different username and try again.',
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -265,6 +281,22 @@ MESSAGES = {
         'product_not_found': "المنتج غير موجود.",
         'category_deleted': "تم حذف الفئة '{category_name}' بنجاح.",
         'category_delete_error': "حدث خطأ أثناء حذف الفئة: {error_message}",
+        'send_username': ('يرجى إرسال **اسم المستخدم** لمتجرك.\n\n'
+                         'سيكون اسم المستخدم جزءًا من عنوان URL الخاص بموقع متجرك، كالتالي:\n'
+                         '👉 tidy-taps.c*m/s/اسم-المستخدم-الخاص-بك\n\n'),
+        'send_logo': 'الآن يرجى إرسال **الشعار** (كصورة) لمتجرك.',
+        'downloading_logo': 'جارٍ تحميل الشعار الخاص بك، قد يستغرق الأمر بضع لحظات...',
+        'logo_downloaded': 'تم تنزيل الشعار بنجاح.',
+        'ask_title': 'الآن يرجى إرسال **عنوان المتجر**.',
+        'invalid_image_format': 'الملف المرفوع ليس تنسيق صورة صالح. يرجى تحميل ملف .jpg أو .jpeg أو .png أو .gif.',
+        'error_downloading_logo': 'حدث خطأ أثناء تحميل الشعار: {}',
+        'ask_phone_number': 'أخيرًا، يرجى إرسال رقم الهاتف WhatsApp للحساب.',
+        'invalid_phone_number': 'رقم الهاتف غير صالح. يرجى إدخال رقم هاتف صالح بالتنسيق 01XXXXXXXXX.',
+        'user_not_found': 'لا يوجد مستخدم بالمعرف 1.',
+        'account_added_success': '🎉 تم إضافة الحساب بنجاح!\n\nيمكنك الآن إضافة منتج جديد لحسابك عن طريق كتابة /add_product.\nاتبع التعليمات لتحديد فئة المنتج، الاسم، السعر، الوصف، والصورة.',
+        'welcome_message': 'يمكنك التحكم في كل شيء! 🎉\n\n',
+        'commands_prompt': 'يمكنك استخدام الأوامر التالية:',
+        'username_taken': 'اسم المستخدم الذي قدمته مأخوذ بالفعل. يرجى اختيار اسم مستخدم مختلف والمحاولة مرة أخرى.',
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -279,7 +311,7 @@ MESSAGES = {
             'cancel': "إلغاء"
         }
     }
-    # Add more languages as needed
+    # Add more languages as needed,
 }
 
 
@@ -292,19 +324,17 @@ def get_message(user, key):
 
 
 async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if no language is set
+
     if update.message:
         await update.message.reply_text(
-            'Please send the **username** for your store.\n\n'
-            'This username will be part of your store\'s website URL, like this:\n'
-            '👉 **tidy-taps.com/s/your-username**'
+            MESSAGES[selected_lang]['send_username']
         )
         context.user_data['state'] = 'awaiting_username'
 
     elif update.callback_query:
         await update.callback_query.message.reply_text(
-            'Please send the **username** for your store.\n\n'
-            'This username will be part of your store\'s website URL, like this:\n'
-            '👉 **tidy-taps.com/s/your-username**'
+            MESSAGES[selected_lang]['send_username']
         )
         context.user_data['state'] = 'awaiting_username'
 
@@ -313,17 +343,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state = context.user_data.get('state')
     selected_lang = context.user_data.get('lang')
     account = context.user_data.get('account')
+
     if not account:
         chat_id = context.user_data.get('chat_id', update.message.chat.id)
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account
         except Account.DoesNotExist:
-            await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
-            return
+            pass
+                
+    # Set the language based on the account if not already set
     if not selected_lang and account:
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
-        
+
+    # If language is still not found, show start message instead
+    if selected_lang not in MESSAGES:
+        await start(update, context)
+        return
     if user_state == 'awaiting_username':
         await handle_username(update, context)
     elif user_state == 'awaiting_logo':
@@ -357,7 +393,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif user_state =="waiting_for_secondary_color":
         await handle_secondary_color_response(update, context)
     else:
-        await show_start_message(update, context, account)
+        print("we are in else in message handle")
+        if not account:
+                try:
+                    account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+                    context.user_data['account'] = account  # Cache the account in user_data
+                except Account.DoesNotExist:
+                    keyboard = [
+                        [InlineKeyboardButton(MESSAGES['en']['buttons']['add_account'], callback_data="add_account")],
+                        [InlineKeyboardButton(MESSAGES['en']['buttons']['cancel'], callback_data="cancel")]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+
+                    await update.callback_query.message.reply_text(
+                        MESSAGES['en']['no_account'],
+                        reply_markup=reply_markup
+                    )
+                    return
+        else:
+            await show_start_message(update, context, account)
 
 
 
@@ -636,14 +690,17 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Retrieve the account to get the language preference
     chat_id = update.message.chat.id
-    account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-    selected_lang = account.language if account.language else 'en'  # Default to English if no language is set
+    try:
+        account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+        selected_lang = account.language if account.language else 'en'  # Default to English if no language is set
+
+    except Exception as e:
+        selected_lang = context.user_data.get('lang', 'en')
 
     # Send message in the user's selected language
-    await update.message.reply_text(MESSAGES[selected_lang]['welcome_back'].format(username=username))
     
     # Ask for the store logo in the user's selected language
-    await update.message.reply_text(MESSAGES[selected_lang]['commands'] + " " + MESSAGES[selected_lang]['buttons']['add_product'])
+    await update.message.reply_text(MESSAGES[selected_lang]['send_logo'])
 
     # Update the state for awaiting logo
     context.user_data['state'] = 'awaiting_logo'
@@ -652,8 +709,9 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Check if the upload is an image
-    await update.message.reply_text('Downloading your logo, this may take a few moments...')
+    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if not set
+
+    await update.message.reply_text(MESSAGES[selected_lang]['downloading_logo'])
 
     chat_id = context.user_data.get('chat_id', update.message.chat.id)
     context.user_data['chat_id'] = chat_id  # Cache chat ID
@@ -662,36 +720,39 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Get the highest resolution photo (last one in the list)
         logo_file = await update.message.photo[-1].get_file()
 
-        # Get file metadata to ensure it's an image (Telegram will provide only valid image files in update.message.photo)
+        # Ensure it's a valid image file
         if logo_file.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')):
             logo_path = f"static/img/logos/{chat_id}_logo.jpg"
             await logo_file.download_to_drive(logo_path)
 
-            # Confirm successful download and update state
-            await update.message.reply_text('Logo downloaded successfully.')
+            await update.message.reply_text(MESSAGES[selected_lang]['logo_downloaded'])
             context.user_data['logo'] = logo_path
-            await update.message.reply_text('Now please send the title for the Store.')
+            await update.message.reply_text(MESSAGES[selected_lang]['ask_title'])
             context.user_data['state'] = 'awaiting_title'
         else:
-            await update.message.reply_text('The file uploaded is not a valid image format. Please upload a .jpg, .jpeg, .png, or .gif file.')
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_format'])
 
     except Exception as e:
-        await update.message.reply_text(f'An error occurred while downloading the logo: {str(e)}')
+        await update.message.reply_text(MESSAGES[selected_lang]['error_downloading_logo'].format(str(e)))
+
 
 # Handle account title step
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang', 'en')
     title = update.message.text
     context.user_data['title'] = title
-    await update.message.reply_text('Finally, please send the whatsapp phone number for the account.')
+    await update.message.reply_text(MESSAGES[selected_lang]['ask_phone_number'])
     context.user_data['state'] = 'awaiting_phone'
+
 
 # Handle account phone number step
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang', 'en')
     phone_number = update.message.text
-    phone_pattern = r'^01\d{9}$'  # This will match 11 characters starting with 01
+    phone_pattern = r'^01\d{9}$'  # Match 11 characters starting with 01
 
     if not re.match(phone_pattern, phone_number):
-        await update.message.reply_text("Invalid phone number. Please enter a valid phone number in the format 01XXXXXXXXX.")
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone_number'])
         return
 
     context.user_data['phone_number'] = phone_number
@@ -699,7 +760,7 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user = await sync_to_async(User.objects.get)(id=1)
     except User.DoesNotExist:
-        await update.message.reply_text("User with ID 1 does not exist.")
+        await update.message.reply_text(MESSAGES[selected_lang]['user_not_found'])
         return
 
     account_data = {
@@ -714,46 +775,40 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_account = Account(**account_data)
     try:
         await sync_to_async(new_account.save)()
-        await update.message.reply_text(
-            '🎉 Account added successfully!\n\n'
-            'You can now add a new product for your account by typing /add_product.\n'
-            'Follow the prompts to specify the product category, name, price, description, and image.'
-        )
-        welcome_message = f"You Can Controll over All Thing! 🎉\n\n"
-        
-        # No Add Account button since the account already exists
+        await update.message.reply_text(MESSAGES[selected_lang]['account_added_success'])
+
+        welcome_message = MESSAGES[selected_lang]['welcome_message']
+
+        # Define the keyboard for user actions
         keyboard = [
             [
-                InlineKeyboardButton("➕ Add Product", callback_data="add_product"),  # Frequently used actions together
-                InlineKeyboardButton("✏️ Edit Product", callback_data='edit_product')
+                InlineKeyboardButton(MESSAGES[selected_lang]['add_product'], callback_data="add_product"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['edit_product'], callback_data='edit_product')
             ],
             [
-                InlineKeyboardButton("❌ Delete Product", callback_data='delete_product')  # Isolated action
+                InlineKeyboardButton(MESSAGES[selected_lang]['delete_product'], callback_data='delete_product')
             ],
             [
-                InlineKeyboardButton("🗑️ Delete Category", callback_data="delete_category"),  # Actions related to categories together
-                InlineKeyboardButton("🛠️ Edit Store Info", callback_data="edit_store_info")
+                InlineKeyboardButton(MESSAGES[selected_lang]['delete_category'], callback_data='delete_category'),
+                InlineKeyboardButton(MESSAGES[selected_lang]['edit_store_info'], callback_data='edit_store_info')
             ],
             [
-                InlineKeyboardButton("🌐 Get Website & QR Code", callback_data="get_website_qr")  # Isolated utility action
+                InlineKeyboardButton(MESSAGES[selected_lang]['get_website_qr'], callback_data='get_website_qr')
             ]
         ]
-     
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(
-            welcome_message + "You can use the following commands:", 
+            welcome_message + MESSAGES[selected_lang]['commands_prompt'],
             reply_markup=reply_markup
         )
 
     except IntegrityError as e:
         print(e)
-        
-        await update.message.reply_text(
-            "The username you provided is already taken. Please choose a different username and try again."
-        )
-        await context.bot.send_message(chat_id="1281643104", text=str(e)+ " " +str(phone_number))
+
+        await update.message.reply_text(MESSAGES[selected_lang]['username_taken'])
+        await context.bot.send_message(chat_id="1281643104", text=str(e) + " " + str(phone_number))
         await start(update, context)  # Replace 'start' with your actual start function name
 
         context.user_data.clear()  # Clear user data to restart the process
@@ -1436,7 +1491,28 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif query.data == 'lang_ar':
             context.user_data['lang'] = 'ar'
         # Fetch or create the user's account and save the language
-        account, created = await sync_to_async(Account.objects.get_or_create)(telegramId=chat_id)
+        print("befoore")
+
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            print("after")
+        except Exception as e: 
+            keyboard = [
+                [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['add_account'], callback_data="add_account")],
+                [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['cancel'], callback_data="cancel")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            if update.callback_query:
+                await update.callback_query.message.reply_text(
+                    MESSAGES[selected_lang]['no_account'],
+                    reply_markup=reply_markup
+                )
+            else:
+                await update.message.reply_text(
+                    MESSAGES[selected_lang]['no_account'],
+                    reply_markup=reply_markup
+                )
+            return
         account.language = selected_lang
         await sync_to_async(account.save)()
 
