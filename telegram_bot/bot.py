@@ -184,6 +184,8 @@ MESSAGES = {
         'welcome_message': 'You can control everything! 🎉\n\n',
         'commands_prompt': 'You can use the following commands:',
         'username_taken': 'The username you provided is already taken. Please choose a different username and try again.',
+        'provide_category': 'Please choose a category or create a new one:',
+        'create_new_category': 'Create New Category',
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -262,6 +264,8 @@ MESSAGES = {
         'edit_logo': "تعديل الشعار",
         'edit_title': "تعديل العنوان",
         'edit_color': "تعديل اللون",
+        'create_new_category': 'إنشاء فئة جديدة',
+        'provide_category': 'يرجى اختيار فئة أو إنشاء فئة جديدة:',
         'cancel': "إلغاء",
         'what_to_edit': "ماذا تريد أن تعدل؟",
         'edit_primary_color': "تعديل اللون الأساسي",
@@ -300,6 +304,7 @@ MESSAGES = {
         'welcome_message': 'يمكنك التحكم في كل شيء! 🎉\n\n',
         'commands_prompt': 'يمكنك استخدام الأوامر التالية:',
         'username_taken': 'اسم المستخدم الذي قدمته مأخوذ بالفعل. يرجى اختيار اسم مستخدم مختلف والمحاولة مرة أخرى.',
+        'enter_new_category': 'يرجى إدخال اسم الفئة الجديدة.',
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -819,7 +824,7 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data.clear()
 
-# Product flow
+
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Determine the user's selected language
     selected_lang = context.user_data.get('lang')
@@ -843,12 +848,7 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
     if not account:
         try:
-            if update.message:
-                chat_id = context.user_data.get('chat_id', update.message.chat.id)
-            elif update.callback_query:
-                chat_id = context.user_data.get('chat_id', update.callback_query.message.chat.id)
-
-            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
             context.user_data['account'] = account  # Cache the account for future use
         except Account.DoesNotExist:
             if update.message:
@@ -860,13 +860,20 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if account and account.language:
         selected_lang = account.language
 
-    print("selected_lang before prive_category")
-    print(selected_lang)
+    # Fetch existing categories for the account
+    categories = await sync_to_async(list)(Category.objects.filter(account=account))  # Ensure ORM call is wrapped with sync_to_async
+
+    # Create inline keyboard with existing categories and an option to add a new one
+    keyboard = [[InlineKeyboardButton(category.name, callback_data=f"category_{category.name}")] for category in categories]
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['create_new_category'], callback_data="create_new_category")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     # Now use the correct update object to reply with translated text
     if update.message:
-        await update.message.reply_text(MESSAGES[selected_lang]['provide_category'])
+        await update.message.reply_text(MESSAGES[selected_lang]['provide_category'], reply_markup=reply_markup)
     else:
-        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['provide_category'])
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['provide_category'], reply_markup=reply_markup)
 
     context.user_data['state'] = 'awaiting_category'
 
@@ -874,7 +881,15 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handle product category step
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    category_name = update.message.text
+
+    if update.message:
+        category_name = update.message.text
+    elif update.callback_query and context.user_data.get('category_name'):
+        category_name = context.user_data['category_name']
+    else:
+        await update.callback_query.message.reply_text("Error: Unable to determine category name.")
+        return
+
     account = context.user_data.get('account')
 
     # Get the user's selected language
@@ -887,7 +902,13 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         category = await sync_to_async(Category.objects.get)(name=category_name, account=account)
         context.user_data['category'] = category
-        await update.message.reply_text(MESSAGES[selected_lang]['item_name_prompt'])
+
+        if update.callback_query:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['item_name_prompt'])
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['item_name_prompt'])
+        
+
         context.user_data['state'] = 'awaiting_item_name'
 
     except Category.DoesNotExist:
@@ -915,10 +936,18 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # Use the translated message for category confirmation
-    await update.message.reply_text(
-        MESSAGES[selected_lang]['category_confirmation'].format(category_name=category_name),
-        reply_markup=reply_markup
-    )
+
+    if update.callback_query:
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['category_confirmation'].format(category_name=category_name),
+            reply_markup=reply_markup
+        )
+    else:
+        await update.message.reply_text(
+            MESSAGES[selected_lang]['category_confirmation'].format(category_name=category_name),
+            reply_markup=reply_markup
+        )
+
 
 
 
@@ -1568,6 +1597,17 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data.startswith("edit_logo"):
         await edit_logo(update, context)
+
+    elif query.data.startswith("create_new_category"):
+        selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_new_category'])
+        context.user_data['state'] = 'awaiting_category'
+
+    elif query.data.startswith("category_"):  # Handle category selection
+        category_name = query.data.split("_")[1]  # Extract category name from callback data
+        context.user_data['category_name'] = category_name  # Store the selected category name
+        await handle_category(update, context)  # Call handle_category to process the selected category
+
 
     elif query.data.startswith("edit_title"):
         await edit_title(update, context)
