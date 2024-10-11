@@ -99,6 +99,7 @@ MESSAGES = {
         'awaiting_image': "Please send an image of the product.",
         'create_account_first': "You need to create an account first using /add_account.",
         'no_products_available': "No products available to delete.",
+        'no_products': "No products available.",
         'select_product_to_delete': "Select the product you want to delete:",
         'cancel': "Cancel",
         'error_occurred': "An error occurred: {error}",
@@ -164,6 +165,7 @@ MESSAGES = {
         'product_name_updated': "Product name updated to: {new_name}",
         'product_image_updated': "Product image updated successfully.",
         'product_not_found': "Product not found.",
+        'what_to_edit': 'What would you like to edit?',
         'category_deleted': "Category '{category_name}' has been deleted successfully.",
         'category_delete_error': "An error occurred while deleting the category: {error_message}",
         'send_username': 'Please send the **username** for your store.\n\n'
@@ -212,6 +214,7 @@ MESSAGES = {
         'awaiting_image': "يرجى إرسال صورة للمنتج.",
         'create_account_first': "تحتاج إلى إنشاء حساب أولاً باستخدام /add_account.",
         'no_products_available': "لا توجد منتجات متاحة للحذف.",
+        'no_products': "لا توجد منتجات متاحة.",
         'select_product_to_delete': "اختر المنتج الذي تريد حذفه:",
         'cancel': "إلغاء",
         'error_occurred': "حدث خطأ: {error}",
@@ -819,7 +822,9 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Product flow
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Determine the user's selected language
-    selected_lang = 'en'  # Default to 'en' if language is not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang in add_product")
+    print(selected_lang)
 
     # Check if the update is a message or a callback query
     if update.message:
@@ -855,6 +860,8 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if account and account.language:
         selected_lang = account.language
 
+    print("selected_lang before prive_category")
+    print(selected_lang)
     # Now use the correct update object to reply with translated text
     if update.message:
         await update.message.reply_text(MESSAGES[selected_lang]['provide_category'])
@@ -1491,11 +1498,14 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif query.data == 'lang_ar':
             context.user_data['lang'] = 'ar'
         # Fetch or create the user's account and save the language
-        print("befoore")
+        
 
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-            print("after")
+            account.language = selected_lang
+            await sync_to_async(account.save)()
+            context.user_data['account'] = account
+
         except Exception as e: 
             keyboard = [
                 [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['add_account'], callback_data="add_account")],
@@ -1513,9 +1523,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     reply_markup=reply_markup
                 )
             return
-        account.language = selected_lang
-        await sync_to_async(account.save)()
-
+        
+        print("account.language")
+        print(account.language)
+        print("context.user_data['lang']")
+        print(context.user_data['lang'])
         # Show the welcome message in the selected language
         await show_start_message(update, context, account)
 
