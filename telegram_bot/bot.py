@@ -164,6 +164,7 @@ MESSAGES = {
         'error_updating_title': "An error occurred while updating the title",
         'product_name_updated': "Product name updated to: {new_name}",
         'product_image_updated': "Product image updated successfully.",
+        'enter_new_category': "Please enter the name of the new category:",
         'product_not_found': "Product not found.",
         'what_to_edit': 'What would you like to edit?',
         'category_deleted': "Category '{category_name}' has been deleted successfully.",
