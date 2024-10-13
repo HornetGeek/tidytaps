@@ -65,6 +65,9 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
         ],
         [
             InlineKeyboardButton(buttons['get_website_qr'], callback_data="get_website_qr")
+        ],
+        [
+            InlineKeyboardButton(buttons['help'], callback_data="help")  # New Help button
         ]
     ]
 
@@ -187,6 +190,7 @@ MESSAGES = {
         'username_taken': 'The username you provided is already taken. Please choose a different username and try again.',
         'provide_category': 'Please choose a category or create a new one:',
         'create_new_category': 'Create New Category',
+        'help': "For further assistance, contact us on WhatsApp: \n wa.me/+201554516636",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -198,6 +202,7 @@ MESSAGES = {
             'choose_product': "Choose a product to edit:",
             'yes': "Yes",
             'no': "No",
+            'help': "Ask For Help",
             'cancel': "Cancel"
         }
     },
@@ -306,6 +311,7 @@ MESSAGES = {
         'commands_prompt': 'يمكنك استخدام الأوامر التالية:',
         'username_taken': 'اسم المستخدم الذي قدمته مأخوذ بالفعل. يرجى اختيار اسم مستخدم مختلف والمحاولة مرة أخرى.',
         'enter_new_category': 'يرجى إدخال اسم الفئة الجديدة.',
+        'help': "للمساعدة الإضافية، تواصل بنا على الواتساب: \n wa.me/+201554516636",
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -317,6 +323,7 @@ MESSAGES = {
             'choose_product': "اختر منتجًا لتعديله:",
             'yes': "نعم",
             'no': "لا",
+            'help': "طلب المساعدة",
             'cancel': "إلغاء"
         }
     }
@@ -1630,6 +1637,19 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("edit_"):
         product_id = int(query.data.split("_")[1])  # Extract the product ID from the callback data
         await edit_product(update, context, product_id)
+
+    if query.data == "help":
+        # Send the help message to the user who requested it
+        help_message = MESSAGES[selected_lang]['help']
+        await query.message.reply_text(help_message)
+
+        # Send a notification to your Telegram chat (your chat ID)
+        user = update.effective_user
+        notification_message = f"User {user.username or user.first_name} ({user.id}) has requested help."
+
+        # Get the bot token from the context or directly if available
+        bot = context.bot
+        await bot.send_message(chat_id="1281643104", text=notification_message)
 
     elif query.data == "yes":
         account = context.user_data.get('account')
