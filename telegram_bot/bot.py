@@ -90,7 +90,7 @@ MESSAGES = {
         'welcome_back': "Welcome back, {username}! 🎉\n\n",
         'welcome_new': "Welcome to the bot! 🎉\n\n",
         'commands': "You can use the following commands:",
-        'no_account': "You need to create an account first using /add_account.",
+        'no_account': "You need to create an account first",
         'provide_category': "Please provide the category for the product.",
         'unable_to_determine_chat_id': "Unable to determine chat ID.",
         'category_confirmation': "Category '{category_name}' does not exist for this account. Do you want to create it?",
@@ -100,7 +100,7 @@ MESSAGES = {
         'invalid_price': "Invalid price. Please enter a numeric value.",
         'awaiting_description': "Please provide a description for the product.",
         'awaiting_image': "Please send an image of the product.",
-        'create_account_first': "You need to create an account first using /add_account.",
+        'create_account_first': "You need to create an account first",
         'no_products_available': "No products available to delete.",
         'no_products': "No products available.",
         'select_product_to_delete': "Select the product you want to delete:",
@@ -191,6 +191,7 @@ MESSAGES = {
         'provide_category': 'Please choose a category or create a new one:',
         'create_new_category': 'Create New Category',
         'help': "For further assistance, contact us on WhatsApp: \n wa.me/+201554516636",
+        'photo_required': "Please send the LOGO photo, not text or any other file type.",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -312,6 +313,7 @@ MESSAGES = {
         'username_taken': 'اسم المستخدم الذي قدمته مأخوذ بالفعل. يرجى اختيار اسم مستخدم مختلف والمحاولة مرة أخرى.',
         'enter_new_category': 'يرجى إدخال اسم الفئة الجديدة.',
         'help': "للمساعدة الإضافية، تواصل بنا على الواتساب: \n wa.me/+201554516636",
+        'photo_required': "يرجى إرسال صورة الاشعار، وليس نصًا أو أي نوع آخر من الملفات.",
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -640,7 +642,7 @@ async def update_product_name(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data['product'] = product
 
     await update.message.reply_text(MESSAGES[selected_lang]['product_name_updated'].format(new_name=new_name))
-
+    await show_start_message(update, context, account)
     # Clear the state without removing the product
     context.user_data.pop('state', None)
 
@@ -663,7 +665,7 @@ async def update_product_price(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Send the success message
     await update.message.reply_text(MESSAGES[selected_lang]['price_updated'].format(new_price=new_price))
-
+    await show_start_message(update, context, account)
     # Clean up user data
     context.user_data.pop('product', None)
     context.user_data.pop('state', None)
@@ -692,6 +694,7 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
           # Get user's language, default to 'en'
         await update.message.reply_text(MESSAGES[selected_lang]['product_image_updated'])
 
+        await show_start_message(update, context, account)
     except MenuItem.DoesNotExist:
         lang = context.user_data.get('language', 'en')  # Get user's language, default to 'en'
         await update.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
@@ -726,6 +729,12 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle account logo step
 async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if not set
+    if not update.message.photo:
+        await update.message.reply_text(MESSAGES[selected_lang]['photo_required'])
+        return  # Exit the function if no photo is provided
+
+    await update.message.reply_text(MESSAGES[selected_lang]['downloading_logo'])
+
 
     await update.message.reply_text(MESSAGES[selected_lang]['downloading_logo'])
 
@@ -1221,9 +1230,11 @@ async def delete_selected_product(update: Update, context: ContextTypes.DEFAULT_
         await update.callback_query.message.reply_text(
             MESSAGES[selected_lang]['product_deleted'].format(product_name=product.item)
         )
+        await show_start_message(update, context, account)
 
     except MenuItem.DoesNotExist:
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_exist'])
+        await show_start_message(update, context, account)
     except Exception as e:
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['error_occurred'].format(error=str(e)))
 
