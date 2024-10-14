@@ -182,9 +182,9 @@ MESSAGES = {
         'invalid_image_format': 'The file uploaded is not a valid image format. Please upload a .jpg, .jpeg, .png, or .gif file.',
         'error_downloading_logo': 'An error occurred while downloading the logo: {}',
         'ask_phone_number': 'Finally, please send the WhatsApp phone number for the account.',
-        'invalid_phone_number': 'Invalid phone number. Please enter a valid phone number in the format 01XXXXXXXXX.',
+        'invalid_phone_number': 'Invalid phone number. Please enter a valid phone number. For Egypt, use 01XXXXXXXXX, and for Morocco, use +212XXXXXXXXX or 0XXXXXXXXX.',
         'user_not_found': 'User with ID 1 does not exist.',
-        'account_added_success': '🎉 Account added successfully!\n\nYou can now add a new product for your account by typing /add_product.\nFollow the prompts to specify the product category, name, price, description, and image.',
+        'account_added_success': '🎉 Account added successfully!\n\nYou can now add a new product for your account by clicking the "Add Product" button below. Follow the prompts to specify the product category, name, price, description, and image.',
         'welcome_message': 'You can control everything! 🎉\n\n',
         'commands_prompt': 'You can use the following commands:',
         'username_taken': 'The username you provided is already taken. Please choose a different username and try again.',
@@ -211,7 +211,7 @@ MESSAGES = {
         'welcome_back': "مرحبًا بك مجددًا، {username}! 🎉\n\n",
         'welcome_new': "مرحبًا بك في البوت! 🎉\n\n",
         'commands': "يمكنك استخدام الأوامر التالية:",
-        'no_account': "يجب عليك إنشاء حساب أولاً باستخدام /add_account.",
+        'no_account': "يجب عليك إنشاء حساب أولاً.",
         'provide_category': "يرجى تقديم الفئة للمنتج.",
         'unable_to_determine_chat_id': "غير قادر على تحديد معرف المحادثة.",
         'category_confirmation': "الفئة '{category_name}' غير موجودة لهذا الحساب. هل تريد إنشاءها؟",
@@ -305,9 +305,9 @@ MESSAGES = {
         'invalid_image_format': 'الملف المرفوع ليس تنسيق صورة صالح. يرجى تحميل ملف .jpg أو .jpeg أو .png أو .gif.',
         'error_downloading_logo': 'حدث خطأ أثناء تحميل الشعار: {}',
         'ask_phone_number': 'أخيرًا، يرجى إرسال رقم الهاتف WhatsApp للحساب.',
-        'invalid_phone_number': 'رقم الهاتف غير صالح. يرجى إدخال رقم هاتف صالح بالتنسيق 01XXXXXXXXX.',
+        'invalid_phone_number': 'رقم الهاتف غير صالح. يرجى إدخال رقم هاتف صالح.\nبالنسبة لمصر: 01XXXXXXXXX\nبالنسبة للمغرب: \u200E+212XXXXXXXXX أو 0XXXXXXXXX.',
         'user_not_found': 'لا يوجد مستخدم بالمعرف 1.',
-        'account_added_success': '🎉 تم إضافة الحساب بنجاح!\n\nيمكنك الآن إضافة منتج جديد لحسابك عن طريق كتابة /add_product.\nاتبع التعليمات لتحديد فئة المنتج، الاسم، السعر، الوصف، والصورة.',
+        'account_added_success': '🎉 تم إضافة الحساب بنجاح!\n\nيمكنك الآن إضافة منتج جديد لحسابك عن طريق الضغط على زر "إضافة منتج" أدناه. اتبع التعليمات لتحديد فئة المنتج، الاسم، السعر، الوصف، والصورة.',
         'welcome_message': 'يمكنك التحكم في كل شيء! 🎉\n\n',
         'commands_prompt': 'يمكنك استخدام الأوامر التالية:',
         'username_taken': 'اسم المستخدم الذي قدمته مأخوذ بالفعل. يرجى اختيار اسم مستخدم مختلف والمحاولة مرة أخرى.',
@@ -774,7 +774,8 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang', 'en')
     phone_number = update.message.text
-    phone_pattern = r'^01\d{9}$'  # Match 11 characters starting with 01
+
+    phone_pattern = r'^(01\d{9}|(?:\+212|0)([5-7]\d{8}))$'  # Match 11 characters starting with 01
 
     if not re.match(phone_pattern, phone_number):
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone_number'])
