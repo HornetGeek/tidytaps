@@ -15,6 +15,8 @@ import asyncio
 from urllib.parse import quote
 from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
+from PIL import Image
+import io
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -188,7 +190,6 @@ MESSAGES = {
         'welcome_message': 'You can control everything! 🎉\n\n',
         'commands_prompt': 'You can use the following commands:',
         'username_taken': 'The username you provided is already taken. Please choose a different username and try again.',
-        'provide_category': 'Please choose a category or create a new one:',
         'create_new_category': 'Create New Category',
         'help': "For further assistance, contact us on WhatsApp: \n wa.me/+201554516636",
         'photo_required': "Please send the LOGO photo, not text or any other file type.",
@@ -684,8 +685,22 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
 
         new_image = await update.message.photo[-1].get_file()
-        file_path = f'static/img/items/{product.item}_new_image.jpg'
-        await new_image.download_to_drive(file_path)
+
+        image_stream = io.BytesIO()
+        await new_image.download(image_stream)
+        image_stream.seek(0)
+
+        with Image.open(image_stream) as img:
+            # Compress the image and save it to a new BytesIO object
+            compressed_image_stream = io.BytesIO()
+            img.save(compressed_image_stream, format='JPEG', quality=85)  # Adjust quality as needed
+            compressed_image_stream.seek(0)  # Move to the start of the compressed image stream
+
+            # Save the compressed image to file
+            file_path = f'static/img/items/{product.item}_new_image.jpg'
+            with open(file_path, 'wb') as f:
+                f.write(compressed_image_stream.getvalue())
+
 
         product.picture = file_path
         await sync_to_async(product.save)()
@@ -798,6 +813,9 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'telegramId': context.user_data['chat_id'],
     }
 
+    if selected_lang:
+        account_data['language'] = selected_lang
+
     new_account = Account(**account_data)
     try:
         await sync_to_async(new_account.save)()
@@ -837,10 +855,9 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id="1281643104", text=str(e) + " " + str(phone_number))
         await start(update, context)  # Replace 'start' with your actual start function name
 
-        context.user_data.clear()  # Clear user data to restart the process
+          # Clear user data to restart the process
         return
 
-    context.user_data.clear()
 
 
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1129,6 +1146,7 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         website_url = f"tidy-taps.com/f/{quote(username)}"
 
         # Send the success message with the website link
+
         await update.message.reply_text(
             f"🎉 {MESSAGES[selected_lang]['product_added_successfully'].format(item=menu_item.item)}\n"
             f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
