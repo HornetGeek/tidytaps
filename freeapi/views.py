@@ -76,9 +76,9 @@ class DeliveryByAccountIdView(APIView):
             serializer = DeliverySerializer(delivery)
             return Response(serializer.data)
         except Account.DoesNotExist:
-            return Response(serializer.data)
+            return Response({'error': 'Account not found'})
         except Delivery.DoesNotExist:
-            return Response(serializer.data)
+            return Response({'error': 'Delivery not found'})
 
 # Get Delivery by Username
 class DeliveryByUsernameView(APIView):
@@ -91,9 +91,9 @@ class DeliveryByUsernameView(APIView):
             serializer = DeliverySerializer(delivery)
             return Response(serializer.data)
         except Account.DoesNotExist:
-            return Response(serializer.data)
+            return Response({'error': 'Account not found'})
         except Delivery.DoesNotExist:
-            return Response(serializer.data)
+            return Response({'error': 'Delivery not found'})
 
 
 class SocialMediaRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
