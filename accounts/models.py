@@ -43,6 +43,10 @@ class Account(models.Model):
 
     def __str__(self):
         return self.username
+    
+class Delivery(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="delivery_account")
+    amount = models.CharField(max_length=500,default=0)
 
 class Contacts(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="conatcts_account")

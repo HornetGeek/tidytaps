@@ -19,7 +19,8 @@ urlpatterns = [
     path('contacts/', views.ContactsListCreateAPIView.as_view(), name='contacts-list-create'),
     path('contacts/<int:account_id>/', views.ContactsListCreateAPIView.as_view(), name='contacts-list-create'),
     path('contacts/<int:account_id>/<int:pk>/', views.ContactsRetrieveUpdateDestroyAPIView.as_view(), name='contacts-detail'),
-
+    path('delivery/account_id/<str:account_id>/', views.DeliveryByAccountIdView.as_view(), name='get_delivery_by_account_id'),
+    path('delivery/username/<str:username>/', views.DeliveryByUsernameView.as_view(), name='get_delivery_by_username'),
     # Adresses
     path('adresses/', views.AdressesListCreateAPIView.as_view(), name='adresses-list-create'),
     path('adresses/<int:account_id>/', views.AdressesListCreateAPIView.as_view(), name='adresses-list-create'),

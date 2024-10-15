@@ -83,7 +83,14 @@ class SocialMediaSerializer(serializers.ModelSerializer):
         model = SocialMedia
         fields = '__all__'
 
+class DeliverySerializer(serializers.ModelSerializer):
+    account = AccountSerializer()  # Include the AccountSerializer to embed account details
 
+    class Meta:
+        model = Delivery
+        fields = ['account', 'amount']
+
+        
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

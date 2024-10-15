@@ -25,7 +25,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tidytap.settings')
 django.setup()
 
 # Now you can import your models
-from accounts.models import Account, MenuItem, Category
+from accounts.models import Account, MenuItem, Category, Delivery
 from django.contrib.auth.models import User
 
 LANGUAGES = {
@@ -166,6 +166,7 @@ MESSAGES = {
         'logo_updated': "Your logo has been updated successfully! 🎉",
         'error_updating_logo': "An error occurred while updating the logo",
         'title_updated': "✅ Your title has been updated to '{new_title}' successfully!",
+        'edit_delivery_fees': 'Edit Delivery Fees',
         'error_updating_title': "An error occurred while updating the title",
         'product_name_updated': "Product name updated to: {new_name}",
         'product_image_updated': "Product image updated successfully.",
@@ -193,6 +194,11 @@ MESSAGES = {
         'create_new_category': 'Create New Category',
         'help': "For further assistance, contact us on WhatsApp: \n wa.me/+201554516636",
         'photo_required': "Please send the LOGO photo, not text or any other file type.",
+        'ask_delivery_fee': 'Would you like to set delivery fees for your store?',
+        'enter_delivery_fee': 'Please enter the delivery fee amount:',
+        'delivery_fee_set': 'Delivery fee set to: {}',
+        'invalid_delivery_fee': 'Invalid input. Please enter a valid number for the delivery fee.',
+        'no_delivery_fee_set': 'No delivery fee has been set.',
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -314,7 +320,13 @@ MESSAGES = {
         'username_taken': 'اسم المستخدم الذي قدمته مأخوذ بالفعل. يرجى اختيار اسم مستخدم مختلف والمحاولة مرة أخرى.',
         'enter_new_category': 'يرجى إدخال اسم الفئة الجديدة.',
         'help': "للمساعدة الإضافية، تواصل بنا على الواتساب: \n wa.me/+201554516636",
+        'edit_delivery_fees': 'تعديل رسوم التوصيل',
         'photo_required': "يرجى إرسال صورة الاشعار، وليس نصًا أو أي نوع آخر من الملفات.",
+        'ask_delivery_fee': 'هل ترغب في تحديد رسوم التوصيل لمتجرك؟',
+        'enter_delivery_fee': 'يرجى إدخال مبلغ رسوم التوصيل:',
+        'delivery_fee_set': 'تم تعديل رسوم التوصيل إلى: {}',
+        'invalid_delivery_fee': 'إدخال غير صالح. يرجى إدخال رقم صالح لرسوم التوصيل.',
+        'no_delivery_fee_set': 'لم يتم تعديل رسوم التوصيل.',
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -411,6 +423,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_primary_color_response(update, context)
     elif user_state =="waiting_for_secondary_color":
         await handle_secondary_color_response(update, context)
+    elif user_state == 'awaiting_delivery_fee':
+        await handle_edit_delivery_fees(update, context)
     else:
         print("we are in else in message handle")
         if not account:
@@ -432,10 +446,61 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await show_start_message(update, context, account)
 
+async def handle_edit_delivery_fees(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        selected_lang = context.user_data.get('lang')
+
+        if 'account' not in context.user_data:
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)
+            try:
+                account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+                context.user_data['account'] = account
+            except Account.DoesNotExist:
+                await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
+                return
+                
+        account = context.user_data.get('account')
+
+        if not selected_lang and account:
+            selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+        print("selected_lang in edit delivery fees")
+        print(selected_lang)
+        delivery_fee = float(update.message.text)
+
+        context.user_data['delivery_fee'] = delivery_fee
+
+        # Confirm the fee
+        await update.message.reply_text(MESSAGES[selected_lang]['delivery_fee_set'].format(delivery_fee))
+
+        delivery_fee_str = str(delivery_fee)
+        delivery, created = await sync_to_async(Delivery.objects.get_or_create)(
+            account=account,
+            defaults={'amount': delivery_fee_str}
+        )
+        if not created:  # If the delivery already exists, update it
+            delivery.amount = delivery_fee_str
+            await sync_to_async(delivery.save)()
+
+
+        await show_start_message(update, context, account)
+            
+    except ValueError:
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_delivery_fee'])
 
 
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
+
+    if 'account' not in context.user_data:
+        chat_id = context.user_data.get('chat_id', update.callback_query.message.chat.id)
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
+            return
+            
     account = context.user_data.get('account')
 
     if not selected_lang and account:
@@ -446,11 +511,13 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton(MESSAGES[selected_lang]['edit_logo'], callback_data="edit_logo")],
         [InlineKeyboardButton(MESSAGES[selected_lang]['edit_title'], callback_data="edit_title")],
         [InlineKeyboardButton(MESSAGES[selected_lang]['edit_color'], callback_data="edit_color")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_delivery_fees'], callback_data="edit_delivery_fees")],  # New Button
         [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.callback_query.message.reply_text(MESSAGES[selected_lang]['what_to_edit'], reply_markup=reply_markup)
+
 
 
 async def handle_edit_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1535,6 +1602,25 @@ async def cancel_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(MESSAGES[selected_lang]['process_canceled'])
 
 
+
+async def awaiting_delivery_fee(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+        account = context.user_data.get('account')
+        if account and account.language:
+            selected_lang = account.language
+        delivery_fee = float(update.message.text)
+        context.user_data['delivery_fee'] = delivery_fee
+
+        # Confirm the fee
+        await update.message.reply_text(MESSAGES[selected_lang]['delivery_fee_set'].format(delivery_fee))
+
+        # Clear the state
+        context.user_data.pop('state', None)
+    
+    except ValueError:
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_delivery_fee'])
+
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1629,7 +1715,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "get_website_qr":  # New handler for the QR code
         await send_website_qr(update, context)
-        
+
+    elif query.data == "edit_delivery_fees":  # New handler for the QR code
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_delivery_fee'])
+        context.user_data['state'] = 'awaiting_delivery_fee'
+
     elif query.data.startswith("delete_category_"):
         await delete_category(update, context)
 

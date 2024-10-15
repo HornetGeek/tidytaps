@@ -15,7 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import viewsets
 from rest_framework import generics
-
+from rest_framework.generics import RetrieveAPIView
 
 class AccountCreateAPIView(generics.ListCreateAPIView):
     queryset = Account.objects.all()
@@ -66,6 +66,34 @@ class SocialMediaListCreateAPIView(generics.ListCreateAPIView):
     def get_queryset(self):
         account_id = self.kwargs.get('account_id')
         return SocialMedia.objects.filter(account__id=account_id)  # Filter social media by account_id
+
+
+class DeliveryByAccountIdView(APIView):
+    def get(self, request, account_id):
+        try:
+            account = Account.objects.get(id=account_id)
+            delivery = Delivery.objects.get(account=account)
+            serializer = DeliverySerializer(delivery)
+            return Response(serializer.data)
+        except Account.DoesNotExist:
+            return Response({'error': 'Account not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Delivery.DoesNotExist:
+            return Response({'error': 'Delivery not found'}, status=status.HTTP_404_NOT_FOUND)
+
+# Get Delivery by Username
+class DeliveryByUsernameView(APIView):
+    def get(self, request, username):
+        try:
+            account = Account.objects.get(username=username)
+            
+            delivery = Delivery.objects.get(account=account)
+
+            serializer = DeliverySerializer(delivery)
+            return Response(serializer.data)
+        except Account.DoesNotExist:
+            return Response({'error': 'Account not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Delivery.DoesNotExist:
+            return Response({'error': 'Delivery not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SocialMediaRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
