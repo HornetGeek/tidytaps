@@ -76,9 +76,9 @@ class DeliveryByAccountIdView(APIView):
             serializer = DeliverySerializer(delivery)
             return Response(serializer.data)
         except Account.DoesNotExist:
-            return Response({'error': 'Account not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.data)
         except Delivery.DoesNotExist:
-            return Response({'error': 'Delivery not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.data)
 
 # Get Delivery by Username
 class DeliveryByUsernameView(APIView):
