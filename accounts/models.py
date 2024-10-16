@@ -46,7 +46,6 @@ class Account(models.Model):
     
 class Delivery(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="delivery_account")
-    city = models.CharField(max_length=150, default="", blank=True)
     amount = models.CharField(max_length=500,default=0)
 
 class Contacts(models.Model):
