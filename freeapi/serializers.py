@@ -90,7 +90,13 @@ class DeliverySerializer(serializers.ModelSerializer):
         model = Delivery
         fields = ['account', 'amount']
 
+
+class MenuItemPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuItemPhoto
+        fields = ['id', 'account', 'menuitem', 'picture']
         
+          
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

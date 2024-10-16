@@ -96,6 +96,24 @@ class DeliveryByUsernameView(APIView):
             return Response({'error': 'Delivery not found'})
 
 
+class MenuItemPhotoViewSet(viewsets.ModelViewSet):
+    queryset = MenuItemPhoto.objects.all()
+    serializer_class = MenuItemPhotoSerializer
+    permission_classes = [IsAuthenticated]  # Add your authentication permissions if needed
+
+    def perform_create(self, serializer):
+        # You can customize any behavior here, for example linking the photo with a specific account
+        serializer.save()
+
+class MenuItemPhotoListByAccountAndMenuItemView(generics.ListAPIView):
+    serializer_class = MenuItemPhotoSerializer
+
+    def get_queryset(self):
+        account_id = self.kwargs['account_id']  # Fetch account_id from URL params
+        menuitem_id = self.kwargs['menuitem_id']  # Fetch menuitem_id from URL params
+        return MenuItemPhoto.objects.filter(account_id=account_id, menuitem_id=menuitem_id)
+
+
 class SocialMediaRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SocialMedia.objects.all()
     serializer_class = SocialMediaSerializer

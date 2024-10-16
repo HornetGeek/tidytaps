@@ -46,6 +46,7 @@ class Account(models.Model):
     
 class Delivery(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="delivery_account")
+    city = models.CharField(max_length=150, default="", blank=True)
     amount = models.CharField(max_length=500,default=0)
 
 class Contacts(models.Model):
@@ -164,6 +165,12 @@ class MenuItem(models.Model):
     def __str__(self):
         return self.item
 
+class MenuItemPhoto(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_photos")
+    picture = models.FileField(upload_to='static/img/items/')
+
+    
 class Modifier(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="Modifier_account",  null=True)
     menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_Modifier")

@@ -25,7 +25,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tidytap.settings')
 django.setup()
 
 # Now you can import your models
-from accounts.models import Account, MenuItem, Category, Delivery
+from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto
 from django.contrib.auth.models import User
 
 LANGUAGES = {
@@ -199,6 +199,9 @@ MESSAGES = {
         'delivery_fee_set': 'Delivery fee set to: {}',
         'invalid_delivery_fee': 'Invalid input. Please enter a valid number for the delivery fee.',
         'no_delivery_fee_set': 'No delivery fee has been set.',
+        'invalid_image_type': 'Please upload a valid image.',
+        'ask_upload_another_photo': 'Do you want to upload another photo?',
+        'no_more_photos': 'No more photos to upload.',
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -327,6 +330,9 @@ MESSAGES = {
         'delivery_fee_set': 'تم تعديل رسوم التوصيل إلى: {}',
         'invalid_delivery_fee': 'إدخال غير صالح. يرجى إدخال رقم صالح لرسوم التوصيل.',
         'no_delivery_fee_set': 'لم يتم تعديل رسوم التوصيل.',
+        'ask_upload_another_photo': 'هل تريد تحميل صورة أخرى؟',
+        'invalid_image_type': 'من فضلك قم برفع صورة صالحة.',
+        'no_more_photos': 'لا توجد صور أخرى لتحميلها.',
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -1168,13 +1174,129 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(MESSAGES[selected_lang]['awaiting_image'])
     context.user_data['state'] = 'awaiting_image'
 
+async def upload_another_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
+
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the update is from a message containing a photo
+    if update.message and update.message.photo:
+        await update.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
+
+        try:
+            # Download the product image
+            product_image_file = await update.message.photo[-1].get_file()
+            product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}.jpg"
+            await product_image_file.download_to_drive(product_image_path)
+
+            # Save the photo in the MenuItemPhoto model
+            menuitem_id = context.user_data.get('menuitem_id')  # Get the menu item ID from user data
+
+            # Ensure that the MenuItem ID exists in the context
+            if menuitem_id:
+                # Create a new MenuItemPhoto instance
+                menu_item_photo = MenuItemPhoto(
+                    account=account,
+                    menuitem_id=menuitem_id,
+                    picture=product_image_path  # Save the image path here
+                )
+                await sync_to_async(menu_item_photo.save)()  # Save to the database asynchronously
+
+                await update.message.reply_text(MESSAGES[selected_lang]['image_downloaded_successfully'])
+
+                # Ask if they want to upload another photo
+                keyboard = [
+                    [
+                        InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data='upload_another_photo'),
+                        InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data='no_more_photos')
+                    ]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(MESSAGES[selected_lang]['ask_upload_another_photo'], reply_markup=reply_markup)
+
+            else:
+                await update.message.reply_text(MESSAGES[selected_lang]['menuitem_id_missing'])
+
+        except Exception as e:
+            await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
+
+    elif update.callback_query:
+        # Handle callback query for Yes/No buttons
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
+
+    else:
+        # Handle invalid input when no photo is provided
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type'])
+
+
+async def no_more_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    menuitem = context.user_data.get('menu_item')
+    username = account.username  # Get the username from the cached account
+    print("menuitem")
+    print(menuitem)
+    website_url = f"tidy-taps.com/f/{quote(username)}"
+    
+    if update.callback_query:
+        await update.callback_query.answer()  # Acknowledge the callback
+        await update.callback_query.message.reply_text(
+            f"🎉 {MESSAGES[selected_lang]['product_added_successfully'].format(item=menuitem.item)}\n"
+            f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
+        )
+    elif update.message:
+        await update.message.reply_text(
+            f"🎉 {MESSAGES[selected_lang]['product_added_successfully'].format(item=menuitem.item)}\n"
+            f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
+        )
+    
+    welcome_message = MESSAGES[selected_lang]['control_over_all_things']
+    
+    keyboard = [
+        [
+            InlineKeyboardButton(MESSAGES[selected_lang]['add_product'], callback_data="add_product"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['edit_product'], callback_data='edit_product')
+        ],
+        [
+            InlineKeyboardButton(MESSAGES[selected_lang]['delete_product'], callback_data='delete_product')
+        ],
+        [
+            InlineKeyboardButton(MESSAGES[selected_lang]['delete_category'], callback_data="delete_category"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['edit_store_info'], callback_data="edit_store_info")
+        ],
+        [
+            InlineKeyboardButton(MESSAGES[selected_lang]['get_website_qr'], callback_data="get_website_qr")
+        ]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    if update.callback_query:
+        await update.callback_query.message.reply_text(
+            welcome_message,
+            reply_markup=reply_markup
+        )
+    elif update.message:
+        await update.message.reply_text(
+            welcome_message,
+            reply_markup=reply_markup
+        )
+
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Get the user's selected language
     selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
     account = context.user_data.get('account')
     if not selected_lang and account:
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
-
+    if not update.message.photo:
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type'])
+        return
     await update.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
 
     try:
@@ -1206,49 +1328,28 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
         menu_item = MenuItem(**menu_item_data)
         await sync_to_async(menu_item.save)()
-
+        context.user_data['menuitem_id'] = menu_item.id 
+        context.user_data['menu_item'] = menu_item
         # Get the website URL for the account
-        username = account.username  # Get the username from the cached account
-
-        website_url = f"tidy-taps.com/f/{quote(username)}"
+        
 
         # Send the success message with the website link
-
-        await update.message.reply_text(
-            f"🎉 {MESSAGES[selected_lang]['product_added_successfully'].format(item=menu_item.item)}\n"
-            f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
-        )
-        
-        welcome_message = MESSAGES[selected_lang]['control_over_all_things']
-        
         keyboard = [
             [
-                InlineKeyboardButton(MESSAGES[selected_lang]['add_product'], callback_data="add_product"),
-                InlineKeyboardButton(MESSAGES[selected_lang]['edit_product'], callback_data='edit_product')
-            ],
-            [
-                InlineKeyboardButton(MESSAGES[selected_lang]['delete_product'], callback_data='delete_product')
-            ],
-            [
-                InlineKeyboardButton(MESSAGES[selected_lang]['delete_category'], callback_data="delete_category"),
-                InlineKeyboardButton(MESSAGES[selected_lang]['edit_store_info'], callback_data="edit_store_info")
-            ],
-            [
-                InlineKeyboardButton(MESSAGES[selected_lang]['get_website_qr'], callback_data="get_website_qr")
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data='upload_another_photo'),
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data='no_more_photos')
             ]
         ]
-
         reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(MESSAGES[selected_lang]['ask_upload_another_photo'], reply_markup=reply_markup)
 
-        await update.message.reply_text(
-            welcome_message,
-            reply_markup=reply_markup
-        )
-        context.user_data.clear()
+
+        
 
     except Exception as e:
         print(e)
         await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
+
 
 async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang',)  # Default to 'en' if language is not set
@@ -1348,11 +1449,14 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
         await handle_product_image(update, context)
     elif context.user_data.get('state') == 'awaiting_new_image':
         await update_product_image(update, context)
+
+    elif context.user_data.get('state') == 'awaiting_another_new_image':
+        await upload_another_photo(update, context)
+
     elif context.user_data.get('state') == 'awaiting_edit_logo':
         await handle_edit_logo(update, context)
     else:
         await update.message.reply_text(MESSAGES[selected_lang]['read_message_again'])
-
 
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.callback_query.message.chat.id
@@ -1713,6 +1817,13 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "delete_category":
         await show_categories_for_deletion(update, context)  # Call the function to show categories for deletion
 
+    elif query.data == "upload_another_photo":
+        context.user_data['state'] = 'awaiting_another_new_image'
+        await query.message.reply_text(MESSAGES[selected_lang]['awaiting_image'])
+
+    elif query.data == "no_more_photos":
+        await no_more_photos(update, context)
+        
     elif query.data == "get_website_qr":  # New handler for the QR code
         await send_website_qr(update, context)
 
