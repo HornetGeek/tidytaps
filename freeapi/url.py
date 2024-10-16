@@ -51,7 +51,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(router2.urls)),
     path('', include(router3.urls)),
-    path('menuitem-photos/account/menuitem/<int:account_id>/<int:menuitem_id>/', views.MenuItemPhotoListByAccountAndMenuItemView.as_view(), name='menuitem-photos-by-account-menuitem'),
+    path('menuitem-photos/account/menuitem/<int:account_id>/<int:menuitem_id>', views.MenuItemPhotoListByAccountAndMenuItemView.as_view(), name='menuitem-photos-by-account-menuitem'),
     path('option/<int:account_id>/<int:menuitem_id>/', views.get_option_by_account_and_menuitem),
     path('choices/<int:account_id>/<int:menuitem_id>/<int:option_id>', views.get_items_by_account_and_menuitem),
 ]
