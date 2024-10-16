@@ -1175,7 +1175,7 @@ async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data['state'] = 'awaiting_image'
 
 async def upload_another_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
 
     account = context.user_data.get('account')
     if not selected_lang and account:
