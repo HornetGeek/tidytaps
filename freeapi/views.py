@@ -106,6 +106,7 @@ class MenuItemPhotoViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 class MenuItemPhotoListByAccountAndMenuItemView(generics.ListAPIView):
+    permission_classes = [BasePermission]
     serializer_class = MenuItemPhotoSerializer
 
     def get_queryset(self):
