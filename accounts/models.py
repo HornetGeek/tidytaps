@@ -60,6 +60,7 @@ class Adresses(models.Model):
 class SocialMedia(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="socialMedia_account")
     facebook = models.CharField(max_length=150, default="")
+    whatsapp = models.CharField(max_length=150, default="")
     youtube = models.CharField(max_length=150, default="")
     instagram = models.CharField(max_length=150, default="")
     tiktok = models.CharField(max_length=150, default="")
