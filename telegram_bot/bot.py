@@ -25,7 +25,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tidytap.settings')
 django.setup()
 
 # Now you can import your models
-from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto
+from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia
 from django.contrib.auth.models import User
 
 LANGUAGES = {
@@ -202,6 +202,56 @@ MESSAGES = {
         'invalid_image_type': 'Please upload a valid image.',
         'ask_upload_another_photo': 'Do you want to upload another photo?',
         'no_more_photos': 'No more photos to upload.',
+        'edit_contacts': "Edit Contacts",  # New entry for editing contacts
+        'edit_addresses': "Edit Addresses",  # New entry for editing addresses
+        'edit_social_media': "Edit Social Media",
+        'choose_contact_to_edit_or_create': 'Choose a contact to edit or create a new one:',
+        'create_new_contact': '➕ Create New Contact',
+        'select_contact': "Please select a contact to edit or create a new one:",
+        'enter_new_contacts': "Please enter the phone number for the new contact:",
+        'contact_added': "Contact phone number has been successfully added.",
+        'invalid_phone': "Please enter a valid phone number.",
+        'edit_contact_phone': "Please enter the new phone number for this contact:",
+        'contact_not_found': "The selected contact was not found.",
+        'contact_updated': "Contact details have been updated.",
+        'select_contact_to_delete': "Please select a contact to delete:",
+        'confirm_contact_delete': "Are you sure you want to delete this contact?",
+        'contact_deleted': "The contact has been deleted successfully.",
+        'confirm': "Yes, Delete",
+        'delete_contact': "Delete a Contact",
+        'select_action': "Please select an action:",
+        'enter_new_address': "Please provide the details for the new address:",
+        'edit_addresses': "Edit Addresses",
+        'create_new_address': "Create New Address",
+        'select_address': "Select an address to edit or create a new one:",
+        'editing_address': "Editing address",
+        'address_added': "The address has been added successfully.",
+        'address_updated': "The address has been updated successfully.",
+        'address_deleted': 'The address has been deleted successfully.',
+        'address_not_found': 'The address you are trying to delete does not exist.',
+        'operation_cancelled': 'Operation cancelled.',
+        'select_address_to_delete': 'Please select an address to delete:',
+        'delete_address': 'Delete Address',
+        'edit_social_media': 'Edit Social Media',
+        'select_social_media': 'Select a social media platform to edit:',
+        'edit_facebook': 'Edit Facebook Link',
+        'edit_instagram': 'Edit Instagram Link',
+        'edit_whatsapp': 'Edit WhatsApp Link',
+        'edit_tiktok': 'Edit TikTok Link',
+        'enter_facebook_link': 'Please enter your Facebook link:',
+        'enter_instagram_link': 'Please enter your Instagram link:',
+        'enter_whatsapp_link': 'Please enter your WhatsApp link:',
+        'enter_tiktok_link': 'Please enter your TikTok link:',
+        'social_media_updated': 'Social media link updated successfully!',
+        'no_social_media': 'No social media links found. Please add them first.',
+        'invalid_instagram_link': 'Please enter a valid Instagram link starting with "instagram.com", "https://www.instagram.com/", or "www.instagram.com".',
+        'social_media_instagram_updated': 'Instagram link updated successfully.',
+        'invalid_whatsapp_link': 'Please enter a valid WhatsApp link starting with "wa.me/".',
+        'social_media_whatsapp_updated': 'WhatsApp link updated successfully.',
+        'invalid_tiktok_link': 'Please enter a valid TikTok link starting with "tiktok.com".',
+        'social_media_tiktok_updated': 'TikTok link updated successfully.',
+        'invalid_facebook_link': 'Please enter a valid Facebook link starting with "facebook.com".',
+        'social_media_facebook_updated': 'Facebook link updated successfully.',
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -333,6 +383,57 @@ MESSAGES = {
         'ask_upload_another_photo': 'هل تريد تحميل صورة أخرى؟',
         'invalid_image_type': 'من فضلك قم برفع صورة صالحة.',
         'no_more_photos': 'لا توجد صور أخرى لتحميلها.',
+        'edit_contacts': "تعديل جهات الاتصال",  # New entry for editing contacts
+        'edit_addresses': "تعديل العناوين",  # New entry for editing addresses
+        'edit_social_media': "تعديل وسائل التواصل الاجتماعي",
+        'choose_contact_to_edit_or_create': 'اختر جهة اتصال لتعديلها أو إنشاء واحدة جديدة:',
+        'create_new_contact': '➕ إنشاء جهة اتصال جديدة',
+        'select_contact': "يرجى اختيار جهة اتصال لتعديلها أو إنشاء جهة اتصال جديدة:",
+        'enter_new_contacts': "يرجى إدخال رقم الهاتف لجهة الاتصال الجديدة:",
+        'contact_added': "تمت إضافة رقم هاتف جهة الاتصال بنجاح.",
+        'invalid_phone': "يرجى إدخال رقم هاتف صالح.",
+        'edit_contact_phone': "يرجى إدخال رقم الهاتف الجديد لجهة الاتصال هذه:",
+        'contact_not_found': "لم يتم العثور على جهة الاتصال المحددة.",
+        'contact_updated': "تم تحديث تفاصيل جهة الاتصال.",
+        'delete_contact': "حذف جهة اتصال",
+        'select_action': "يرجى تحديد إجراء:",
+        'select_contact_to_delete': "يرجى اختيار جهة الاتصال لحذفها:",
+        'confirm_contact_delete': "هل أنت متأكد أنك تريد حذف هذه جهة الاتصال؟",
+        'contact_deleted': "تم حذف جهة الاتصال بنجاح.",
+        'confirm': "نعم، احذف",
+        'enter_new_address': "يرجى إدخال العنوان الجديد:",
+        'edit_addresses': "تعديل العناوين",
+        'create_new_address': "إضافة عنوان جديد",
+        'select_address': "اختر عنوانًا لتعديله أو أضف عنوانًا جديدًا:",
+        'editing_address': "تعديل العنوان",
+        'enter_new_addresses': "يرجى إدخال العنوان الجديد:",
+        'address_added': "تمت إضافة العنوان بنجاح.",
+        'address_updated': "تم تحديث العنوان بنجاح.",
+        'address_deleted': 'تم حذف العنوان بنجاح.',
+        'address_not_found': 'العنوان الذي تحاول حذفه غير موجود.',
+        'operation_cancelled': 'تم إلغاء العملية.',
+        'select_address_to_delete': 'يرجى اختيار عنوان لحذفه:',
+        'delete_address': 'حذف العنوان',
+        'edit_social_media': 'تعديل وسائل التواصل الاجتماعي',
+        'select_social_media': 'اختر منصة وسائل التواصل الاجتماعي للتعديل:',
+        'edit_facebook': 'تعديل رابط فيسبوك',
+        'edit_instagram': 'تعديل رابط انستغرام',
+        'edit_whatsapp': 'تعديل رابط واتساب',
+        'edit_tiktok': 'تعديل رابط تيك توك',
+        'enter_facebook_link': 'الرجاء إدخال رابط فيسبوك الخاص بك:',
+        'enter_instagram_link': 'الرجاء إدخال رابط انستغرام الخاص بك:',
+        'enter_whatsapp_link': 'الرجاء إدخال رابط واتساب الخاص بك:',
+        'enter_tiktok_link': 'الرجاء إدخال رابط تيك توك الخاص بك:',
+        'social_media_updated': 'تم تحديث رابط وسائل التواصل الاجتماعي بنجاح!',
+        'no_social_media': 'لا توجد روابط وسائل التواصل الاجتماعي. يرجى إضافتها أولاً.',
+        'invalid_instagram_link': 'يرجى إدخال رابط إنستغرام صالح يبدأ بـ "instagram.com" أو "https://www.instagram.com/" أو "www.instagram.com".',
+        'social_media_instagram_updated': 'تم تحديث رابط إنستغرام بنجاح.',
+        'invalid_whatsapp_link': 'يرجى إدخال رابط واتساب صالح يبدأ بـ "wa.me/".',
+        'social_media_whatsapp_updated': 'تم تحديث رابط واتساب بنجاح.',
+        'invalid_tiktok_link': 'يرجى إدخال رابط تيك توك صالح يبدأ بـ "tiktok.com".',
+        'social_media_tiktok_updated': 'تم تحديث رابط تيك توك بنجاح.',
+        'invalid_facebook_link': 'يرجى إدخال رابط فيسبوك صالح يبدأ بـ "facebook.com".',
+        'social_media_facebook_updated': 'تم تحديث رابط فيسبوك بنجاح.',
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -407,12 +508,39 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_phone(update, context)
     elif user_state == 'awaiting_category':
         await handle_category(update, context)
+    elif user_state == 'awaiting_contact':
+        await handle_contact(update, context)
     elif user_state == 'awaiting_item_name':
         await handle_item_name(update, context)
+
+    elif user_state == 'awaiting_facebook_link':
+        await edit_facebook_link(update, context)
+
+    elif user_state == 'awaiting_instagram_link':
+        await edit_instagram_link(update, context)
+
+    elif user_state == 'awaiting_whatsapp_link':
+        await edit_whatsapp_link(update, context)
+
+    elif user_state == 'awaiting_tiktok_link':
+        await edit_tiktok_link(update, context)
+
     elif user_state == 'awaiting_price':
         await handle_price(update, context)
+
+    elif user_state == 'awaiting_address_details':
+        await start_creating_address(update, context)
+
+
     elif user_state == 'awaiting_description':
         await handle_description(update, context)
+
+    elif user_state == 'awaiting_new_address':
+        await handle_new_address_input(update, context)
+
+    elif user_state == 'awaiting_new_contact':
+        await handle_contact_input(update, context)
+
     elif user_state == 'awaiting_image':
         await handle_product_image(update, context)
     elif user_state == 'awaiting_category_confirmation':
@@ -495,6 +623,7 @@ async def handle_edit_delivery_fees(update: Update, context: ContextTypes.DEFAUL
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_delivery_fee'])
 
 
+
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
 
@@ -510,15 +639,30 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
 
     if not selected_lang and account:
-        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+        selected_lang = account.language
 
     await update.callback_query.answer()
+
+    # Improved button layout with emojis and better grouping
     keyboard = [
-        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_logo'], callback_data="edit_logo")],
-        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_title'], callback_data="edit_title")],
-        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_color'], callback_data="edit_color")],
-        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_delivery_fees'], callback_data="edit_delivery_fees")],  # New Button
-        [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
+        [
+            InlineKeyboardButton(f"🖼 {MESSAGES[selected_lang]['edit_logo']}", callback_data="edit_logo"),
+            InlineKeyboardButton(f"✏️ {MESSAGES[selected_lang]['edit_title']}", callback_data="edit_title"),
+        ],
+        [
+            InlineKeyboardButton(f"🎨 {MESSAGES[selected_lang]['edit_color']}", callback_data="edit_color"),
+            InlineKeyboardButton(f"🚚 {MESSAGES[selected_lang]['edit_delivery_fees']}", callback_data="edit_delivery_fees"),
+        ],
+        [
+            InlineKeyboardButton(f"📞 {MESSAGES[selected_lang]['edit_contacts']}", callback_data="Edits_contacts"),
+            InlineKeyboardButton(f"🏠 {MESSAGES[selected_lang]['edit_addresses']}", callback_data="edit_addresses"),
+        ],
+        [
+            InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
+        ],
+        [
+            InlineKeyboardButton(f"❌ {MESSAGES[selected_lang]['cancel']}", callback_data="cancel")
+        ]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -542,6 +686,69 @@ async def handle_edit_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.callback_query.message.reply_text(MESSAGES[selected_lang]['which_color_to_edit'], reply_markup=reply_markup)
+
+
+async def handle_edit_contacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    await update.callback_query.answer()
+
+    # Retrieve all contacts associated with the account
+    contacts = await sync_to_async(list)(Contacts.objects.filter(account=account))
+
+    keyboard = []
+
+    # Loop through contacts to add buttons for each
+    for contact in contacts:
+        keyboard.append([InlineKeyboardButton(
+            text=f"{contact.phone} / {contact.emails}",
+            callback_data=f"edit_contact_{contact.id}"  # Callback to edit this contact
+        )])
+
+    # Option to create a new contact
+    keyboard.append([InlineKeyboardButton(
+        MESSAGES[selected_lang]['create_new_contact'],
+        callback_data="create_new_contact"  # Callback to create a new contact
+    )])
+
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['delete_contact'], callback_data="delete_contact_list")],)
+
+
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]["buttons"]['cancel'], callback_data="cancel")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_contact'], reply_markup=reply_markup)
 
 
 async def edit_primary_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1023,6 +1230,66 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['category_name'] = category_name
         await handle_category_confirmation(update, context)
 
+async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the state is awaiting the user's input for contact phone
+    if 'awaiting_contact' in context.user_data.get('state', ''):
+        # User is expected to enter a phone number
+        if update.message and update.message.text.isdigit():
+            phone_number = int(update.message.text)
+
+            # Save or update the contact phone number to the database
+            contact, created = await sync_to_async(Contacts.objects.get_or_create)(
+                account=account
+            )
+            contact.phone = phone_number
+            await sync_to_async(contact.save)()  # Save the new phone number
+
+            # Clear the state and notify the user
+           
+            await update.message.reply_text(MESSAGES[selected_lang]['contact_added'])
+            await show_start_message(update, context, account)
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone'])
+        
+        return
+
+    # If we're not awaiting a phone number, prompt the user to enter one
+    await update.message.reply_text(MESSAGES[selected_lang]['enter_new_contacts'])
+    context.user_data['state'] = 'awaiting_contact'
+
+
 # Handle category creation confirmation
 async def handle_category_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Get the user's selected language
@@ -1057,6 +1324,287 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
         )
 
 
+async def show_social_media_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    if not account:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+        return
+
+    await update.callback_query.answer()
+
+    # Create the keyboard with social media options
+    keyboard = [
+        [InlineKeyboardButton(f"📘 Facebook", callback_data="edit_facebook")],
+        [InlineKeyboardButton(f"📸 Instagram", callback_data="edit_instagram")],
+        [InlineKeyboardButton(f"📱 WhatsApp", callback_data="edit_whatsapp")],
+        [InlineKeyboardButton(f"🎵 TikTok", callback_data="edit_tiktok")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['cancel'], callback_data="cancel")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_social_media'], reply_markup=reply_markup)
+
+
+async def edit_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    query = update.callback_query
+    await query.answer()
+
+    # Extract address ID from callback data
+    address_id = query.data.split("_")[2]  # Assuming format is "edit_address_<id>"
+
+    # Fetch the address from the database
+    try:
+        address = await sync_to_async(Adresses.objects.get)(id=address_id)
+        context.user_data['current_address'] = address  # Cache the address for editing
+
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_new_address'], reply_markup=None)
+        context.user_data['state'] = 'awaiting_new_address'  # Set state for awaiting new address input
+
+    except Adresses.DoesNotExist:
+        await query.message.reply_text(MESSAGES[selected_lang]['address_not_found'])  # Error message if address not found
+
+
+async def show_address_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    # Retrieve all addresses associated with the account
+    addresses = await sync_to_async(list)(Adresses.objects.filter(account=account))
+
+    keyboard = []
+
+    # Loop through addresses to add buttons for each
+    for address in addresses:
+        keyboard.append([InlineKeyboardButton(
+            text=f"{address.address}",
+            callback_data=f"edit_address_{address.id}"  # Callback to edit this address
+        )])
+
+    # Option to create a new address
+    keyboard.append([InlineKeyboardButton(
+        MESSAGES[selected_lang]['create_new_address'],
+        callback_data="create_new_address"  # Callback to create a new address
+    )])
+
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['delete_address'], callback_data="delete_address_list")],)
+
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_address'], reply_markup=reply_markup)
+
+
+async def start_creating_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    if 'state' in context.user_data and context.user_data['state'] == 'awaiting_address_details':
+        address_details = update.message.text  # Get the address input from the user
+
+        # Save the new address to the database
+        new_address = Adresses(account=account, address=address_details)  # Assuming Address model has 'details' field
+        await sync_to_async(new_address.save)()  # Save to the database
+
+        await update.message.reply_text(MESSAGES[selected_lang]['address_added'])  # Confirm addition
+        await show_start_message(update, context, account)
+
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unexpected_input'])  # Handle unexpected input
+
+
+async def show_delete_contact_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    # Retrieve all contacts associated with the account
+    contacts = await sync_to_async(list)(Contacts.objects.filter(account=account))
+
+    keyboard = []
+
+    # Loop through contacts to add buttons for each
+    for contact in contacts:
+        keyboard.append([InlineKeyboardButton(
+            text=f"{contact.phone} / {contact.emails}",
+            callback_data=f"confirm_delete_contact_{contact.id}"  # Callback to confirm delete
+        )])
+
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['cancel'], callback_data="cancel")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_contact_to_delete'], reply_markup=reply_markup)
+
+
+async def show_address_list_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+    selected_lang = context.user_data.get('lang', 'en')
+
+    # Ensure the chat_id is set
+    chat_id = update.callback_query.message.chat.id
+
+    # Retrieve all addresses associated with the account
+    addresses = await sync_to_async(list)(Adresses.objects.filter(account=account))
+
+    keyboard = []
+
+    # Loop through addresses to add buttons for each address with delete option
+    for address in addresses:
+        keyboard.append([InlineKeyboardButton(
+            text=f"🗑️ Delete {address.address}",
+            callback_data=f"delete_address_{address.id}"  # Callback to delete this address
+        )])
+
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_address_to_delete'], reply_markup=reply_markup)
 
 
 async def show_categories_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1098,6 +1646,107 @@ async def show_categories_for_deletion(update: Update, context: ContextTypes.DEF
         reply_markup=reply_markup
     )
 
+async def confirm_delete_contact(update: Update, context: ContextTypes.DEFAULT_TYPE, contact_id):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.callback_query.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Retrieve the contact that the user wants to delete
+    try:
+        contact = await sync_to_async(Contacts.objects.get)(id=contact_id)
+        context.user_data['contact_to_delete'] = contact_id  # Store the contact ID for deletion confirmation
+
+        # Ask the user for confirmation before deleting
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['confirm'], callback_data="delete_contact_confirm")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['confirm_contact_delete'], reply_markup=reply_markup)
+    
+    except Contacts.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['contact_not_found'])
+
+async def delete_selected_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    contact_id = context.user_data.get('contact_to_delete')
+    chat_id = update.callback_query.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    try:
+        # Retrieve and delete the contact
+        contact = await sync_to_async(Contacts.objects.get)(id=contact_id)
+        await sync_to_async(contact.delete)()
+
+        # Notify the user that the contact was deleted
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['contact_deleted'])
+
+        # Optionally reload the contacts list
+        await handle_edit_contacts(update, context)
+    
+    except Contacts.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['contact_not_found'])
+
+
+async def delete_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.callback_query.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    # Acknowledge the callback query
+    await query.answer()
+
+    address_id = int(query.data.split("_")[-1])  # Get the address ID from callback data
+
+    try:
+        # Retrieve and delete the address
+        address = await sync_to_async(Adresses.objects.get)(id=address_id, account=context.user_data['account'])
+        await sync_to_async(address.delete)()  # Delete the address
+
+        await query.message.reply_text(MESSAGES[selected_lang]['address_deleted'])  # Confirm deletion
+        await show_start_message(update, context, account)
+    except Adresses.DoesNotExist:
+        await query.message.reply_text(MESSAGES[selected_lang]['address_not_found'])
+
 
 async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1105,8 +1754,19 @@ async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Fetch the language from context or account
     selected_lang = context.user_data.get('lang')
+    chat_id = update.callback_query.message.chat.id
     account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
     if not selected_lang and account:
+        # Assuming the account model has a language field
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
 
     try:
@@ -1123,6 +1783,210 @@ async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             MESSAGES[selected_lang]['category_delete_error'].format(error_message=str(e))
         )
+async def edit_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+            
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the state is set to awaiting_instagram_link
+    if context.user_data.get('state') == 'awaiting_instagram_link':
+        new_instagram_link = update.message.text  # Get the new Instagram link from the message
+        
+        # Validate the link format
+        valid_prefixes = [
+            "instagram.com",
+            "https://www.instagram.com/",
+            "www.instagram.com"
+        ]
+        if not any(new_instagram_link.startswith(prefix) for prefix in valid_prefixes):
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_instagram_link'])
+            return
+        
+        # Retrieve the account from user data
+        account = context.user_data.get('account')
+        
+        if account:
+            # Update the Instagram link in the database
+            social_media_instance, created = await sync_to_async(SocialMedia.objects.get_or_create)(account=account)
+            social_media_instance.instagram = new_instagram_link
+            await sync_to_async(social_media_instance.save)()  # Save the updated instance
+            
+            await update.message.reply_text(MESSAGES[selected_lang]['social_media_instagram_updated'])
+            await show_start_message(update, context, account)
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+        
+        # Reset the state
+        context.user_data['state'] = None
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+
+async def edit_whatsapp_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the state is set to awaiting_whatsapp_link
+    if context.user_data.get('state') == 'awaiting_whatsapp_link':
+        new_whatsapp_link = update.message.text  # Get the new WhatsApp link from the message
+        
+        # Validate the link format
+        valid_prefixes = [
+            "wa.me/"
+        ]
+        if not any(new_whatsapp_link.startswith(prefix) for prefix in valid_prefixes):
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_whatsapp_link'])
+            return
+        
+        # Retrieve the account from user data
+        account = context.user_data.get('account')
+        
+        if account:
+            # Update the WhatsApp link in the database
+            social_media_instance, created = await sync_to_async(SocialMedia.objects.get_or_create)(account=account)
+            social_media_instance.whatsapp = new_whatsapp_link  # Change to the WhatsApp field
+            await sync_to_async(social_media_instance.save)()  # Save the updated instance
+            
+            await update.message.reply_text(MESSAGES[selected_lang]['social_media_whatsapp_updated'])
+            await show_start_message(update, context, account)
+
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+        
+        # Reset the state
+        context.user_data['state'] = None
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+
+async def edit_tiktok_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the state is set to awaiting_tiktok_link
+    if context.user_data.get('state') == 'awaiting_tiktok_link':
+        new_tiktok_link = update.message.text  # Get the new TikTok link from the message
+        
+        # Validate the link format
+        valid_prefixes = [
+            "tiktok.com",
+            "https://www.tiktok.com/",
+            "www.tiktok.com"
+        ]
+        if not any(new_tiktok_link.startswith(prefix) for prefix in valid_prefixes):
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_tiktok_link'])
+            return
+        
+        # Retrieve the account from user data
+        account = context.user_data.get('account')
+        
+        if account:
+            # Update the TikTok link in the database
+            social_media_instance, created = await sync_to_async(SocialMedia.objects.get_or_create)(account=account)
+            social_media_instance.tiktok = new_tiktok_link  # Change to the TikTok field
+            await sync_to_async(social_media_instance.save)()  # Save the updated instance
+            
+            await update.message.reply_text(MESSAGES[selected_lang]['social_media_tiktok_updated'])
+            await show_start_message(update, context, account)
+
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+        
+        # Reset the state
+        context.user_data['state'] = None
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+
+async def edit_facebook_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+            
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the state is set to awaiting_facebook_link
+    if context.user_data.get('state') == 'awaiting_facebook_link':
+        new_facebook_link = update.message.text  # Get the new Facebook link from the message
+        
+        # Validate the link format
+        valid_prefixes = [
+            "facebook.com",
+            "www.facebook.com",
+            "https://www.facebook.com"
+        ]
+        if not any(new_facebook_link.startswith(prefix) for prefix in valid_prefixes):
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_facebook_link'])
+            return
+        
+        # Retrieve the account from user data
+        account = context.user_data.get('account')
+        
+        if account:
+            # Update the Facebook link in the database
+            social_media_instance, created = await sync_to_async(SocialMedia.objects.get_or_create)(account=account)
+            social_media_instance.facebook = new_facebook_link
+            await sync_to_async(social_media_instance.save)()  # Save the updated instance
+            
+            await update.message.reply_text(MESSAGES[selected_lang]['social_media_facebook_updated'])
+            await show_start_message(update, context, account)
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+        
+        # Reset the state
+        context.user_data['state'] = None
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
+
 
 # Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1156,6 +2020,108 @@ async def handle_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['price'] = int(price)
     await update.message.reply_text(MESSAGES[selected_lang]['awaiting_description'])
     context.user_data['state'] = 'awaiting_description'
+
+async def start_editing_address(update: Update, context: ContextTypes.DEFAULT_TYPE, address_id):
+    selected_lang = context.user_data.get('lang')
+
+    # Fetch the selected address
+    address = await sync_to_async(Adresses.objects.get)(id=address_id)
+    context.user_data['address_to_edit'] = address_id  # Store the address ID for later use
+
+    await update.callback_query.message.reply_text(f"{MESSAGES[selected_lang]['editing_address']}: {address.street}, {address.city}, {address.country}")
+    context.user_data['state'] = 'awaiting_address_edit'
+
+
+async def handle_contact_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    state = context.user_data.get('state')
+    selected_lang = context.user_data.get('lang')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+        
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    if state == 'awaiting_new_contact':
+        contact = context.user_data.get('contact')
+
+        # Validate if the input is a valid phone number
+        if update.message.text.isdigit():
+            contact.phone = int(update.message.text)
+            await sync_to_async(contact.save)()  # Save the updated contact
+            await update.message.reply_text(MESSAGES[selected_lang]['contact_updated'])
+            await show_start_message(update, context, account)
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone'])
+
+
+async def handle_new_address_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    
+    selected_lang = context.user_data.get('lang')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+        
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    if 'state' in context.user_data and context.user_data['state'] == 'awaiting_new_address':
+        new_address_text = update.message.text  # Get the new address input from the user
+        
+        # Update the current address with the new details
+        current_address = context.user_data.get('current_address')
+        if current_address:
+            current_address.address = new_address_text  # Assuming 'address' is the field name in your model
+            await sync_to_async(current_address.save)()  # Save the updated address
+            
+            await update.message.reply_text(MESSAGES[selected_lang]['address_updated'])  # Confirm update
+            await show_start_message(update, context, account)
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['address_not_found'])  # Handle case where address is not found
+
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unexpected_input'])  # Handle unexpected input
+
 
 
 async def handle_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1659,6 +2625,30 @@ async def start_editing_price(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
 
+
+
+async def start_editing_contact(update: Update, context: ContextTypes.DEFAULT_TYPE, contact_id):
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    
+    # If account language exists, use it
+    if account and account.language:
+        selected_lang = account.language
+
+    try:
+        # Retrieve the contact based on the provided contact_id
+        contact = await sync_to_async(Contacts.objects.get)(id=contact_id, account=account)
+        context.user_data['contact'] = contact  # Store the contact in user_data for future reference
+
+        # Prompt the user to edit the phone number
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['edit_contact_phone'])
+        
+        # Set the state to indicate that the bot is waiting for a new phone number
+        context.user_data['state'] = 'awaiting_new_contact'
+    except Contacts.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['contact_not_found'])
+
+
 async def edit_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()  # Acknowledge the callback
@@ -1791,6 +2781,37 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "add_product":
         await add_product(update, context)
 
+    elif query.data == "edit_addresses":
+        await show_address_list(update, context)
+    
+    elif query.data.startswith("edit_address_"):
+        await edit_address(update, context)  # Call the edit_address function
+
+    elif query.data == "edit_social_media":
+        await show_social_media_options(update, context)
+
+    elif query.data == "edit_facebook":
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_facebook_link'])
+        context.user_data['social_media'] = 'facebook'
+        context.user_data['state'] = 'awaiting_facebook_link'
+
+    elif query.data == "edit_instagram":
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_instagram_link'])
+        context.user_data['social_media'] = 'instagram'
+        context.user_data['state'] = 'awaiting_instagram_link'
+
+    elif query.data == "edit_whatsapp":
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_whatsapp_link'])
+        context.user_data['social_media'] = 'whatsapp'
+        context.user_data['state'] = 'awaiting_whatsapp_link'
+
+    elif query.data == "edit_tiktok":
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_tiktok_link'])
+        context.user_data['social_media'] = 'tiktok'
+        context.user_data['state'] = 'awaiting_tiktok_link'
+
+
+
     elif query.data == 'edit_product':
         await query.message.reply_text(MESSAGES[selected_lang]['buttons']['edit_product'])
         await show_products(update, context)
@@ -1817,6 +2838,12 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "delete_category":
         await show_categories_for_deletion(update, context)  # Call the function to show categories for deletion
 
+    elif query.data == "delete_address_list":
+        await show_address_list_for_deletion(update, context)  # Show addresses for deletion
+
+    elif query.data == "delete_contact_list":
+        await show_delete_contact_list(update, context)  # Call the function to show categories for deletion
+
     elif query.data == "upload_another_photo":
         context.user_data['state'] = 'awaiting_another_new_image'
         await query.message.reply_text(MESSAGES[selected_lang]['awaiting_image'])
@@ -1831,8 +2858,24 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(MESSAGES[selected_lang]['enter_delivery_fee'])
         context.user_data['state'] = 'awaiting_delivery_fee'
 
+    elif query.data.startswith("delete_address_"):
+        await delete_address(update, context)  # Handle the address deletion
+
+        
+    elif query.data.startswith("edit_contact_"):
+        contact_id = query.data.split("_")[-1]  # Extract contact ID from callback data
+        await start_editing_contact(update, context, contact_id)
+        
+
     elif query.data.startswith("delete_category_"):
         await delete_category(update, context)
+
+    elif query.data.startswith("confirm_delete_contact_"):
+        contact_id = query.data.split("_")[3]
+        await confirm_delete_contact(update, context, contact_id)
+
+    elif query.data == "delete_contact_confirm":
+        await delete_selected_contact(update, context)
 
     elif query.data.startswith("edit_logo"):
         await edit_logo(update, context)
@@ -1841,6 +2884,17 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
         await query.message.reply_text(MESSAGES[selected_lang]['enter_new_category'])
         context.user_data['state'] = 'awaiting_category'
+
+    elif query.data.startswith("create_new_contact"):
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_new_contacts'])
+        context.user_data['state'] = 'awaiting_contact'
+
+    
+
+    elif query.data.startswith("create_new_address"):
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_new_addresses'])
+        context.user_data['state'] = 'awaiting_address_details'
+
 
     elif query.data.startswith("category_"):  # Handle category selection
         category_name = query.data.split("_")[1]  # Extract category name from callback data
@@ -1858,6 +2912,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "edit_secondary_color":
         await edit_secondary_color(update, context)
+
+    elif query.data == "Edits_contacts":
+        await handle_edit_contacts(update, context)
 
     elif query.data == 'delete_product':
         await show_products_for_deletion(update, context)
@@ -1912,8 +2969,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
-    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
+    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
