@@ -219,6 +219,7 @@ class MenuItemChoices(models.Model):
     menuitem = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="menuitem_Options")
     option = models.ForeignKey(Option, on_delete=models.CASCADE,default=1)
     name = models.CharField(max_length=500)
+    price = models.CharField(max_length=500, default=0)
     Popular = models.BooleanField(default=False)
 
 class ShopOrder(models.Model):
