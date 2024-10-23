@@ -17,6 +17,7 @@ from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
 from PIL import Image
 import io
+
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -296,6 +297,10 @@ MESSAGES = {
         'confirm_remove_option': "⚠️ Are you sure you want to remove the option '{}'? This action cannot be undone.",
         'option_removed': "✅ Option removed successfully.",
         'removal_canceled': "❌ Option removal canceled.",
+        'edit_whatsapp_number': "Edit WhatsApp Number",
+        'enter_new_phone_number': "Please enter your new phone number:",
+        'whatsapp_number_updated': "Your WhatsApp number has been updated successfully.",
+        'invalid_phone_number': "The phone number you entered is invalid. Please enter a valid international phone number.",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -522,6 +527,10 @@ MESSAGES = {
         'confirm_remove_option': "هل أنت متأكد أنك تريد إزالة الخيار '{}؟' هذا الإجراء لا يمكن التراجع عنه.",
         'option_removed': "تمت إزالة الخيار بنجاح.",
         'removal_canceled': "تم إلغاء إزالة الخيار.",
+        'edit_whatsapp_number': "تعديل رقم الواتساب",
+        'enter_new_phone_number': "يرجى إدخال رقم الواتساب الجديد الخاص بك:",
+        'whatsapp_number_updated': "تم تحديث رقم الواتساب الخاص بك بنجاح.",
+        'invalid_phone_number': "رقم الهاتف الذي أدخلته غير صالح. يرجى إدخال رقم هاتف دولي صالح.",
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -669,6 +678,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await receive_new_choice_name(update, context)
     elif user_state == "awaiting_choice_price":
         await receive_new_choice_price(update, context)
+    elif user_state == "awaiting_phone_number":
+        await edit_whatsapp_number(update, context)
 
     else:
         print("we are in else in message handle")
@@ -990,7 +1001,64 @@ async def receive_new_choice_price(update: Update, context: ContextTypes.DEFAULT
 
         await update.message.reply_text(MESSAGES[selected_lang]['new_choice_added'].format(new_choice_name, new_choice_price))
         await show_start_message(update, context, account)
-       
+
+async def edit_whatsapp_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+    if not selected_lang and account:
+        selected_lang = account.language
+
+    if context.user_data.get('state') == 'awaiting_phone_number':
+        if validate_phone_number(user_message):
+            # Store only digits for the phone number in the database
+            cleaned_number = re.sub(r'[^\d]', '', user_message)
+            account.phone_number = cleaned_number
+            await sync_to_async(account.save)()
+            await update.message.reply_text(MESSAGES[selected_lang]['whatsapp_number_updated'])
+            await show_start_message(update, context, account)
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone_number'])
+        return
+
+
+def validate_phone_number(phone_number):
+    # Remove spaces, dashes, and parentheses
+    phone_number = re.sub(r'[\s\-()]+', '', phone_number)
+
+    # Validate Egyptian phone numbers (10 digits, starting with 01)
+    if re.match(r'^01[0125][0-9]{8}$', phone_number):
+        return True
+
+    # Validate international phone numbers
+    # Accepts formats like +201234567890 or +441632960961 (UK)
+    # Country code should be 1-3 digits, followed by 4-14 digits
+    # Added validation for numbers starting with digits only (without '+')
+    if re.match(r'^\d{1,3}\d{4,14}$', phone_number) or re.match(r'^\+\d{1,3}\d{4,14}$', phone_number):
+        return True
+
+    return False
 
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
@@ -1027,6 +1095,8 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
+            InlineKeyboardButton(f"📱 {MESSAGES[selected_lang]['edit_whatsapp_number']}", callback_data="edit_whatsapp_number"),  # New button added
+
         ],
         [
             InlineKeyboardButton(f"❌ {MESSAGES[selected_lang]['cancel']}", callback_data="cancel")
@@ -4044,6 +4114,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['social_media'] = 'tiktok'
         context.user_data['state'] = 'awaiting_tiktok_link'
 
+    elif query.data == "edit_whatsapp_number":
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_new_phone_number'])
+        context.user_data['state'] = "awaiting_phone_number"  # Set a flag to expect the phone number next
+        
     elif query.data == "add_options_yes":
         await handle_add_options_yes(update, context)
 
@@ -4306,8 +4380,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
-    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
+    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
