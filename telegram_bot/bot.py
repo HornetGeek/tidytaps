@@ -989,7 +989,7 @@ async def receive_new_choice_price(update: Update, context: ContextTypes.DEFAULT
         )
 
         await update.message.reply_text(MESSAGES[selected_lang]['new_choice_added'].format(new_choice_name, new_choice_price))
-
+        await show_start_message(update, context, account)
        
 
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
