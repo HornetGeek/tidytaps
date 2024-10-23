@@ -4306,8 +4306,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
-    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
+    #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
