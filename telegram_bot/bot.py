@@ -25,7 +25,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tidytap.settings')
 django.setup()
 
 # Now you can import your models
-from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia
+from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia, Option, MenuItemChoices
 from django.contrib.auth.models import User
 
 LANGUAGES = {
@@ -252,6 +252,50 @@ MESSAGES = {
         'social_media_tiktok_updated': 'TikTok link updated successfully.',
         'invalid_facebook_link': 'Please enter a valid Facebook link starting with "facebook.com".',
         'social_media_facebook_updated': 'Facebook link updated successfully.',
+        'do_you_want_to_add_options': "❓ Would you like to add options for this product? 🛍️",
+        'provide_option_title': "🏷️ Please provide a title for this option (e.g., Size, Color):",
+        'provide_option_values': "Now, please enter the values for this option (e.g., Small, Medium, Large), separated by commas:",
+        'option_added_successfully': "Option added successfully!",
+        'add_more_options': "Would you like to add more options for this product?",
+        'provide_single_option_value': "🔢 Please enter a value for this option (e.g., Small, Red):",
+        'provide_single_option_price': "💰 Now, please enter the price for '{value}':",
+        'add_more_option_values': "Would you like to add another value for this option? Please enter it, or type 'done' to finish:",
+        'options_completed': "✅ You have completed adding options.",
+        'options_completed': "✅ You have completed adding options.",
+        'add_another_option_title': "➕ Would you like to add another option title?",
+        'edit_option': "Edit Options",
+        'choose_option_to_edit': "Choose an option to edit:",
+        'edit_option_title': "Edit Option Title",
+        'edit_option_choices': "Edit Option Choices",
+        'enter_new_option_title': "Enter the new title for the option:",
+        'option_title_updated': "The option title has been updated to: {0}",
+        'enter_new_choice_value': "Enter the new value for this choice:",
+        'choice_value_updated': "The choice value has been updated to: {0}",
+        'choose_choice_to_edit_or_add': "Choose a choice to edit, or add a new one:",
+        'add_new_choice': "Add New Choice",
+        'option_not_exist': "This option doesn't exist.",
+        'no_options_to_edit': "No options available for this product.",
+        'choice_not_exist': "This choice doesn't exist.",
+        'edit_option_prompt': "You are editing option: {0}. What would you like to do?",
+        'edit_choice_value': "Edit Value",  # Button label for editing the choice name/value
+        'edit_choice_price': "Edit Price",  # Button label for editing the choice price
+        'choose_edit_action': "What would you like to edit for '{0}'?",  # Message asking what to edit, where {0} is the choice name
+        'choice_price_updated': "The choice price has been updated to '{0}'.",  # Message confirming the price change
+        'enter_new_price': "Please enter the new price for '{0}':",  # Message asking for the new price, {0} is the choice name
+        'invalid_price': "Invalid input! Please enter a valid price.",
+        'enter_new_choice_name': "Please enter the name for the new choice:",
+        'enter_new_choice_price': "Please enter the price for the new choice:",
+        'new_choice_added': "New choice '{0}' with price {1} has been added successfully.",
+        'enter_option_name': "Please enter the name of the new option (e.g., Color, Size):",
+        'enter_choice_name': "Please enter the name of the choice (e.g., Red, Blue):",
+        'enter_choice_price': "Please enter the price for this choice:",
+        'add_another_choice_prompt': "Do you want to add another choice?",
+        'add_new_option': "Add New Option",
+        'finished_adding_choices': "You have finished adding choices for this option.",
+        'remove_option': "Remove Option",
+        'confirm_remove_option': "Are you sure you want to remove the option '{}'? This action cannot be undone.",
+        'option_removed': "Option removed successfully.",
+        'removal_canceled': "Option removal canceled.",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -434,6 +478,50 @@ MESSAGES = {
         'social_media_tiktok_updated': 'تم تحديث رابط تيك توك بنجاح.',
         'invalid_facebook_link': 'يرجى إدخال رابط فيسبوك صالح يبدأ بـ "facebook.com".',
         'social_media_facebook_updated': 'تم تحديث رابط فيسبوك بنجاح.',
+        'do_you_want_to_add_options': "❓ هل تريد إضافة خيارات لهذا المنتج؟ 🛍️",
+        'provide_option_title': "🏷️ يرجى تقديم عنوان لهذا الخيار (مثل: الحجم او اللون او إضافات):",
+        'provide_option_values': "الآن، يرجى إدخال القيم لهذا الخيار (مثل: صغير، متوسط، كبير)، مفصولة بفواصل:",
+        'option_added_successfully': "تمت إضافة الخيار بنجاح!",
+        'add_more_options': "هل تريد إضافة المزيد من الخيارات لهذا المنتج؟",
+        'provide_single_option_value': "🔢 يرجى إدخال قيمة لهذا الخيار (مثل: صغير, أحمر):",
+        'provide_single_option_price': "💰 الآن، يرجى إدخال السعر لـ '{value}':",
+        'add_more_option_values': "هل تريد ادخال قيمه اخرى لهذا الخيار",
+        'options_completed': "✅ لقد انتهيت من إضافة الخيارات.",
+        'options_completed': "✅ لقد انتهيت من إضافة الخيارات.",
+        'add_another_option_title': "➕ هل ترغب في إضافة عنوان خيار آخر؟",
+        'edit_option': "تعديل الخيارات",
+        'choose_option_to_edit': "اختر خيارًا للتعديل:",
+        'edit_option_title': "تعديل عنوان الخيار",
+        'edit_option_choices': "تعديل قيم الخيارات",
+        'enter_new_option_title': "أدخل العنوان الجديد للخيار:",
+        'option_title_updated': "تم تحديث عنوان الخيار إلى: {0}",
+        'enter_new_choice_value': "أدخل القيمة الجديدة لهذا الخيار:",
+        'choice_value_updated': "تم تحديث قيمة الخيار إلى: {0}",
+        'choose_choice_to_edit_or_add': "اختر خيارًا لتعديله، أو أضف خيارًا جديدًا:",
+        'add_new_choice': "إضافة خيار جديد",
+        'option_not_exist': "هذا الخيار غير موجود.",
+        'no_options_to_edit': "لا توجد خيارات لهذا المنتج.",
+        'choice_not_exist': "هذا الخيار غير موجود.",
+        'edit_option_prompt': "أنت تقوم بتعديل الخيار: {0}. ماذا تريد أن تفعل؟",
+        'edit_choice_value': "تعديل القيمة",  # Button label for editing the choice name/value
+        'edit_choice_price': "تعديل السعر",  # Button label for editing the choice price
+        'choose_edit_action': "ماذا تريد تعديل '{0}'؟",  # Message asking what to edit, where {0} is the choice name
+        'choice_price_updated': "تم تحديث سعر الخيار إلى '{0}'.",  # Message confirming the price change
+        'enter_new_price': "الرجاء إدخال السعر الجديد لـ '{0}':",  # Message asking for the new price, {0} is the choice name
+        'invalid_price': "إدخال غير صالح! الرجاء إدخال سعر صالح.",
+         'enter_new_choice_name': "الرجاء إدخال اسم الخيار الجديد:",
+        'enter_new_choice_price': "الرجاء إدخال سعر الخيار الجديد:",
+        'new_choice_added': "تمت إضافة الخيار الجديد '{0}' بسعر {1} بنجاح.",
+        'add_new_option': "إضافة خيار جديد",
+        'enter_option_name': "الرجاء إدخال اسم الخيار الجديد (مثلاً: اللون أو الحجم):",
+        'enter_choice_name': "الرجاء إدخال اسم الخيار (مثلاً: أحمر، أزرق):",
+        'enter_choice_price': "الرجاء إدخال السعر لهذا الخيار:",
+        'add_another_choice_prompt': "هل تريد إضافة خيار آخر؟",
+        'finished_adding_choices': "لقد انتهيت من إضافة الخيارات لهذا الخيار.",
+        'remove_option': "إزالة الخيار",
+        'confirm_remove_option': "هل أنت متأكد أنك تريد إزالة الخيار '{}؟' هذا الإجراء لا يمكن التراجع عنه.",
+        'option_removed': "تمت إزالة الخيار بنجاح.",
+        'removal_canceled': "تم إلغاء إزالة الخيار.",
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -531,6 +619,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif user_state == 'awaiting_address_details':
         await start_creating_address(update, context)
 
+    elif user_state == 'awaiting_option_title'  or user_state == "awaiting_new_option_name":
+        print("we are in awaiting option title")
+        await handle_option_title(update, context)
+
+    elif user_state == "awaiting_single_option_value":
+        await handle_option_value(update, context)
+    elif user_state == "awaiting_single_option_price":
+        await handle_option_price(update, context)
 
     elif user_state == 'awaiting_description':
         await handle_description(update, context)
@@ -559,6 +655,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_secondary_color_response(update, context)
     elif user_state == 'awaiting_delivery_fee':
         await handle_edit_delivery_fees(update, context)
+
+    elif user_state == 'awaiting_new_option_title':
+        print("we are in awaiting_new_option_title")
+        await receive_new_option_title(update, context)
+    elif user_state == 'awaiting_choice_value':
+        await receive_new_choice_value(update, context)
+
+    elif user_state == "awaiting_edit_new_price_choice":
+        await receive_new_price(update, context)
+
+    elif user_state == "awaiting_choice_name":
+        await receive_new_choice_name(update, context)
+    elif user_state == "awaiting_choice_price":
+        await receive_new_choice_price(update, context)
+
     else:
         print("we are in else in message handle")
         if not account:
@@ -622,7 +733,264 @@ async def handle_edit_delivery_fees(update: Update, context: ContextTypes.DEFAUL
     except ValueError:
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_delivery_fee'])
 
+async def receive_new_option_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
 
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    option = context.user_data.get('option')
+
+    if context.user_data.get('state') == 'awaiting_new_option_title':
+        new_title = update.message.text
+
+        # Update the option title
+        option.name = new_title
+        await sync_to_async(option.save)()
+
+        await update.message.reply_text(MESSAGES[selected_lang]['option_title_updated'].format(new_title))
+
+        # Reset the state
+        context.user_data['state'] = None
+
+async def receive_new_choice_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    choice = context.user_data.get('choice')
+
+    if context.user_data.get('state') == 'awaiting_choice_value':
+        new_choice_value = update.message.text
+
+        # Update the choice value
+        choice.name = new_choice_value
+        await sync_to_async(choice.save)()
+
+        await update.message.reply_text(MESSAGES[selected_lang]['choice_value_updated'].format(new_choice_value))
+
+        # Reset the state
+        context.user_data['state'] = None
+
+async def receive_new_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    # Check if the state is correct for receiving the new price
+    if context.user_data.get('state') == 'awaiting_edit_new_price_choice':
+        new_price = update.message.text
+
+        # Validate that the input is a number (basic validation)
+        if not new_price.isdigit():
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_price'])
+            return
+
+        # Get the choice from user_data
+        choice = context.user_data.get('choice')
+
+        # Update the price for the choice
+        choice.price = new_price
+        await sync_to_async(choice.save)()
+
+        # Notify the user that the price has been updated
+        await update.message.reply_text(MESSAGES[selected_lang]['choice_price_updated'].format(choice.name))
+
+
+async def receive_new_choice_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    # Check the state
+    if context.user_data.get('state') == 'awaiting_choice_name':
+        new_choice_name = update.message.text
+        context.user_data['new_choice_name'] = new_choice_name  # Cache the new choice name
+
+        # Ask for the price of the new choice
+        await update.message.reply_text(MESSAGES[selected_lang]['enter_new_choice_price'])
+
+        # Update the state to await the price
+        context.user_data['state'] = 'awaiting_choice_price'
+
+
+async def receive_new_choice_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    menu_item = context.user_data.get('product')
+    # Check the state
+    if context.user_data.get('state') == 'awaiting_choice_price':
+        new_choice_price = update.message.text
+
+        # Basic validation to check if it's a valid number
+        if not new_choice_price.isdigit():
+            await update.message.reply_text(MESSAGES[selected_lang]['invalid_price'])
+            return
+
+        # Get the option and new choice name from user_data
+        option = context.user_data.get('option')
+        new_choice_name = context.user_data.get('new_choice_name')
+
+        # Save the new choice to the database
+        new_choice = await sync_to_async(MenuItemChoices.objects.create)(
+            account=account,
+            menuitem=menu_item,
+            option=option,
+            name=new_choice_name,
+            price=new_choice_price
+        )
+
+        await update.message.reply_text(MESSAGES[selected_lang]['new_choice_added'].format(new_choice_name, new_choice_price))
+
+       
 
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
@@ -686,6 +1054,628 @@ async def handle_edit_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.callback_query.message.reply_text(MESSAGES[selected_lang]['which_color_to_edit'], reply_markup=reply_markup)
+
+async def edit_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    product = context.user_data.get('product')
+
+    # Fetch the options for the selected product
+    options = await sync_to_async(list)(Option.objects.filter(Item=product))
+
+    keyboard = []
+
+    if not options:
+        # If there are no options, show a button to add a new option
+        keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['add_new_option'], callback_data="add_new_option")])
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_options_to_edit'], reply_markup=InlineKeyboardMarkup(keyboard))
+        return
+
+    # If there are options, show them with an additional button to add a new option
+    for option in options:
+        # Add edit button for each option
+        keyboard.append([InlineKeyboardButton(option.name, callback_data=f"edit_option_{option.id}")])
+        # Add remove button with option name for each option
+        keyboard.append([InlineKeyboardButton(f"{MESSAGES[selected_lang]['remove_option']} ({option.name})", callback_data=f"remove_option_{option.id}")])
+
+    # Add button for adding a new option
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['add_new_option'], callback_data="add_new_option")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['choose_option_to_edit'], reply_markup=reply_markup)
+
+async def handle_remove_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    query = update.callback_query
+    await query.answer()
+
+    # Extract the option ID from the callback data
+    option_id = query.data.split('_')[-1]
+
+    # Fetch the option to ensure it exists
+    try:
+        option = await sync_to_async(Option.objects.get)(id=option_id)
+    except Option.DoesNotExist:
+        await query.message.reply_text(MESSAGES[selected_lang]['option_not_exist'])
+        return
+
+    # Confirm removal with the user
+    keyboard = [
+        [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data=f"confirm_remove_option_{option.id}")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data="cancel_remove_option")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.message.reply_text(
+        MESSAGES[selected_lang]['confirm_remove_option'].format(option.name),
+        reply_markup=reply_markup
+    )
+
+async def handle_confirm_remove_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    query = update.callback_query
+    await query.answer()
+
+    if query.data.startswith("confirm_remove_option_"):
+        option_id = query.data.split('_')[-1]
+
+        try:
+            # Remove the option
+            await sync_to_async(Option.objects.filter(id=option_id).delete)()
+            await query.message.reply_text(MESSAGES[selected_lang]['option_removed'])
+        except Option.DoesNotExist:
+            await query.message.reply_text(MESSAGES[selected_lang]['option_not_exist'])
+
+    elif query.data == "cancel_remove_option":
+        await query.message.reply_text(MESSAGES[selected_lang]['removal_canceled'])
+
+
+
+async def handle_edit_option(update: Update, context: ContextTypes.DEFAULT_TYPE, option_id):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    try:
+        option = await sync_to_async(Option.objects.get)(id=option_id)
+        context.user_data['option'] = option  # Cache the option
+
+        # Ask if the user wants to edit the title or the choices
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_option_title'], callback_data=f"edit_option_title_{option.id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_option_choices'], callback_data=f"edit_option_choices_{option.id}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['edit_option_prompt'].format(option.name),
+            reply_markup=reply_markup
+        )
+
+    except Option.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['option_not_exist'])
+
+async def add_new_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, option_id):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    # Fetch the option using the option_id
+    try:
+        option = await sync_to_async(Option.objects.get)(id=option_id)
+        context.user_data['option'] = option  # Cache the option in user_data
+    except Option.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['option_not_exist'])
+        return
+
+    # Ask the user for the new choice name
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_new_choice_name'])
+    
+    # Set the state to indicate that we're waiting for the new choice name
+    context.user_data['state'] = 'awaiting_choice_name'
+
+async def handle_add_new_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    # Prompt user for the new option name
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_option_name'])
+    
+    # Set the state to track what we're asking for
+    context.user_data['state'] = 'awaiting_new_option_name'
+
+async def handle_add_another_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == 'add_another_choice':
+        # Ask for the next choice name
+        context.user_data['state'] = 'awaiting_choice_name'
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_choice_name'])
+
+    elif query.data == 'finish_adding_choices':
+        # Finish adding options and choices
+        context.user_data['state'] = None
+        await query.message.reply_text(MESSAGES[selected_lang]['finished_adding_choices'])
+
+async def edit_option_choices(update: Update, context: ContextTypes.DEFAULT_TYPE, option_id):
+    print("we are in edit_option_choices func")
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    # Ensure that option is already set in context, or fetch it if necessary
+    option = context.user_data.get('option')
+
+    if option:
+        try:
+            # Fetch option from database if not already in context or incorrect option_id
+            option = await sync_to_async(Option.objects.get)(id=option_id)
+            context.user_data['option'] = option  # Store it in user_data
+        except Option.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['option_not_exist'])
+            return
+
+    # Fetch choices for this option
+    choices = await sync_to_async(list)(MenuItemChoices.objects.filter(option=option))
+
+    # Prepare the keyboard with current choices to edit or add new ones
+    keyboard = []
+    for choice in choices:
+        keyboard.append([InlineKeyboardButton(f"{choice.name}", callback_data=f"edit_choice_{choice.id}")])
+
+    # Add button to allow adding a new choice
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['add_new_choice'], callback_data=f"add_new_choice_{option.id}")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['choose_choice_to_edit_or_add'],
+        reply_markup=reply_markup
+    )
+
+async def handle_edit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, choice_id):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    
+    # Fetch the choice from the database
+    choice = await sync_to_async(MenuItemChoices.objects.get)(id=choice_id)
+    
+    # Ask the user if they want to edit the value or the price
+    keyboard = [
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_choice_value'], callback_data=f"edit_choice_value_{choice.id}")],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['edit_choice_price'], callback_data=f"edit_choice_price_{choice.id}")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['choose_edit_action'].format(choice.name),
+        reply_markup=reply_markup
+    )
+
+
+async def edit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE, choice_id):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+    try:
+        choice = await sync_to_async(MenuItemChoices.objects.get)(id=choice_id)
+        context.user_data['choice'] = choice  # Cache the choice
+
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_new_choice_value'])
+
+        # Set state to awaiting choice input
+        context.user_data['state'] = 'awaiting_choice_value'
+
+    except MenuItemChoices.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['choice_not_exist'])
+
+
+
+async def handle_edit_choice_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    
+    
+    query = update.callback_query
+    await query.answer()
+
+    # Extract choice ID from the callback data
+    choice_id = query.data.split("_")[-1]
+
+    try:
+        # Fetch the choice by ID
+        choice = await sync_to_async(MenuItemChoices.objects.get)(id=choice_id)
+        context.user_data['choice'] = choice  # Store the choice in user_data
+
+        # Ask the user to provide the new price
+        await query.message.reply_text(MESSAGES[selected_lang]['enter_new_price'].format(choice.name))
+
+        # Set state to collect the new price
+        context.user_data['state'] = 'awaiting_edit_new_price_choice'
+
+    except MenuItemChoices.DoesNotExist:
+        await query.message.reply_text(MESSAGES[selected_lang]['choice_not_exist'])
+
+
+async def edit_option_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+
+
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_new_option_title'])
+
+    # Set state to awaiting title input
+    context.user_data['state'] = 'awaiting_new_option_title'
 
 
 async def handle_edit_contacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1322,6 +2312,232 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
             MESSAGES[selected_lang]['category_confirmation'].format(category_name=category_name),
             reply_markup=reply_markup
         )
+
+async def handle_add_options_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    
+    # Ask for option title
+    option_title_prompt = MESSAGES[selected_lang]['provide_option_title']
+    await update.callback_query.message.reply_text(option_title_prompt)
+
+    # Set state for collecting option title
+    context.user_data['adding_option'] = True
+    context.user_data['current_option'] = {'title': None, 'choices': []}
+    context.user_data['state'] = 'awaiting_option_title'
+
+async def handle_option_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language
+    selected_lang = context.user_data.get('lang')
+    if not selected_lang and account:
+        selected_lang = account.language
+
+    chat_id = update.message.chat.id if update.message else update.callback_query.message.chat.id
+    context.user_data['chat_id'] = chat_id
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    # Step 1: If user is entering option title
+    if context.user_data.get('adding_option') or context.user_data.get('state') == "awaiting_new_option_name":
+        option_title = update.message.text
+        context.user_data['current_option'] = {'title': option_title, 'choices': [], 'prices': []}
+
+        # Prompt for the first value
+        option_values_prompt = MESSAGES[selected_lang]['provide_single_option_value']
+        await update.message.reply_text(option_values_prompt)
+
+        # Set state to collect the first option value
+        context.user_data['collecting_value'] = True
+        context.user_data['state'] = 'awaiting_single_option_value'
+
+async def handle_option_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    if context.user_data.get('collecting_value'):
+        # Get the value entered by the user
+        option_value = update.message.text
+        context.user_data['current_value'] = option_value  # Save current value
+
+        # Ask for the price for this value
+        option_price_prompt = MESSAGES[selected_lang]['provide_single_option_price'].format(value=option_value)
+
+        await update.message.reply_text(option_price_prompt)
+
+        # Set state for collecting the price for the current value
+        context.user_data['collecting_price'] = True
+        context.user_data['state'] = 'awaiting_single_option_price'
+
+async def handle_option_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    if context.user_data.get('collecting_price'):
+        # Get the price entered by the user
+        option_price = update.message.text
+        current_value = context.user_data['current_value']
+
+        # Save the value and price
+        context.user_data['current_option']['choices'].append(current_value)
+        context.user_data['current_option']['prices'].append(option_price)
+        #await store_option_in_db(context)
+        print(context.user_data['current_option'])
+
+        # Ask if the user wants to add another option
+        more_option_values_prompt = MESSAGES[selected_lang]['add_more_option_values']
+
+        more_options_keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data="add_more_option_yes"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data="add_more_option_no")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(more_options_keyboard)
+
+        # Send the message with the button options
+        await update.message.reply_text(
+            more_option_values_prompt,
+            reply_markup=reply_markup
+        )
+
+        # Reset state and wait for the user to click Yes or No
+        context.user_data['collecting_value'] = False
+        context.user_data['collecting_price'] = False
+        context.user_data['state'] = 'awaiting_more_option_choice'
+
+async def store_option_in_db(context):
+    account = context.user_data.get('account')
+    menu_item = context.user_data.get('menu_item')  # Assuming this holds the MenuItem object
+    current_option = context.user_data.get('current_option')
+    print("menu_item")
+    print("current_option")
+    print(menu_item)
+    if menu_item == None:
+        menu_item = context.user_data.get('product')
+    print(current_option)
+    # Create a new Option in the database
+    option_title = current_option['title']
+
+    new_option = await sync_to_async(Option.objects.create)(
+        account=account,
+        Item=menu_item,
+        name=option_title,
+        type='text',  # You can modify this to allow different types
+        required=False
+    )
+
+    # Create MenuItemChoices for each choice with the corresponding price
+    choices = current_option['choices']
+    prices = current_option['prices']
+
+    for choice, price in zip(choices, prices):
+        await sync_to_async(MenuItemChoices.objects.create)(
+            account=account,
+            menuitem=menu_item,
+            option=new_option,
+            name=f"{choice}",
+            price= price,
+            Popular=False  # You can adjust the value for Popular based on additional logic
+        )
+
+    # Reset the current option in context for the next option, if any
+    context.user_data['current_option'] = {'title': '', 'choices': [], 'prices': []}
 
 
 async def show_social_media_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2222,37 +3438,29 @@ async def no_more_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
         )
     
-    welcome_message = MESSAGES[selected_lang]['control_over_all_things']
-    
-    keyboard = [
+    add_options_prompt = MESSAGES[selected_lang]['do_you_want_to_add_options']
+
+    options_keyboard = [
         [
-            InlineKeyboardButton(MESSAGES[selected_lang]['add_product'], callback_data="add_product"),
-            InlineKeyboardButton(MESSAGES[selected_lang]['edit_product'], callback_data='edit_product')
-        ],
-        [
-            InlineKeyboardButton(MESSAGES[selected_lang]['delete_product'], callback_data='delete_product')
-        ],
-        [
-            InlineKeyboardButton(MESSAGES[selected_lang]['delete_category'], callback_data="delete_category"),
-            InlineKeyboardButton(MESSAGES[selected_lang]['edit_store_info'], callback_data="edit_store_info")
-        ],
-        [
-            InlineKeyboardButton(MESSAGES[selected_lang]['get_website_qr'], callback_data="get_website_qr")
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data="add_options_yes"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data="add_options_no")
         ]
     ]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    options_reply_markup = InlineKeyboardMarkup(options_keyboard)
 
     if update.callback_query:
         await update.callback_query.message.reply_text(
-            welcome_message,
-            reply_markup=reply_markup
+            add_options_prompt,
+            reply_markup=options_reply_markup
         )
     elif update.message:
         await update.message.reply_text(
-            welcome_message,
-            reply_markup=reply_markup
+            add_options_prompt,
+            reply_markup=options_reply_markup
         )
+
+
 
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Get the user's selected language
@@ -2478,8 +3686,32 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
     # Get the user's selected language
-    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    chat_id = update.callback_query.message.chat.id
+    
+    # Set default language to English ('en') initially
+    selected_lang = 'en'
+
+    # Assuming context.user_data['account'] has the logged-in account details
     account = context.user_data.get('account')
+    
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account in user_data
+        except Account.DoesNotExist:
+            keyboard = [
+                [InlineKeyboardButton(MESSAGES['en']['buttons']['add_account'], callback_data="add_account")],
+                [InlineKeyboardButton(MESSAGES['en']['buttons']['cancel'], callback_data="cancel")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.callback_query.message.reply_text(
+                MESSAGES['en']['no_account'],
+                reply_markup=reply_markup
+            )
+            return
+
+    # Set the user's language if available in the account, otherwise use 'en' (English)
     if account and account.language:
         selected_lang = account.language
 
@@ -2487,11 +3719,13 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
     try:
         product = await sync_to_async(MenuItem.objects.get)(id=product_id)
         context.user_data['product'] = product  # Cache the product in user_data
-
+        print("producttttttttt")
+        print(context.user_data['product'])
         # Show buttons for editing options: Name, Price, Image
         keyboard = [
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_name'], callback_data=f"edit_name_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_price'], callback_data=f"edit_price_{product.id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_option'], callback_data=f"edit_options_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_image'], callback_data=f"edit_image_{product.id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -2810,6 +4044,49 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['social_media'] = 'tiktok'
         context.user_data['state'] = 'awaiting_tiktok_link'
 
+    elif query.data == "add_options_yes":
+        await handle_add_options_yes(update, context)
+
+    elif query.data == "add_another_option_yes":
+        # Ask for the new option title
+        option_title_prompt = MESSAGES[selected_lang]['provide_option_title']
+        await query.message.reply_text(option_title_prompt)
+
+        # Set state to collect the new option title
+        context.user_data['collecting_option_title'] = True
+        context.user_data['state'] = 'awaiting_option_title'
+
+    elif query.data == "add_another_option_no":
+
+        await query.message.reply_text(MESSAGES[selected_lang]['options_completed'])
+        await store_option_in_db(context)
+        await show_start_message(update, context, account)
+
+        # Finalize the product or move to the next stage
+
+    elif query.data == "add_more_option_yes":
+        # Ask the user for the next option value
+        option_values_prompt = MESSAGES[selected_lang]['provide_single_option_value']
+        await query.message.reply_text(option_values_prompt)
+
+        # Set state to collect the next option value
+        context.user_data['collecting_value'] = True
+        context.user_data['state'] = 'awaiting_single_option_value'
+
+    elif query.data == "add_more_option_no":
+        await query.message.reply_text(MESSAGES[selected_lang]['no_more_options'])
+        another_option_prompt = MESSAGES[selected_lang]['add_another_option_title']
+
+        another_option_keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data="add_another_option_yes"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data="add_another_option_no")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(another_option_keyboard)
+
+        await query.message.reply_text(another_option_prompt, reply_markup=reply_markup)
+
 
 
     elif query.data == 'edit_product':
@@ -2916,6 +4193,66 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "Edits_contacts":
         await handle_edit_contacts(update, context)
 
+    elif query.data.startswith("add_new_choice_"):
+        option_id = query.data.split("_")[-1]
+        await add_new_choice(update, context, option_id)
+
+    elif query.data == "add_new_option":
+        await handle_add_new_option(update, context)
+
+    elif query.data.startswith("add_another_choice") or query.data == "finish_adding_choices":
+        await handle_add_another_choice(update, context)
+
+    elif query.data.startswith("remove_option_"):
+        await handle_remove_option(update, context)
+    elif query.data.startswith("confirm_remove_option_") or query.data == "cancel_remove_option":
+        await handle_confirm_remove_option(update, context)
+
+    elif query.data.startswith("edit_option_choices_"):
+        print("we are edit_option_choices_")
+        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwwww")
+        option_id = query.data.split("_")[3]
+        print("option_id")
+        print(option_id)
+        await edit_option_choices(update, context, option_id)
+
+    elif query.data.startswith("edit_option_title_"):
+        print("we are in edit option title")
+        await edit_option_title(update, context)
+
+    elif query.data.startswith("edit_option_"):
+        print("we are in edit_option")
+        print("option_id")
+
+        option_id = query.data.split("_")[-1]
+        print("option_id")
+        print(option_id)
+       
+        await handle_edit_option(update, context, option_id)
+
+    elif query.data.startswith("edit_options_"):
+        await edit_options(update, context)
+    
+    elif query.data.startswith("edit_choice_price_"):
+        print("we are in edit_choice_price_  ")
+        print(query.data.split("_")[3])
+        
+        await handle_edit_choice_price(update, context)
+
+    elif query.data.startswith("edit_choice_value_"):
+        print("we are in edit_choice_value_  ")
+        print(query.data.split("_")[3])
+        choice_id = query.data.split("_")[3]
+
+        await edit_choice(update, context, choice_id)
+
+
+    elif query.data.startswith("edit_choice_"):
+        choice_id = query.data.split("_")[-1]
+        await handle_edit_choice(update, context, choice_id)
+
+        #await edit_choice(update, context, choice_id)
+    
     elif query.data == 'delete_product':
         await show_products_for_deletion(update, context)
 
@@ -2969,8 +4306,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
-    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
+    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
