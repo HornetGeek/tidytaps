@@ -4074,7 +4074,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['state'] = 'awaiting_single_option_value'
 
     elif query.data == "add_more_option_no":
-        await query.message.reply_text(MESSAGES[selected_lang]['no_more_options'])
+        #await query.message.reply_text(MESSAGES[selected_lang]['no_more_options'])
         another_option_prompt = MESSAGES[selected_lang]['add_another_option_title']
 
         another_option_keyboard = [
