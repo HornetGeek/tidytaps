@@ -1,4 +1,5 @@
 # Import necessary libraries and modules
+import json
 import os
 import sys
 import django
@@ -17,6 +18,7 @@ from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
 from PIL import Image
 import io
+import requests
 
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -65,6 +67,9 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
         [
             InlineKeyboardButton(buttons['delete_category'], callback_data="delete_category"),
             InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
+        ],
+        [
+            InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
         ],
         [
             InlineKeyboardButton(buttons['get_website_qr'], callback_data="get_website_qr")
@@ -301,6 +306,10 @@ MESSAGES = {
         'enter_new_phone_number': "Please enter your new phone number:",
         'whatsapp_number_updated': "Your WhatsApp number has been updated successfully.",
         'invalid_phone_number': "The phone number you entered is invalid. Please enter a valid international phone number.",
+        'enter_new_description': "Please enter the new description for the product:",
+        'description_updated': "Product description updated successfully.",
+        'edit_description': "Edit Description",
+        
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -308,6 +317,7 @@ MESSAGES = {
             'delete_category': "🗑️ Delete Category",
             'edit_store_info': "🛠️ Edit Store Info",
             'get_website_qr': "🌐 Get Website & QR Code",
+            'get_analytics': "📊 View Analytics",
             'add_account': "Add Account",
             'choose_product': "Choose a product to edit:",
             'yes': "Yes",
@@ -531,6 +541,10 @@ MESSAGES = {
         'enter_new_phone_number': "يرجى إدخال رقم الواتساب الجديد الخاص بك:",
         'whatsapp_number_updated': "تم تحديث رقم الواتساب الخاص بك بنجاح.",
         'invalid_phone_number': "رقم الهاتف الذي أدخلته غير صالح. يرجى إدخال رقم هاتف دولي صالح.",
+        'edit_description': "تعديل الوصف",
+        'enter_new_description': "يرجى إدخال الوصف الجديد للمنتج:",
+        'description_updated': "تم تحديث وصف المنتج بنجاح.",
+        
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -538,6 +552,7 @@ MESSAGES = {
             'delete_category': "🗑️ حذف فئة",
             'edit_store_info': "🛠️ تعديل معلومات المتجر",
             'get_website_qr': "🌐 الحصول على الموقع ورمز QR",
+            'get_analytics': "📊 عرض التحليلات",
             'add_account': "إضافة حساب",
             'choose_product': "اختر منتجًا لتعديله:",
             'yes': "نعم",
@@ -680,7 +695,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await receive_new_choice_price(update, context)
     elif user_state == "awaiting_phone_number":
         await edit_whatsapp_number(update, context)
-
+    elif user_state == "awaiting_edit_description":
+        await handle_edit_description(update, context)
     else:
         print("we are in else in message handle")
         if not account:
@@ -1059,6 +1075,38 @@ def validate_phone_number(phone_number):
         return True
 
     return False
+
+
+async def handle_edit_description(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
+    selected_lang = context.user_data.get('lang')
+
+    if 'account' not in context.user_data:
+        chat_id = context.user_data.get('chat_id', update.callback_query.message.chat.id)
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
+            return
+            
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language
+
+
+    if context.user_data.get('state') == 'awaiting_edit_description':
+        product = context.user_data.get('product')
+        if product:
+            product.desc = user_message  # Update the product description
+            await sync_to_async(product.save)()  # Save changes to the database
+            await update.message.reply_text(MESSAGES[selected_lang]['description_updated'])
+            await show_start_message(update, context, account)
+            
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['product_not_exist'])
+
 
 async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
@@ -3754,6 +3802,48 @@ async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def edit_product_description(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
+    selected_lang = context.user_data.get('lang')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+        
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    # Fetch the product from the database
+    try:
+        product = await sync_to_async(MenuItem.objects.get)(id=product_id)
+        context.user_data['product'] = product  # Cache the product in user_data
+        
+        # Prompt user to enter new description
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_new_description'])
+        context.user_data['state'] = 'awaiting_edit_description'  # Set the state to await description input
+
+    except MenuItem.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['product_not_exist'])
+
+
 async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
     # Get the user's selected language
     chat_id = update.callback_query.message.chat.id
@@ -3796,6 +3886,7 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_name'], callback_data=f"edit_name_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_price'], callback_data=f"edit_price_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_option'], callback_data=f"edit_options_{product.id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_description'], callback_data=f"edit_description_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_image'], callback_data=f"edit_image_{product.id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -4109,6 +4200,49 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['social_media'] = 'whatsapp'
         context.user_data['state'] = 'awaiting_whatsapp_link'
 
+    elif query.data == "get_analytics":
+        account_id = account.id  # Assuming you have an account object with an id field
+        print("account_id")
+        print(account_id)
+        loading_message = await query.message.reply_text("Loading analytics data... Please wait.", disable_notification=True)
+        # Constructing the API call
+        api_url = "https://us.posthog.com/api/projects/97740/query/"
+        headers = {
+            'Authorization': 'Bearer phx_q3dOBgCDf270CsMd3TxVAYGsm8Gaxn0vwQb7WJ5bRURs8oK',
+            'Content-Type': 'application/json'
+        }
+        
+        query_data = {
+            "query": {
+                "kind": "HogQLQuery",
+                "query": f"SELECT COUNT(*) AS total_views, COUNT(DISTINCT distinct_id) AS total_visits, "
+                        f"AVG(toFloat(properties.$session_duration)) AS avg_visit_duration "
+                        f"FROM events WHERE event = 'account_page_view' AND properties.account_id = '{account_id}'"
+            }
+        }
+
+        # Make the request to PostHog API
+        response = requests.post(api_url, headers=headers, data=json.dumps(query_data))
+        
+        
+
+        # Check if the response was successful
+        if response.status_code == 200:
+            result = response.json()['results'][0]
+            total_views = result[0]
+            total_visits = result[1]
+            avg_visit_duration = result[2]
+
+            # Reply back with the analytics information
+            await loading_message.edit_text(
+                f"📊 *Analytics for Account ID {account_id}*\n"
+                f"Total Views: {total_views}\n"
+                f"Total Visits: {total_visits}\n",
+                parse_mode="Markdown"
+            )
+        else:
+            await query.message.reply_text(f"Failed to fetch analytics. Status code: {response.status_code}")
+
     elif query.data == "edit_tiktok":
         await query.message.reply_text(MESSAGES[selected_lang]['enter_tiktok_link'])
         context.user_data['social_media'] = 'tiktok'
@@ -4162,7 +4296,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(another_option_prompt, reply_markup=reply_markup)
 
 
-
+    elif query.data.startswith("edit_description_"):
+        product_id = query.data.split("_")[2]  # Extract product ID from the callback data
+        await edit_product_description(update, context, product_id)
     elif query.data == 'edit_product':
         await query.message.reply_text(MESSAGES[selected_lang]['buttons']['edit_product'])
         await show_products(update, context)
@@ -4380,8 +4516,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
-    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
+    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
