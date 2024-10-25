@@ -309,7 +309,13 @@ MESSAGES = {
         'enter_new_description': "Please enter the new description for the product:",
         'description_updated': "Product description updated successfully.",
         'edit_description': "Edit Description",
-        
+         "get_analytics": (
+            "📊 *Analytics for Account ID {account_id}*\n"
+            "Total Views: {total_views}\n"
+            "Total Visits: {total_visits}\n"
+        ),
+        "loading_message": "Loading analytics data... Please wait.",
+        "failed_fetch": "Failed to fetch analytics. Status code: {status_code}",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -544,7 +550,13 @@ MESSAGES = {
         'edit_description': "تعديل الوصف",
         'enter_new_description': "يرجى إدخال الوصف الجديد للمنتج:",
         'description_updated': "تم تحديث وصف المنتج بنجاح.",
-        
+        "get_analytics": (
+            "📊 *تحليلات لحساب ID {account_id}*\n"
+            "إجمالي المشاهدات: {total_views}\n"
+            "إجمالي الزيارات: {total_visits}\n"
+        ),
+        "loading_message": "جاري تحميل بيانات التحليلات... من فضلك انتظر.",
+        "failed_fetch": "فشل في جلب التحليلات. كود الحالة: {status_code}",
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -1143,8 +1155,11 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
-            InlineKeyboardButton(f"📱 {MESSAGES[selected_lang]['edit_whatsapp_number']}", callback_data="edit_whatsapp_number"),  # New button added
-
+        ],
+        [
+            InlineKeyboardButton(f"📱 {MESSAGES[selected_lang]['edit_whatsapp_number']}", callback_data="edit_whatsapp_number"), 
+            
+    
         ],
         [
             InlineKeyboardButton(f"❌ {MESSAGES[selected_lang]['cancel']}", callback_data="cancel")
@@ -4204,7 +4219,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         account_id = account.id  # Assuming you have an account object with an id field
         print("account_id")
         print(account_id)
-        loading_message = await query.message.reply_text("Loading analytics data... Please wait.", disable_notification=True)
+
+        loading_message_text = MESSAGES[selected_lang]['loading_message']
+        loading_message = await query.message.reply_text(loading_message_text, disable_notification=True)
         # Constructing the API call
         api_url = "https://us.posthog.com/api/projects/97740/query/"
         headers = {
@@ -4231,17 +4248,19 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             result = response.json()['results'][0]
             total_views = result[0]
             total_visits = result[1]
-            avg_visit_duration = result[2]
 
+            analytics_message = MESSAGES[selected_lang]['get_analytics']
             # Reply back with the analytics information
-            await loading_message.edit_text(
-                f"📊 *Analytics for Account ID {account_id}*\n"
-                f"Total Views: {total_views}\n"
-                f"Total Visits: {total_visits}\n",
-                parse_mode="Markdown"
+            await loading_message.edit_text(analytics_message.format(
+                account_id=account_id, 
+                total_views=total_views, 
+                total_visits=total_visits
+            ),
+            parse_mode="Markdown"
             )
         else:
-            await query.message.reply_text(f"Failed to fetch analytics. Status code: {response.status_code}")
+            failed_message = MESSAGES[selected_lang]['failed_fetch']
+            await query.message.reply_text(failed_message.format(status_code=response.status_code))
 
     elif query.data == "edit_tiktok":
         await query.message.reply_text(MESSAGES[selected_lang]['enter_tiktok_link'])
@@ -4368,7 +4387,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_logo(update, context)
 
     elif query.data.startswith("create_new_category"):
-        selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
         await query.message.reply_text(MESSAGES[selected_lang]['enter_new_category'])
         context.user_data['state'] = 'awaiting_category'
 
