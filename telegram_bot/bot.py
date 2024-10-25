@@ -310,7 +310,7 @@ MESSAGES = {
         'description_updated': "Product description updated successfully.",
         'edit_description': "Edit Description",
          "get_analytics": (
-            "📊 *Analytics for Account ID {account_id}*\n"
+            "📊 *Analytics for Account*\n"
             "Total Views: {total_views}\n"
             "Total Visits: {total_visits}\n"
         ),
@@ -551,7 +551,7 @@ MESSAGES = {
         'enter_new_description': "يرجى إدخال الوصف الجديد للمنتج:",
         'description_updated': "تم تحديث وصف المنتج بنجاح.",
         "get_analytics": (
-            "📊 *تحليلات لحساب ID {account_id}*\n"
+            "📊 *تحليلات لحسابك*\n"
             "إجمالي المشاهدات: {total_views}\n"
             "إجمالي الزيارات: {total_visits}\n"
         ),
