@@ -4286,7 +4286,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "add_another_option_no":
 
         await query.message.reply_text(MESSAGES[selected_lang]['options_completed'])
-        await store_option_in_db(context)
+        
         await show_start_message(update, context, account)
 
         # Finalize the product or move to the next stage
@@ -4302,6 +4302,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "add_more_option_no":
         #await query.message.reply_text(MESSAGES[selected_lang]['no_more_options'])
+        await store_option_in_db(context)
         another_option_prompt = MESSAGES[selected_lang]['add_another_option_title']
 
         another_option_keyboard = [
