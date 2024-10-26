@@ -264,7 +264,7 @@ MESSAGES = {
         'option_added_successfully': "Option added successfully!",
         'add_more_options': "Would you like to add more options for this product?",
         'provide_single_option_value': "🔢 Please enter a value for this option (e.g., Small, Red):",
-        'provide_single_option_price': "💰 Now, please enter the price for '{value}':",
+        'provide_single_option_price': "💰 Now, please enter the price for '{value}' (this will be added to the product price. Enter 0 if there’s no additional cost):",
         'add_more_option_values': "Would you like to add another value for this option? Please enter it, or type 'done' to finish:",
         'options_completed': "✅ You have completed adding options.",
         'options_completed': "✅ You have completed adding options.",
@@ -287,10 +287,10 @@ MESSAGES = {
         'edit_choice_price': "Edit Price",  # Button label for editing the choice price
         'choose_edit_action': "What would you like to edit for '{0}'?",  # Message asking what to edit, where {0} is the choice name
         'choice_price_updated': "The choice price has been updated to '{0}'.",  # Message confirming the price change
-        'enter_new_price': "Please enter the new price for '{0}':",  # Message asking for the new price, {0} is the choice name
+        'enter_new_price': "💰 Please enter the new price for '{0}' (enter 0 if there is no additional price):",
         'invalid_price': "Invalid input! Please enter a valid price.",
         'enter_new_choice_name': "Please enter the name for the new choice:",
-        'enter_new_choice_price': "Please enter the price for the new choice:",
+        'enter_new_choice_price': "Please enter the price for the new choice (enter 0 if there is no additional cost):",
         'new_choice_added': "New choice '{0}' with price {1} has been added successfully.",
         'enter_option_name': "📋 Please enter the name of the new option (e.g., Color, Size):",
         'enter_choice_name': "🏷️ Please enter the name of the choice (e.g., Red, Blue):",  # Replaced the palette icon with a tag icon
@@ -505,7 +505,7 @@ MESSAGES = {
         'option_added_successfully': "تمت إضافة الخيار بنجاح!",
         'add_more_options': "هل تريد إضافة المزيد من الخيارات لهذا المنتج؟",
         'provide_single_option_value': "🔢 يرجى إدخال قيمة لهذا الخيار (مثل: صغير, أحمر):",
-        'provide_single_option_price': "💰 الآن، يرجى إدخال السعر لـ '{value}':",
+        'provide_single_option_price': "💰 الآن، يرجى إدخال السعر لـ '{value}' (سيتم إضافة هذا السعر إلى سعر المنتج. إذا لم يكن هناك سعر إضافي، أدخل 0):",
         'add_more_option_values': "هل تريد ادخال قيمه اخرى لهذا الخيار",
         'options_completed': "✅ لقد انتهيت من إضافة الخيارات.",
         'options_completed': "✅ لقد انتهيت من إضافة الخيارات.",
@@ -528,10 +528,10 @@ MESSAGES = {
         'edit_choice_price': "تعديل السعر",  # Button label for editing the choice price
         'choose_edit_action': "ماذا تريد تعديل '{0}'؟",  # Message asking what to edit, where {0} is the choice name
         'choice_price_updated': "تم تحديث سعر الخيار إلى '{0}'.",  # Message confirming the price change
-        'enter_new_price': "الرجاء إدخال السعر الجديد لـ '{0}':",  # Message asking for the new price, {0} is the choice name
+        'enter_new_price': "💰 الرجاء إدخال السعر الجديد لـ '{0}' (إذا لم يكن هناك زيادة على السعر، أدخل 0):",  # Message asking for the new price, {0} is the choice name
         'invalid_price': "إدخال غير صالح! الرجاء إدخال سعر صالح.",
-         'enter_new_choice_name': "الرجاء إدخال اسم الخيار الجديد:",
-        'enter_new_choice_price': "الرجاء إدخال سعر الخيار الجديد:",
+        'enter_new_choice_name': "الرجاء إدخال اسم الخيار الجديد:",
+        'enter_new_choice_price': "💰 الرجاء إدخال سعر الخيار الجديد (إذا لم يكن هناك سعر إضافي، أدخل 0):",
         'new_choice_added': "تمت إضافة الخيار الجديد '{0}' بسعر {1} بنجاح.",
         'add_new_option': "➕ إضافة خيار جديد",
         'enter_option_name': "📋 الرجاء إدخال اسم الخيار الجديد (مثلاً: اللون أو الحجم):",
