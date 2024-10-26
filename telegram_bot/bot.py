@@ -2074,29 +2074,33 @@ async def update_product_price(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data.pop('product', None)
     context.user_data.pop('state', None)
 
-
 async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     product_id = context.user_data.get('product_id')
     selected_lang = context.user_data.get('lang')
-    account = context.user_data['account']
+    account = context.user_data.get('account')
+    
     if not selected_lang and account:
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
 
     try:
+        # Fetch product
         product = await sync_to_async(MenuItem.objects.get)(id=product_id)
 
         await update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
 
-        new_image = await update.message.photo[-1].get_file()
+        # Get the last photo file sent in the message and await get_file() correctly
+        new_image = update.message.photo[-1]
+        file = await new_image.get_file()  # Await here to get the actual File object
 
-        image_stream = io.BytesIO()
-        await new_image.download(image_stream)
-        image_stream.seek(0)
+        # Download the photo to an in-memory byte stream
+        image_stream = await file.download_as_bytearray()
+        image_stream = io.BytesIO(image_stream)
 
+        # Process the image using PIL
         with Image.open(image_stream) as img:
             # Compress the image and save it to a new BytesIO object
             compressed_image_stream = io.BytesIO()
-            img.save(compressed_image_stream, format='JPEG', quality=85)  # Adjust quality as needed
+            img.save(compressed_image_stream, format='JPEG', quality=85)
             compressed_image_stream.seek(0)  # Move to the start of the compressed image stream
 
             # Save the compressed image to file
@@ -2104,21 +2108,22 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
             with open(file_path, 'wb') as f:
                 f.write(compressed_image_stream.getvalue())
 
-
+        # Update the product image path in the database
         product.picture = file_path
         await sync_to_async(product.save)()
 
-        # Send the success message
-          # Get user's language, default to 'en'
+        # Send success message
         await update.message.reply_text(MESSAGES[selected_lang]['product_image_updated'])
 
         await show_start_message(update, context, account)
+
     except MenuItem.DoesNotExist:
-        lang = context.user_data.get('language', 'en')  # Get user's language, default to 'en'
         await update.message.reply_text(MESSAGES[selected_lang]['product_not_found'])
 
+    # Clean up user data in context
     context.user_data.pop('product_id', None)
     context.user_data.pop('state', None)
+
 
 # Handle account username step
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
