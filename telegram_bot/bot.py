@@ -4295,7 +4295,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_start_message(update, context, account)
 
         # Finalize the product or move to the next stage
-
+    elif query.data == "add_options_no":
+        context.user_data.pop('state', None)
+        await show_start_message(update, context, account)
     elif query.data == "add_more_option_yes":
         # Ask the user for the next option value
         option_values_prompt = MESSAGES[selected_lang]['provide_single_option_value']
