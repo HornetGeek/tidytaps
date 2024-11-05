@@ -197,7 +197,24 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class CoverViewSet(viewsets.ModelViewSet):
+    queryset = Cover.objects.all()
+    serializer_class = CoverSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        account_id = self.request.query_params.get('account_id')
+        if account_id:
+            return self.queryset.filter(account__id=account_id)
+        return self.queryset
+
+    def create(self, request, *args, **kwargs):
+        account_id = request.data.get('account')
+        if not account_id:
+            return Response({"detail": "Account ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().create(request, *args, **kwargs)
+    
 class CategoryAPIView(generics.CreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer

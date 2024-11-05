@@ -43,6 +43,10 @@ class Account(models.Model):
 
     def __str__(self):
         return self.username
+
+class Cover(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="cover_account")
+    cover = models.FileField(upload_to='static/img/covers')
     
 class Delivery(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="delivery_account")

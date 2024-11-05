@@ -77,7 +77,14 @@ class AdressesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Adresses
         fields = '__all__'
-
+        
+class CoverSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cover
+        fields = ['id', 'account', 'cover']  # Include all fields you want to expose in the API
+        extra_kwargs = {
+            'account': {'write_only': True}  # Make 'account' writable only, so you can create/update by account_id
+        }
 class SocialMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialMedia

@@ -19,6 +19,8 @@ from telegram.ext import CallbackContext
 from PIL import Image
 import io
 import requests
+from urllib.parse import quote
+
 
 # Add the project root to sys.path so Python can find 'tidytap'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,7 +30,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tidytap.settings')
 django.setup()
 
 # Now you can import your models
-from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia, Option, MenuItemChoices
+from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia, Option, MenuItemChoices, Cover
 from django.contrib.auth.models import User
 
 LANGUAGES = {
@@ -309,6 +311,23 @@ MESSAGES = {
         'enter_new_description': "Please enter the new description for the product:",
         'description_updated': "Product description updated successfully.",
         'edit_description': "Edit Description",
+        'too_many_images': "You can only upload up to {max_images} images. Please try again with fewer images.",
+        'upload_cover_instruction': "Please upload a cover photo for your store. This will appear at the top of your website.",
+        'cover_uploaded_successfully': "Cover photo uploaded successfully!",
+        'upload_another_cover': "Would you like to upload another cover photo?",
+        'upload_cover_instruction': "Please upload another cover photo for your store.",
+        'cover_upload_complete': "Cover upload completed. Thank you!",
+        'ask_upload_another_cover': "Would you like to upload another cover image?",
+        'downloading_image': "Downloading the image...",
+        'cover_downloaded_successfully': "Cover image uploaded successfully!",
+        'cover_download_error': "An error occurred while downloading the cover image: {error}",
+        'invalid_image_type': "Please send a valid image file.",
+        'upload_error': "There was an error uploading your cover photo. Please try again.",
+        "upload_another_cover_inst":"Please Upload another cover photo",
+        'choose_cover_action': "Would you like to add a new cover or delete an existing one?",
+        'upload_cover_instruction': "Please upload a new cover image.",
+        'cover_deleted': "The cover image has been deleted.",
+        'cover_not_found': "No cover found to delete.",
          "get_analytics": (
             "📊 *Analytics for Account*\n"
             "Total Views: {total_views}\n"
@@ -316,6 +335,7 @@ MESSAGES = {
         ),
         "loading_message": "Loading analytics data... Please wait.",
         "failed_fetch": "Failed to fetch analytics. Status code: {status_code}",
+        'edit_cover': "Edit Cover",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -327,9 +347,12 @@ MESSAGES = {
             'add_account': "Add Account",
             'choose_product': "Choose a product to edit:",
             'yes': "Yes",
+            'delete': "Delete",
             'no': "No",
             'help': "Ask For Help",
-            'cancel': "Cancel"
+            'cancel': "Cancel",
+            'add_cover': "Add Cover",
+            'delete_cover': "Delete Cover",
         }
     },
     'ar': {
@@ -550,6 +573,21 @@ MESSAGES = {
         'edit_description': "تعديل الوصف",
         'enter_new_description': "يرجى إدخال الوصف الجديد للمنتج:",
         'description_updated': "تم تحديث وصف المنتج بنجاح.",
+        'edit_cover': "تعديل الغلاف",
+        'upload_cover_instruction': "يرجى تحميل صورة غلاف لمتجرك. ستظهر في أعلى المتجر.",
+        'cover_uploaded_successfully': "تم تحميل صورة الغلاف بنجاح!",
+        "upload_another_cover_inst" : "يرجى تحميل صورة غلاف اخرى لمتجرك",
+        'upload_another_cover': "هل ترغب في تحميل صورة غلاف أخرى؟",
+        'cover_upload_complete': "اكتمل تحميل الغلاف. شكرًا لك!",
+        'upload_error': "حدث خطأ أثناء تحميل صورة الغلاف. يرجى المحاولة مرة أخرى.",
+        'cover_downloaded_successfully': "تم تحميل صورة الغلاف بنجاح!",
+        'ask_upload_another_cover': "هل ترغب في تحميل صورة غلاف أخرى؟",
+        'cover_download_error': "حدث خطأ أثناء تنزيل صورة الغلاف: {error}",
+        'invalid_image_type': "يرجى إرسال ملف صورة صالح.",
+        'choose_cover_action': "هل ترغب في إضافة غلاف جديد أو حذف غلاف موجود؟",
+        'upload_cover_instruction': "يرجى تحميل صورة غلاف جديدة.",
+        'cover_deleted': "تم حذف صورة الغلاف.",
+        'cover_not_found': "لم يتم العثور على غلاف لحذفه.",
         "get_analytics": (
             "📊 *تحليلات لحسابك*\n"
             "إجمالي المشاهدات: {total_views}\n"
@@ -557,6 +595,7 @@ MESSAGES = {
         ),
         "loading_message": "جاري تحميل بيانات التحليلات... من فضلك انتظر.",
         "failed_fetch": "فشل في جلب التحليلات. كود الحالة: {status_code}",
+        'too_many_images': "يمكنك تحميل ما يصل إلى {max_images} صورة فقط. يرجى المحاولة مرة أخرى بعدد أقل من الصور.",
         'buttons': {
             'add_product': "➕ إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -567,6 +606,9 @@ MESSAGES = {
             'get_analytics': "📊 عرض التحليلات",
             'add_account': "إضافة حساب",
             'choose_product': "اختر منتجًا لتعديله:",
+            'add_cover': "إضافة غلاف",
+            'delete_cover': "حذف غلاف",
+            'delete': "حذف",
             'yes': "نعم",
             'no': "لا",
             'help': "طلب المساعدة",
@@ -651,7 +693,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif user_state == 'awaiting_price':
         await handle_price(update, context)
-
+    elif user_state == "awaiting_cover_upload":
+        await handle_cover_upload(update, context)
     elif user_state == 'awaiting_address_details':
         await start_creating_address(update, context)
 
@@ -1141,29 +1184,29 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Improved button layout with emojis and better grouping
     keyboard = [
-        [
-            InlineKeyboardButton(f"🖼 {MESSAGES[selected_lang]['edit_logo']}", callback_data="edit_logo"),
-            InlineKeyboardButton(f"✏️ {MESSAGES[selected_lang]['edit_title']}", callback_data="edit_title"),
-        ],
-        [
-            InlineKeyboardButton(f"🎨 {MESSAGES[selected_lang]['edit_color']}", callback_data="edit_color"),
-            InlineKeyboardButton(f"🚚 {MESSAGES[selected_lang]['edit_delivery_fees']}", callback_data="edit_delivery_fees"),
-        ],
-        [
-            InlineKeyboardButton(f"📞 {MESSAGES[selected_lang]['edit_contacts']}", callback_data="Edits_contacts"),
-            InlineKeyboardButton(f"🏠 {MESSAGES[selected_lang]['edit_addresses']}", callback_data="edit_addresses"),
-        ],
-        [
-            InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
-        ],
-        [
-            InlineKeyboardButton(f"📱 {MESSAGES[selected_lang]['edit_whatsapp_number']}", callback_data="edit_whatsapp_number"), 
-            
-    
-        ],
-        [
-            InlineKeyboardButton(f"❌ {MESSAGES[selected_lang]['cancel']}", callback_data="cancel")
-        ]
+    [
+        InlineKeyboardButton(f"🖼 {MESSAGES[selected_lang]['edit_logo']}", callback_data="edit_logo"),
+        InlineKeyboardButton(f"🖼 {MESSAGES[selected_lang]['edit_cover']}", callback_data="edit_cover"),
+    ],
+    [
+        InlineKeyboardButton(f"✏️ {MESSAGES[selected_lang]['edit_title']}", callback_data="edit_title"),
+        InlineKeyboardButton(f"🎨 {MESSAGES[selected_lang]['edit_color']}", callback_data="edit_color"),
+    ],
+    [
+        InlineKeyboardButton(f"🚚 {MESSAGES[selected_lang]['edit_delivery_fees']}", callback_data="edit_delivery_fees"),
+        InlineKeyboardButton(f"📞 {MESSAGES[selected_lang]['edit_contacts']}", callback_data="edit_contacts"),
+    ],
+    [
+        InlineKeyboardButton(f"🏠 {MESSAGES[selected_lang]['edit_addresses']}", callback_data="edit_addresses"),
+        InlineKeyboardButton(f"📱 {MESSAGES[selected_lang]['edit_whatsapp_number']}", callback_data="edit_whatsapp_number"),
+
+    ],
+    [
+        InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
+    ],
+    [
+        InlineKeyboardButton(f"❌ {MESSAGES[selected_lang]['cancel']}", callback_data="cancel")
+    ]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -2127,7 +2170,7 @@ async def update_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
 
 # Handle account username step
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    username = update.message.text
+    username = update.message.text.replace('/', '')
     context.user_data['username'] = username
 
     # Retrieve the account to get the language preference
@@ -2184,6 +2227,153 @@ async def handle_logo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(MESSAGES[selected_lang]['error_downloading_logo'].format(str(e)))
 
 
+async def handle_cover_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    # Check if the update is a message or a callback query
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    account = context.user_data.get('account')
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+    if account and account.language:
+        selected_lang = account.language
+
+
+    # Check if the state is set to 'awaiting_cover_upload'
+    if context.user_data.get('state') != 'awaiting_cover_upload':
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_upload'])
+        return
+
+    # Ensure an image is provided
+    if not update.message.photo:
+        await update.message.reply_text(MESSAGES[selected_lang]['no_image_upload'])
+        return
+
+    try:
+        # Process the cover image (use the highest resolution photo)
+        cover_file = await update.message.photo[-1].get_file()
+        
+        # Download the photo to an in-memory byte stream
+        image_stream = await cover_file.download_as_bytearray()
+        image_stream = io.BytesIO(image_stream)
+
+        # Process the image using PIL
+        with Image.open(image_stream) as img:
+            # Compress the image and save it to a new BytesIO object
+            compressed_image_stream = io.BytesIO()
+            img.save(compressed_image_stream, format='JPEG', quality=85)
+            compressed_image_stream.seek(0)  # Move to the start of the compressed image stream
+
+            # Save the compressed image to a file
+            cover_path = f"static/img/covers/{context.user_data.get('chat_id', update.message.chat.id)}_cover_{int(time.time())}.jpg"
+            with open(cover_path, 'wb') as f:
+                f.write(compressed_image_stream.getvalue())
+
+        # Save the cover image to the Cover model
+        account = context.user_data.get('account')
+        if not account:
+            chat_id = context.user_data.get('chat_id', update.message.chat.id)
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+
+        cover = Cover(account=account, cover=cover_path)
+        await sync_to_async(cover.save)()
+
+        # Confirm the upload to the user
+        await update.message.reply_text(MESSAGES[selected_lang]['cover_uploaded_successfully'])
+
+        # Prompt the user to upload another cover photo with Yes/No buttons
+        keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data='upload_another_cover_yes'),
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data='no_more_covers')
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(MESSAGES[selected_lang]['upload_another_cover'], reply_markup=reply_markup)
+
+    except Exception as e:
+        # Log the exception if needed and inform the user of an error
+        await update.message.reply_text(MESSAGES[selected_lang]['upload_error'])
+        print(f"Error in handle_cover_upload: {e}")
+
+    # Clear the state after upload
+    context.user_data['state'] = None
+
+
+
+async def upload_another_cover_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Check if the update is from a message containing a photo
+    if update.message and update.message.photo:
+        await update.message.reply_text(MESSAGES[selected_lang]['cover_uploaded_successfully'])
+
+        try:
+            # Download the cover image
+            cover_image_file = await update.message.photo[-1].get_file()
+            cover_image_path = f"static/img/covers/{context.user_data.get('chat_id', update.message.chat.id)}_cover_{int(time.time())}.jpg"
+            await cover_image_file.download_to_drive(cover_image_path)
+
+            # Save the cover photo in the Cover model
+            if account:
+                # Create a new Cover instance
+                cover = Cover(
+                    account=account,
+                    cover=cover_image_path  # Save the image path here
+                )
+                await sync_to_async(cover.save)()  # Save to the database asynchronously
+
+                await update.message.reply_text(MESSAGES[selected_lang]['cover_downloaded_successfully'])
+
+                # Ask if they want to upload another cover photo
+                keyboard = [
+                    [
+                        InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data='upload_another_cover'),
+                        InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data='no_more_covers')
+                    ]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(MESSAGES[selected_lang]['ask_upload_another_cover'], reply_markup=reply_markup)
+
+            else:
+                await update.message.reply_text(MESSAGES[selected_lang]['account_not_found'])
+
+        except Exception as e:
+            await update.message.reply_text(MESSAGES[selected_lang]['cover_download_error'].format(error=str(e)))
+
+    elif update.callback_query:
+        # Handle callback query for Yes/No buttons
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['cover_uploaded_successfully'])
+
+    else:
+        # Handle invalid input when no photo is provided
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type']) 
 # Handle account title step
 async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang', 'en')
@@ -2451,6 +2641,56 @@ async def handle_category_confirmation(update: Update, context: ContextTypes.DEF
             reply_markup=reply_markup
         )
 
+
+async def handle_delete_cover_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Fetch covers associated with this account using sync_to_async
+    covers = await sync_to_async(list)(Cover.objects.filter(account=account))
+    if not covers:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['cover_not_found'])
+        return
+
+    # Loop through each cover and send it with a delete button
+    for cover in covers:
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['delete'], callback_data=f'delete_cover_{cover.id}')]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        with open(cover.cover.path, 'rb') as photo:
+            await update.callback_query.message.reply_photo(photo=photo, reply_markup=reply_markup)
+
+
 async def handle_add_options_yes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
 
@@ -2676,6 +2916,57 @@ async def store_option_in_db(context):
 
     # Reset the current option in context for the next option, if any
     context.user_data['current_option'] = {'title': '', 'choices': [], 'prices': []}
+
+
+
+async def delete_cover(cover_id: int, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    try:
+        # Fetch the cover using sync_to_async
+        cover = await sync_to_async(Cover.objects.get)(id=cover_id)
+        cover_path = cover.cover.path
+
+        # Delete the cover record in the database asynchronously
+        await sync_to_async(cover.delete)()  # Wrap deletion in sync_to_async
+
+        # Remove the file from the filesystem
+        if os.path.exists(cover_path):
+            os.remove(cover_path)
+
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['cover_deleted'])
+    except Cover.DoesNotExist:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['cover_not_found'])
 
 
 async def show_social_media_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -3551,6 +3842,16 @@ async def upload_another_photo(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type'])
 
 
+
+async def no_more_covers(update:Update, context:ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    await show_start_message(update, context, account)
+    
 async def no_more_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
     account = context.user_data.get('account')
@@ -3606,46 +3907,59 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
     account = context.user_data.get('account')
     if not selected_lang and account:
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
+    if len(update.message.photo) > 20:
+        await update.message.reply_text(MESSAGES[selected_lang]['too_many_images'].format(max_images=20))
+        return
+    
     if not update.message.photo:
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type'])
         return
+    
     await update.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
 
+    image_paths = []
+
     try:
-        # Download the product image
-        product_image_file = await update.message.photo[-1].get_file()
-        product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}.jpg"
-        await product_image_file.download_to_drive(product_image_path)
+        # Loop through all photos sent by the user (up to 20)
+        for photo in update.message.photo[:20]:
+            product_image_file = await photo.get_file()
+            product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}_{photo.file_id}.jpg"
+            await product_image_file.download_to_drive(product_image_path)
+            image_paths.append(product_image_path)
+
         await update.message.reply_text(MESSAGES[selected_lang]['image_downloaded_successfully'])
 
-        # Save the menu item with all the information
-        account = context.user_data['account']
+        # Retrieve or create account if not already set
+        account = context.user_data.get('account')
         if not account:
             try:
                 chat_id = context.user_data.get('chat_id', update.message.chat.id)
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-                context.user_data['account'] = account  # Cache the account for future use
+                context.user_data['account'] = account
             except Account.DoesNotExist:
                 await update.message.reply_text(MESSAGES[selected_lang]['create_account_first'])
                 return
-        
+
+        # Save the menu item with all images and other information
         menu_item_data = {
             'account': account,
             'item': context.user_data['item_name'],
             'price': context.user_data['price'],
             'desc': context.user_data['description'],
             'category': context.user_data['category'],
-            'picture': product_image_path  # Save the image path here
+            'picture': image_paths[0]  # Save the first image path as the main image
         }
-
         menu_item = MenuItem(**menu_item_data)
         await sync_to_async(menu_item.save)()
-        context.user_data['menuitem_id'] = menu_item.id 
+        context.user_data['menuitem_id'] = menu_item.id
         context.user_data['menu_item'] = menu_item
-        # Get the website URL for the account
-        
 
-        # Send the success message with the website link
+        # If there are additional images, save them as related images
+        for path in image_paths[1:]:  # Skip the first image (already saved)
+            menu_item_photo = MenuItemPhoto(account=account, menuitem=menu_item, picture=path)
+            await sync_to_async(menu_item_photo.save)()
+
+        # Ask the user if they want to upload another photo
         keyboard = [
             [
                 InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data='upload_another_photo'),
@@ -3655,12 +3969,10 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(MESSAGES[selected_lang]['ask_upload_another_photo'], reply_markup=reply_markup)
 
-
-        
-
     except Exception as e:
         print(e)
         await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
+
 
 
 async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -3740,6 +4052,7 @@ async def delete_selected_product(update: Update, context: ContextTypes.DEFAULT_
 
 async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Get the user's selected language
+    print("wewewewe")
     selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if language is not set
 
     if not update.message.photo:
@@ -3762,13 +4075,21 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif context.user_data.get('state') == 'awaiting_new_image':
         await update_product_image(update, context)
 
+    elif context.user_data.get("state") == "awaiting_cover_upload":
+        await handle_cover_upload(update, context)
+
     elif context.user_data.get('state') == 'awaiting_another_new_image':
         await upload_another_photo(update, context)
+
+    elif context.user_data.get("state") == "awaiting_another_cover_image":
+        await upload_another_cover_yes(update, context)
 
     elif context.user_data.get('state') == 'awaiting_edit_logo':
         await handle_edit_logo(update, context)
     else:
         await update.message.reply_text(MESSAGES[selected_lang]['read_message_again'])
+
+
 
 async def show_products(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.callback_query.message.chat.id
@@ -4272,6 +4593,71 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['social_media'] = 'tiktok'
         context.user_data['state'] = 'awaiting_tiktok_link'
 
+    elif query.data == "edit_cover":
+        account = context.user_data.get('account')
+
+        # Get the user's selected language, defaulting to 'en' if not set
+        selected_lang = context.user_data.get('lang')
+        print("selected_lang")
+        print(selected_lang)
+        if update.message:
+            chat_id = update.message.chat.id
+        elif update.callback_query:
+            chat_id = update.callback_query.message.chat.id
+            # Acknowledge the callback query
+            await update.callback_query.answer()
+        else:
+            await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+            return
+
+        context.user_data['chat_id'] = chat_id 
+
+        if not account:
+            try:
+                account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+                context.user_data['account'] = account  # Cache the account for future use
+            except Account.DoesNotExist:
+                if update.message:
+                    await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+                elif update.callback_query:
+                    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+                return
+        
+        if not selected_lang and account:
+            selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+        
+        context.user_data['state'] = 'cover_action'
+        await query.answer()
+        
+        # Provide options for Add or Delete cover
+        keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['add_cover'], callback_data="add_cover"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['delete_cover'], callback_data="delete_cover")
+            ],
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.reply_text(MESSAGES[selected_lang]['choose_cover_action'], reply_markup=reply_markup)
+        #context.user_data['state'] = 'awaiting_cover_upload'  # Set state to indicate cover upload is expected
+        #await query.answer()
+        #await query.message.reply_text(MESSAGES[selected_lang]['upload_cover_instruction'])  # Prompt user for cover upload
+    # Other button handlers...
+    elif query.data == "delete_cover":
+        await handle_delete_cover_action(update, context)
+
+    elif query.data.startswith("delete_cover_"):
+        cover_id = int(query.data.split("_")[-1])
+        await delete_cover(cover_id, update, context)
+
+
+    elif query.data == "add_cover":
+        context.user_data['state'] = 'awaiting_cover_upload'
+        await query.answer()
+        await query.message.reply_text(MESSAGES[selected_lang]['upload_cover_instruction'])
     elif query.data == "edit_whatsapp_number":
         await query.message.reply_text(MESSAGES[selected_lang]['enter_new_phone_number'])
         context.user_data['state'] = "awaiting_phone_number"  # Set a flag to expect the phone number next
@@ -4361,6 +4747,16 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "upload_another_photo":
         context.user_data['state'] = 'awaiting_another_new_image'
         await query.message.reply_text(MESSAGES[selected_lang]['awaiting_image'])
+
+    elif query.data == "upload_another_cover_yes":
+        context.user_data['state'] = "awaiting_another_cover_image"
+        await query.message.reply_text(MESSAGES[selected_lang]['upload_another_cover_inst'])
+
+
+        
+    
+    elif query.data == "no_more_covers":
+        await no_more_covers(update, context)
 
     elif query.data == "no_more_photos":
         await no_more_photos(update, context)
@@ -4545,13 +4941,14 @@ if __name__ == '__main__':
     #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
     token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
-
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(CommandHandler("add_account", add_account))
     application.add_handler(CommandHandler("add_product", add_product))
     application.add_handler(CommandHandler("edit_product", show_products))
     application.add_handler(CommandHandler("cancel", cancel_process))
+    
     application.add_handler(MessageHandler(filters.PHOTO, handle_image_upload))  # Expecting a logo first
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))

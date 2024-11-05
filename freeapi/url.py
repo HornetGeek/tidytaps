@@ -13,6 +13,8 @@ router2.register('options',  views.MenuOptionsViewSet)
 router3 = routers.DefaultRouter()
 router3.register(r'menuitem-photos', views.MenuItemPhotoViewSet, basename='menuitemphoto')
 
+router4 = routers.DefaultRouter()
+router4.register(r'covers', views.CoverViewSet, basename='cover')
 
 
 urlpatterns = [
@@ -51,6 +53,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(router2.urls)),
     path('', include(router3.urls)),
+    path('', include(router4.urls)),
     path('menuitem-photos/account/menuitem/<int:account_id>/<int:menuitem_id>', views.MenuItemPhotoListByAccountAndMenuItemView.as_view(), name='menuitem-photos-by-account-menuitem'),
     path('option/<int:account_id>/<int:menuitem_id>/', views.get_option_by_account_and_menuitem),
     path('choices/<int:account_id>/<int:menuitem_id>/<int:option_id>', views.get_items_by_account_and_menuitem),
