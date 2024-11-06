@@ -20,6 +20,8 @@ from PIL import Image
 import io
 import requests
 from urllib.parse import quote
+from telegram.ext import ConversationHandler
+
 
 
 # Add the project root to sys.path so Python can find 'tidytap'
@@ -328,6 +330,14 @@ MESSAGES = {
         'upload_cover_instruction': "Please upload a new cover image.",
         'cover_deleted': "The cover image has been deleted.",
         'cover_not_found': "No cover found to delete.",
+        'choose_delivery_option': "Choose an option for delivery fees:",
+        'enter_delivery_details': "Please enter the city for the new delivery fee.",
+        'choose_delivery_to_edit': "Select a delivery entry to edit.",
+        'choose_delivery_to_delete': "Select a delivery entry to delete.",
+        'delivery_added': 'Delivery to %s has been added with a fee of %s.',
+        'delivery_deleted': "Delivery for city %s has been deleted.",
+        'add_delivery': "Add Delivery",
+        'delete_delivery': "Delete Delivery",
          "get_analytics": (
             "📊 *Analytics for Account*\n"
             "Total Views: {total_views}\n"
@@ -588,6 +598,14 @@ MESSAGES = {
         'upload_cover_instruction': "يرجى تحميل صورة غلاف جديدة.",
         'cover_deleted': "تم حذف صورة الغلاف.",
         'cover_not_found': "لم يتم العثور على غلاف لحذفه.",
+        'choose_delivery_option': "اختر خيارًا لرسوم التوصيل:",
+        'enter_delivery_details': "يرجى إدخال المدينة لرسوم التوصيل الجديدة.",
+        'choose_delivery_to_edit': "اختر إدخال التوصيل الذي تريد تعديله.",
+        'choose_delivery_to_delete': "اختر إدخال التوصيل الذي تريد حذفه.",
+        'delivery_added': 'تم إضافة التوصيل إلى %s مع رسوم قدرها %s.',
+        'delivery_deleted': "تم حذف التوصيل للمدينة %s.",
+        'add_delivery': "إضافة توصيل",
+        'delete_delivery': "حذف التوصيل",
         "get_analytics": (
             "📊 *تحليلات لحسابك*\n"
             "إجمالي المشاهدات: {total_views}\n"
@@ -695,6 +713,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_price(update, context)
     elif user_state == "awaiting_cover_upload":
         await handle_cover_upload(update, context)
+
+    elif user_state == "awaiting_fee_input":
+        await handle_city_input(update, context)
+    elif user_state == "adding_delivery_city":
+        await handle_city_input(update, context)
+
     elif user_state == 'awaiting_address_details':
         await start_creating_address(update, context)
 
@@ -1213,7 +1237,261 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.message.reply_text(MESSAGES[selected_lang]['what_to_edit'], reply_markup=reply_markup)
 
 
+async def handle_edit_delivery_fees(update, context):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
 
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    # Define buttons for Add, Edit, and Delete delivery fees
+    delivery_options_keyboard = [
+        [
+            InlineKeyboardButton(MESSAGES[selected_lang]['add_delivery'], callback_data="add_delivery"),
+            #InlineKeyboardButton("✏️ Edit Delivery", callback_data="edit_existing_delivery"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['delete_delivery'], callback_data="delete_delivery"),
+        ],
+        [InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")]
+    ]
+    
+    # Set up the reply markup for inline buttons
+    reply_markup = InlineKeyboardMarkup(delivery_options_keyboard)
+    
+    # Send the message with inline buttons for delivery fee options
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['choose_delivery_option'], 
+        reply_markup=reply_markup
+    )
+
+    # Set user state to "choosing_delivery_option"
+    context.user_data['state'] = 'choosing_delivery_option'
+
+
+# Handle adding delivery fee
+async def handle_add_delivery(update, context):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+
+    # Store the state of the user as adding delivery
+    context.user_data['state'] = 'adding_delivery_city'
+
+    # Prompt user to enter the city/area for the delivery fee
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['enter_delivery_details']  # Prompt to enter city and fee
+    )
+
+async def handle_city_input(update, context):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    # Determine chat_id based on whether it's a message or callback query
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        await update.callback_query.answer()  # Acknowledge the callback query
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    # Use account language if selected_lang is missing
+    if not selected_lang and account:
+        selected_lang = account.language
+
+    # If 'city' is not stored, ask for it
+    if 'city' not in context.user_data:
+        context.user_data['city'] = update.message.text
+        await update.message.reply_text(MESSAGES[selected_lang]['enter_delivery_fee'])  # Ask for delivery fee
+        context.user_data['state'] = 'awaiting_fee_input'
+
+    # If 'fee' is not stored, save the delivery fee and create the Delivery
+    elif 'fee' not in context.user_data:
+        context.user_data['fee'] = update.message.text
+
+        # Save the city and fee in the Delivery model (using sync_to_async for DB operations)
+        city = context.user_data.get('city')
+        fee = context.user_data.get('fee')
+
+        # Creating delivery entry asynchronously
+        await create_delivery(account, city, fee)
+
+        await update.message.reply_text(MESSAGES[selected_lang]['delivery_added'] % (city, fee))
+
+        # Clear stored data for this operation
+        context.user_data.pop('city', None)
+        context.user_data.pop('fee', None)
+        
+
+        # Reset the state
+        context.user_data['state'] = None
+
+        await show_start_message(update, context, account)
+
+# Use sync_to_async on the database operation function
+@sync_to_async
+def create_delivery(account, city, fee):
+    # Directly creating the Delivery record in the DB
+    Delivery.objects.create(account=account, city=city, amount=fee)
+# Handle edit delivery
+async def handle_edit_delivery(update, context):
+    selected_lang = context.user_data.get('lang')
+
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+    
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['choose_delivery_to_edit']  # Prompt to select delivery to edit
+    )
+
+    # Store the state as editing delivery
+    context.user_data['state'] = 'editing_delivery'
+
+
+async def handle_delete_delivery(update, context):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        await update.callback_query.answer()  # Acknowledge the callback query
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Use account language if selected_lang is missing
+
+    # Fetch all cities associated with the account asynchronously
+    deliveries = await sync_to_async(list)(Delivery.objects.filter(account=account))
+    
+    # Prepare the list of cities with delivery id
+    cities = [(delivery.id, delivery.city) for delivery in deliveries]
+
+    if not cities:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_deliveries_found'])
+        return
+
+    # Create inline buttons for each city
+    keyboard = [
+        [InlineKeyboardButton(city, callback_data=f"delete_city_{id}")] for id, city in cities
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['choose_delivery_to_delete'],  # Prompt to select delivery to delete
+        reply_markup=reply_markup
+    )
+
+    # Store the state as deleting delivery
+    context.user_data['state'] = 'deleting_delivery'
 async def handle_edit_color(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
     account = context.user_data.get('account')
@@ -4508,6 +4786,27 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "add_product":
         await add_product(update, context)
 
+    elif query.data.startswith("delete_city_"):
+        city_to_delete = update.callback_query.data[len('delete_city_'):]
+
+        # Delete the delivery for the selected city asynchronously
+        try:
+            # Get the delivery for the selected city and account
+            delivery = await sync_to_async(Delivery.objects.get)(account=account, id=city_to_delete)
+
+            # Delete the delivery asynchronously
+            await sync_to_async(delivery.delete)()
+
+            await update.callback_query.message.reply_text(
+                MESSAGES[selected_lang]['delivery_deleted'] % delivery.city
+            )
+        except Delivery.DoesNotExist:
+            await update.callback_query.message.reply_text(MESSAGES[selected_lang]['delivery_not_found'])
+        # Reset the state
+        context.user_data['state'] = None
+        await show_start_message(update, context, account)
+
+
     elif query.data == "edit_addresses":
         await show_address_list(update, context)
     
@@ -4531,6 +4830,17 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(MESSAGES[selected_lang]['enter_whatsapp_link'])
         context.user_data['social_media'] = 'whatsapp'
         context.user_data['state'] = 'awaiting_whatsapp_link'
+
+    elif query.data == "edit_delivery_fees":
+        await handle_edit_delivery_fees(update, context)
+    elif query.data == "add_delivery":
+        await handle_add_delivery(update, context)
+    elif query.data == "edit_existing_delivery":
+        await handle_edit_delivery(update, context)
+    elif query.data == "delete_delivery":
+        await handle_delete_delivery(update, context)
+    elif query.data == "go_back_to_main_menu":
+        await show_start_message(update, context, account)  # Assuming this function shows the main menu options
 
     elif query.data == "get_analytics":
         account_id = account.id  # Assuming you have an account object with an id field
@@ -4755,7 +5065,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "get_website_qr":  # New handler for the QR code
         await send_website_qr(update, context)
 
-    elif query.data == "edit_delivery_fees":  # New handler for the QR code
+    elif query.data == "edit_delivery_fees":  
+        await handle_edit_delivery_fees(update, context)
         await query.message.reply_text(MESSAGES[selected_lang]['enter_delivery_fee'])
         context.user_data['state'] = 'awaiting_delivery_fee'
 

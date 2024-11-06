@@ -79,8 +79,17 @@ class DeliveryByAccountIdView(APIView):
             return Response({'error': 'Account not found'})
         except Delivery.DoesNotExist:
             return Response({'error': 'Delivery not found'})
-
-# Get Delivery by Username
+    def post(self, request):
+        try:
+            serializer = DeliveryPostSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()  # Associate the created delivery with the account
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors,)
+        except Exception as e :
+            print(str(e))
+    # Get Delivery by Username
 class DeliveryByUsernameView(APIView):
     def get(self, request, username):
         try:

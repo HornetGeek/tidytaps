@@ -95,7 +95,13 @@ class DeliverySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Delivery
-        fields = ['account', 'amount']
+        fields = ['account', 'amount', "city"]
+
+class DeliveryPostSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Delivery
+        fields = ['account', 'amount', "city"]
 
 
 class MenuItemPhotoSerializer(serializers.ModelSerializer):
