@@ -72,13 +72,21 @@ class DeliveryByAccountIdView(APIView):
     def get(self, request, account_id):
         try:
             account = Account.objects.get(id=account_id)
-            delivery = Delivery.objects.get(account=account)
-            serializer = DeliverySerializer(delivery)
+            
+            # Fetch all deliveries related to this account
+            deliveries = Delivery.objects.filter(account=account)
+
+            # Check if deliveries exist for the account
+            if not deliveries:
+                return Response({'error': 'No deliveries found for this account'}, status=404)
+
+            # Serialize the deliveries data
+            serializer = DeliverySerializer(deliveries, many=True)
             return Response(serializer.data)
+        
         except Account.DoesNotExist:
-            return Response({'error': 'Account not found'})
-        except Delivery.DoesNotExist:
-            return Response({'error': 'Delivery not found'})
+            return Response({'error': 'Account not found'}, status=404)
+        
     def post(self, request):
         try:
             serializer = DeliveryPostSerializer(data=request.data)
@@ -95,14 +103,18 @@ class DeliveryByUsernameView(APIView):
         try:
             account = Account.objects.get(username=username)
 
-            delivery = Delivery.objects.get(account=account)
+            deliveries = Delivery.objects.filter(account=account)
 
-            serializer = DeliverySerializer(delivery)
+            # Check if deliveries exist for the account
+            if not deliveries:
+                return Response({'error': 'No deliveries found for this account'}, status=404)
+
+            # Serialize the deliveries data
+            serializer = DeliverySerializer(deliveries, many=True)
             return Response(serializer.data)
+        
         except Account.DoesNotExist:
-            return Response({'error': 'Account not found'})
-        except Delivery.DoesNotExist:
-            return Response({'error': 'Delivery not found'})
+            return Response({'error': 'Account not found'}, status=404)
 
 
 class MenuItemPhotoViewSet(viewsets.ModelViewSet):
