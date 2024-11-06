@@ -3900,66 +3900,52 @@ async def no_more_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-
 async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Get the user's selected language
     selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
     account = context.user_data.get('account')
     if not selected_lang and account:
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
-    if len(update.message.photo) > 20:
-        await update.message.reply_text(MESSAGES[selected_lang]['too_many_images'].format(max_images=20))
-        return
-    
     if not update.message.photo:
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type'])
         return
-    
     await update.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
 
-    image_paths = []
-
     try:
-        # Loop through all photos sent by the user (up to 20)
-        for photo in update.message.photo[:20]:
-            product_image_file = await photo.get_file()
-            product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}_{photo.file_id}.jpg"
-            await product_image_file.download_to_drive(product_image_path)
-            image_paths.append(product_image_path)
-
+        # Download the product image
+        product_image_file = await update.message.photo[-1].get_file()
+        product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}.jpg"
+        await product_image_file.download_to_drive(product_image_path)
         await update.message.reply_text(MESSAGES[selected_lang]['image_downloaded_successfully'])
 
-        # Retrieve or create account if not already set
-        account = context.user_data.get('account')
+        # Save the menu item with all the information
+        account = context.user_data['account']
         if not account:
             try:
                 chat_id = context.user_data.get('chat_id', update.message.chat.id)
                 account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
-                context.user_data['account'] = account
+                context.user_data['account'] = account  # Cache the account for future use
             except Account.DoesNotExist:
                 await update.message.reply_text(MESSAGES[selected_lang]['create_account_first'])
                 return
-
-        # Save the menu item with all images and other information
+        
         menu_item_data = {
             'account': account,
             'item': context.user_data['item_name'],
             'price': context.user_data['price'],
             'desc': context.user_data['description'],
             'category': context.user_data['category'],
-            'picture': image_paths[0]  # Save the first image path as the main image
+            'picture': product_image_path  # Save the image path here
         }
+
         menu_item = MenuItem(**menu_item_data)
         await sync_to_async(menu_item.save)()
-        context.user_data['menuitem_id'] = menu_item.id
+        context.user_data['menuitem_id'] = menu_item.id 
         context.user_data['menu_item'] = menu_item
+        # Get the website URL for the account
+        
 
-        # If there are additional images, save them as related images
-        for path in image_paths[1:]:  # Skip the first image (already saved)
-            menu_item_photo = MenuItemPhoto(account=account, menuitem=menu_item, picture=path)
-            await sync_to_async(menu_item_photo.save)()
-
-        # Ask the user if they want to upload another photo
+        # Send the success message with the website link
         keyboard = [
             [
                 InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data='upload_another_photo'),
@@ -3969,10 +3955,12 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(MESSAGES[selected_lang]['ask_upload_another_photo'], reply_markup=reply_markup)
 
+
+        
+
     except Exception as e:
         print(e)
         await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
-
 
 
 async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -4071,8 +4059,11 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
     if context.user_data.get('state') == 'awaiting_logo':
         await handle_logo(update, context)
     elif context.user_data.get('state') in ['awaiting_product_image', 'awaiting_image']:
+        print("inside handle_product_image")
         await handle_product_image(update, context)
+
     elif context.user_data.get('state') == 'awaiting_new_image':
+        print("inside awaiting_new_image")
         await update_product_image(update, context)
 
     elif context.user_data.get("state") == "awaiting_cover_upload":
