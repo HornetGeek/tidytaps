@@ -5078,6 +5078,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("delete_address_"):
         await delete_address(update, context)  # Handle the address deletion
 
+    elif query.data == "edit_contacts":
+        await handle_edit_contacts(update, context)
         
     elif query.data.startswith("edit_contact_"):
         contact_id = query.data.split("_")[-1]  # Extract contact ID from callback data
