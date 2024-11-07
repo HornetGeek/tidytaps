@@ -1474,6 +1474,8 @@ async def handle_delete_delivery(update, context):
     
     # Prepare the list of cities with delivery id
     cities = [(delivery.id, delivery.city) for delivery in deliveries]
+    print("cities")
+    print(cities)
 
     if not cities:
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_deliveries_found'])
@@ -1481,8 +1483,11 @@ async def handle_delete_delivery(update, context):
 
     # Create inline buttons for each city
     keyboard = [
-        [InlineKeyboardButton(city, callback_data=f"delete_city_{id}")] for id, city in cities
+    [
+        InlineKeyboardButton(city if city else "Unknown City", callback_data=f"delete_city_{id}")
     ]
+    for id, city in cities
+]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.callback_query.message.reply_text(
