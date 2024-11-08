@@ -4990,6 +4990,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "add_options_no":
         context.user_data.pop('state', None)
         await show_start_message(update, context, account)
+
     elif query.data == "add_more_option_yes":
         # Ask the user for the next option value
         option_values_prompt = MESSAGES[selected_lang]['provide_single_option_value']
@@ -5172,6 +5173,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_edit_option(update, context, option_id)
 
     elif query.data.startswith("edit_options_"):
+        menu_item = query.data.split("edit_options_")[1]
+        product = await sync_to_async(MenuItem.objects.get)(id=menu_item)
+        context.user_data["menu_item"] = product
         await edit_options(update, context)
     
     elif query.data.startswith("edit_choice_price_"):
