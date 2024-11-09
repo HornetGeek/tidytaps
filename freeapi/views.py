@@ -38,12 +38,19 @@ class ReadOnlyUserPermission(permissions.BasePermission):
         # Allow other authenticated users to proceed
         return request.user.is_authenticated
 
+class IsHornetUser(permissions.BasePermission):
+    """
+    Custom permission to allow access only to the user with username 'hornet'.
+    """
+    def has_permission(self, request, view):
+        # Check if the user is authenticated and their username is "hornet"
+        return request.user.is_authenticated and request.user.username == "hornet"
 
 class AccountCreateAPIView(generics.ListCreateAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountPostSerializer
 
-    permission_classes = [ReadOnlyUserPermission]
+    permission_classes = [IsHornetUser]
 
 
 class AccountRetrieveByUsernameAPIView(generics.RetrieveAPIView):
