@@ -16,39 +16,71 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.generics import RetrieveAPIView
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
+from rest_framework import generics, permissions
+from rest_framework.exceptions import PermissionDenied
+
+class ReadOnlyUserPermission(permissions.BasePermission):
+    """
+    Custom permission to restrict "Read-Only Users" from performing create, update, or delete operations.
+    """
+    def has_permission(self, request, view):
+        # Allow safe methods for all authenticated users
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        
+        # Restrict unsafe methods for users in the "Read-Only Users" group
+        is_read_only_user = request.user.groups.filter(name="Read-Only Users").exists()
+        if is_read_only_user and request.method not in permissions.SAFE_METHODS:
+            return False
+        
+        # Allow other authenticated users to proceed
+        return request.user.is_authenticated
+
 
 class AccountCreateAPIView(generics.ListCreateAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountPostSerializer
+
+    permission_classes = [ReadOnlyUserPermission]
+
 
 class AccountRetrieveByUsernameAPIView(generics.RetrieveAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountPostSerializer
     lookup_field = 'username'  # Specify that the lookup field is 'username'
 
+    permission_classes = [ReadOnlyUserPermission]
+
 class AccountUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountPostSerializer
     lookup_field = 'id'  # This tells Django to look for 'id' in the URL
 
+    permission_classes = [ReadOnlyUserPermission]
+
 class ContactsListCreateAPIView(generics.ListCreateAPIView):
     queryset = Contacts.objects.all()
     serializer_class = ContactsSerializer
+    
+    permission_classes = [ReadOnlyUserPermission]
 
     def get_queryset(self):
         account_id = self.kwargs.get('account_id')  # Get the account_id from the URL
         return Contacts.objects.filter(account__id=account_id)  # Filter contacts by account_id
-
+    
 
 class ContactsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Contacts.objects.all()
     serializer_class = ContactsSerializer
-
+    permission_classes = [ReadOnlyUserPermission]
 # CRUD for Adresses
 class AdressesListCreateAPIView(generics.ListCreateAPIView):
     queryset = Adresses.objects.all()
     serializer_class = AdressesSerializer
-
+    
+    permission_classes = [ReadOnlyUserPermission]
     def get_queryset(self):
         account_id = self.kwargs.get('account_id')
         return Adresses.objects.filter(account__id=account_id)  # Filter addresses by account_id
@@ -57,18 +89,22 @@ class AdressesListCreateAPIView(generics.ListCreateAPIView):
 class AdressesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Adresses.objects.all()
     serializer_class = AdressesSerializer
-
+    
+    permission_classes = [ReadOnlyUserPermission]
 # CRUD for SocialMedia
+
 class SocialMediaListCreateAPIView(generics.ListCreateAPIView):
     queryset = SocialMedia.objects.all()
     serializer_class = SocialMediaSerializer
-
+    
+    permission_classes = [ReadOnlyUserPermission]
     def get_queryset(self):
         account_id = self.kwargs.get('account_id')
         return SocialMedia.objects.filter(account__id=account_id)  # Filter social media by account_id
 
 
 class DeliveryByAccountIdView(APIView):
+    permission_classes = [ReadOnlyUserPermission]
     def get(self, request, account_id):
         try:
             account = Account.objects.get(id=account_id)
@@ -99,6 +135,8 @@ class DeliveryByAccountIdView(APIView):
             print(str(e))
     # Get Delivery by Username
 class DeliveryByUsernameView(APIView):
+    permission_classes = [ReadOnlyUserPermission]
+
     def get(self, request, username):
         try:
             account = Account.objects.get(username=username)
@@ -120,7 +158,8 @@ class DeliveryByUsernameView(APIView):
 class MenuItemPhotoViewSet(viewsets.ModelViewSet):
     queryset = MenuItemPhoto.objects.all()
     serializer_class = MenuItemPhotoSerializer
-    permission_classes = [IsAuthenticated]  # Add your authentication permissions if needed
+
+    permission_classes = [ReadOnlyUserPermission]
 
     def perform_create(self, serializer):
         # You can customize any behavior here, for example linking the photo with a specific account
@@ -129,6 +168,8 @@ class MenuItemPhotoViewSet(viewsets.ModelViewSet):
 class MenuItemPhotoListByAccountAndMenuItemView(generics.ListAPIView):
     permission_classes = [BasePermission]
     serializer_class = MenuItemPhotoSerializer
+    
+    permission_classes = [ReadOnlyUserPermission]
 
     def get_queryset(self):
         account_id = self.kwargs['account_id']  # Fetch account_id from URL params
@@ -139,6 +180,7 @@ class MenuItemPhotoListByAccountAndMenuItemView(generics.ListAPIView):
 class SocialMediaRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SocialMedia.objects.all()
     serializer_class = SocialMediaSerializer
+    permission_classes = [ReadOnlyUserPermission]
 
 class IndexView(APIView):
     permission_classes = [IsAuthenticated]
@@ -221,7 +263,7 @@ class RegisterView(APIView):
 class CoverViewSet(viewsets.ModelViewSet):
     queryset = Cover.objects.all()
     serializer_class = CoverSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ReadOnlyUserPermission]
 
     def get_queryset(self):
         account_id = self.request.query_params.get('account_id')
@@ -239,9 +281,12 @@ class CoverViewSet(viewsets.ModelViewSet):
 class CategoryAPIView(generics.CreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [ReadOnlyUserPermission]
+
 
 class CategoryGetAPIView(generics.ListAPIView):
     serializer_class = CategorySerializer
+    permission_classes = [ReadOnlyUserPermission]
 
     def get_queryset(self):
         account_id = self.kwargs.get('account_id')  # Get account_id from the URL
@@ -252,7 +297,7 @@ class CategoryGetAPIView(generics.ListAPIView):
 
 class CategoryWithItemsAPIView(generics.ListAPIView):
     serializer_class = CategoryWithItemsSerializer
-
+    permission_classes = [ReadOnlyUserPermission]
     def get_queryset(self):
         account_id = self.kwargs.get('account_id')  # Get account_id from the URL
         if account_id:
@@ -260,6 +305,7 @@ class CategoryWithItemsAPIView(generics.ListAPIView):
         return Category.objects.none()
 
 class LastClientView(APIView):
+    permission_classes = [ReadOnlyUserPermission]
     def get(self, request):
         account = Account.objects.get(user=request.user)
         last_10_clients = Clients.objects.filter(account=account).order_by('-date')[:10]
@@ -268,7 +314,7 @@ class LastClientView(APIView):
 
 
 class OfferDetailView(APIView):
-    permission_classes = [IsAuthenticated]  # Optional authentication
+    permission_classes = [ReadOnlyUserPermission]
 
     def get(self, request, pk, format=None):
         try:
@@ -308,7 +354,7 @@ class OfferDetailView(APIView):
 
 
 class MenuItemDetailView(APIView):
-    permission_classes = [IsAuthenticated]  # Optional authentication
+    permission_classes = [ReadOnlyUserPermission]
 
     def get(self, request, pk, format=None):
         try:
@@ -384,6 +430,7 @@ class MenuItemDetailView(APIView):
 class MenuItemOptionsViewSet(viewsets.ModelViewSet):
     queryset = MenuItemChoices.objects.all()
     serializer_class = MenuItemChoicesSerializer
+    permission_classes = [ReadOnlyUserPermission]
 
 def get_items_by_account_and_menuitem(request, account_id, menuitem_id, option_id):
     items = MenuItemChoices.objects.filter(account=account_id, menuitem=menuitem_id, option=option_id)
@@ -393,6 +440,7 @@ def get_items_by_account_and_menuitem(request, account_id, menuitem_id, option_i
 class MenuOptionsViewSet(viewsets.ModelViewSet):
     queryset = Option.objects.all()
     serializer_class = OptionsSerializer
+    permission_classes = [ReadOnlyUserPermission]
 
 def get_option_by_account_and_menuitem(request, account_id, menuitem_id):
     items = Option.objects.filter(account=account_id, Item=menuitem_id)
@@ -401,6 +449,7 @@ def get_option_by_account_and_menuitem(request, account_id, menuitem_id):
 
 
 class MakeOrderView(APIView):
+    permission_classes = [ReadOnlyUserPermission]
     def get(self, request, format=None):
         orders = ShopOrder.objects.all()
         serializer = ShopOrderSerializer(orders, many=True)
