@@ -4,7 +4,7 @@ import os
 import sys
 import django
 from django.db import IntegrityError  # Import IntegrityError
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from telegram import error  # This is needed for error handling like telegram.error.TimedOut
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from asgiref.sync import sync_to_async
@@ -69,7 +69,8 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
             InlineKeyboardButton(buttons['delete_product'], callback_data='delete_product')
         ],
         [
-            InlineKeyboardButton(buttons['delete_category'], callback_data="delete_category"),
+            #InlineKeyboardButton(buttons['delete_category'], callback_data="delete_category"),
+            InlineKeyboardButton(buttons['edit_category'], callback_data="edit_category_menu"),
             InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
         ],
         [
@@ -97,6 +98,9 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
             reply_markup=reply_markup
         )
 
+
+
+
 MESSAGES = {
     'en': {
         'welcome_back': "Welcome back, {username}! 🎉\n\n",
@@ -106,7 +110,7 @@ MESSAGES = {
         'provide_category': "Please provide the category for the product.",
         'unable_to_determine_chat_id': "Unable to determine chat ID.",
         'category_confirmation': "Category '{category_name}' does not exist for this account. Do you want to create it?",
-        'category_creation_success': "Category '{category_name}' created successfully! Please provide the item name.",
+        'category_creation_success': "Category '{category_name}' created successfully! Please provide the product name to add it, or press cancel.",
         'item_name_prompt': "Please provide the item name.",
         'item_price_prompt': "Please provide the price for the product.",
         'invalid_price': "Invalid price. Please enter a numeric value.",
@@ -338,6 +342,13 @@ MESSAGES = {
         'delivery_deleted': "Delivery for city %s has been deleted.",
         'add_delivery': "Add Delivery",
         'delete_delivery': "Delete Delivery",
+        'add_image': "➕ Add Image",
+        'remove_image': "❌ Remove Image",
+        'choose_image_action': "Please choose an action for the product image:",
+        'choose_image_to_remove': "Please select an image to remove:",
+        'no_images_to_remove': "No images available to remove.",
+        'image_removed_success': "Image has been successfully removed.",
+        'image_added_success': "The image has been successfully added to the product!",
          "get_analytics": (
             "📊 *Analytics for Account*\n"
             "Total Views: {total_views}\n"
@@ -346,6 +357,12 @@ MESSAGES = {
         "loading_message": "Loading analytics data... Please wait.",
         "failed_fetch": "Failed to fetch analytics. Status code: {status_code}",
         'edit_cover': "Edit Cover",
+        'choose_category_action': "Choose a category action:",
+        'choose_category_to_edit': "Choose a category to edit:",
+        'enter_new_category_name': "Please enter the new name for the category:",
+        'category_updated_successfully': "The category has been updated successfully.",
+        'category_not_found': "The selected category could not be found.",
+        'confirm_delete_message': "Are you sure you want to delete this category?",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -356,6 +373,9 @@ MESSAGES = {
             'get_analytics': "📊 View Analytics",
             'add_account': "Add Account",
             'choose_product': "Choose a product to edit:",
+            'edit_category': '✏️ Edit Category',
+            'add_category': '➕ Add Category',
+            'delete_category': '❌ Delete Category',
             'yes': "Yes",
             'delete': "Delete",
             'no': "No",
@@ -373,7 +393,7 @@ MESSAGES = {
         'provide_category': "يرجى تقديم الفئة للمنتج.",
         'unable_to_determine_chat_id': "غير قادر على تحديد معرف المحادثة.",
         'category_confirmation': "الفئة '{category_name}' غير موجودة لهذا الحساب. هل تريد إنشاءها؟",
-        'category_creation_success': "تم إنشاء الفئة '{category_name}' بنجاح! يرجى تقديم اسم العنصر.",
+        'category_creation_success': "تم إنشاء الفئة '{category_name}'  بنجاح! يرجى تقديم اسم المنتج لاضافته. اول الضغط على الغاء",
         'item_name_prompt': "يرجى تقديم اسم المنتج.",
         'item_price_prompt': "يرجى تقديم السعر للمنتج.",
         'invalid_price': "سعر غير صالح. يرجى إدخال قيمة رقمية.",
@@ -614,17 +634,32 @@ MESSAGES = {
         "loading_message": "جاري تحميل بيانات التحليلات... من فضلك انتظر.",
         "failed_fetch": "فشل في جلب التحليلات. كود الحالة: {status_code}",
         'too_many_images': "يمكنك تحميل ما يصل إلى {max_images} صورة فقط. يرجى المحاولة مرة أخرى بعدد أقل من الصور.",
+        'choose_category_action': "اختر إجراءً للفئة:",
+        'choose_category_to_edit': "اختر فئة للتعديل:",
+        'enter_new_category_name': "يرجى إدخال الاسم الجديد للفئة:",
+        'category_updated_successfully': "تم تحديث الفئة بنجاح.",
+        'category_not_found': "لم يتم العثور على الفئة المحددة.",
+        'confirm_delete_message': "هل أنت متأكد أنك تريد حذف هذه الفئة؟",
+        'add_image': "➕ إضافة صورة",
+        'remove_image': "❌ إزالة الصورة",
+        'choose_image_action': "يرجى اختيار إجراء لصورة المنتج:",
+        'choose_image_to_remove': "يرجى اختيار الصورة لإزالتها:",
+        'no_images_to_remove': "لا توجد صور متاحة للإزالة.",
+        'image_removed_success': "تمت إزالة الصورة بنجاح.",
+        'image_added_success': "تمت إضافة الصورة بنجاح إلى المنتج!",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
             'delete_product': "❌ حذف منتج",
-            'delete_category': "🗑️ حذف فئة",
             'edit_store_info': "🛠️ تعديل معلومات المتجر",
             'get_website_qr': "🌐 الحصول على الموقع ورمز QR",
             'get_analytics': "📊 عرض التحليلات",
             'add_account': "إضافة حساب",
             'choose_product': "اختر منتجًا لتعديله:",
             'add_cover': "إضافة غلاف",
+            'edit_category': '✏️ تعديل الفئة',
+            'add_category': '➕ إضافة فئة',
+            'delete_category': '❌ حذف الفئة',
             'delete_cover': "حذف غلاف",
             'delete': "حذف",
             'yes': "نعم",
@@ -721,7 +756,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif user_state == 'awaiting_address_details':
         await start_creating_address(update, context)
-
+    elif 'category_id_to_edit' in context.user_data:
+        await handle_new_category_name(update, context)
     elif user_state == 'awaiting_option_title'  or user_state == "awaiting_new_option_name":
         print("we are in awaiting option title")
         await handle_option_title(update, context)
@@ -2705,20 +2741,28 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_message = MESSAGES[selected_lang]['welcome_message']
 
         # Define the keyboard for user actions
+        buttons = MESSAGES[selected_lang]['buttons']
         keyboard = [
             [
-                InlineKeyboardButton(MESSAGES[selected_lang]['add_product'], callback_data="add_product"),
-                InlineKeyboardButton(MESSAGES[selected_lang]['edit_product'], callback_data='edit_product')
+                InlineKeyboardButton(buttons['add_product'], callback_data="add_product"),
+                InlineKeyboardButton(buttons['edit_product'], callback_data='edit_product')
             ],
             [
-                InlineKeyboardButton(MESSAGES[selected_lang]['delete_product'], callback_data='delete_product')
+                InlineKeyboardButton(buttons['delete_product'], callback_data='delete_product')
             ],
             [
-                InlineKeyboardButton(MESSAGES[selected_lang]['delete_category'], callback_data='delete_category'),
-                InlineKeyboardButton(MESSAGES[selected_lang]['edit_store_info'], callback_data='edit_store_info')
+                #InlineKeyboardButton(buttons['delete_category'], callback_data="delete_category"),
+                InlineKeyboardButton(buttons['edit_category'], callback_data="edit_category_menu"),
+                InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
             ],
             [
-                InlineKeyboardButton(MESSAGES[selected_lang]['get_website_qr'], callback_data='get_website_qr')
+                InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
+            ],
+            [
+                InlineKeyboardButton(buttons['get_website_qr'], callback_data="get_website_qr")
+            ],
+            [
+                InlineKeyboardButton(buttons['help'], callback_data="help")  # New Help button
             ]
         ]
 
@@ -3355,6 +3399,160 @@ async def edit_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Adresses.DoesNotExist:
         await query.message.reply_text(MESSAGES[selected_lang]['address_not_found'])  # Error message if address not found
 
+async def handle_category_selection(update, context):
+    query = update.callback_query
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Extract category ID from the callback data
+    category_id = int(query.data.split("_")[-1])
+    context.user_data['category_id_to_edit'] = category_id  # Store the category ID to use later
+
+    # Prompt the user to enter a new name
+    await query.message.reply_text(
+        MESSAGES[selected_lang]['enter_new_category_name']
+    )
+    
+async def handle_edit_category_menu(update, context, selected_lang):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Fetch categories asynchronously
+    categories = await sync_to_async(list)(Category.objects.filter(account=account))
+
+    # Create buttons for each category
+    category_buttons = [
+        [InlineKeyboardButton(category.name, callback_data=f"edit_category_{category.id}")]
+        for category in categories
+    ]
+
+    category_reply_markup = InlineKeyboardMarkup(category_buttons)
+
+    # Send the list of categories to the user
+    await update.callback_query.message.reply_text(
+        MESSAGES[selected_lang]['choose_category_to_edit'],
+        reply_markup=category_reply_markup
+    )
+
+
+async def confirm_delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+
+    print("selected_lang")
+    print(selected_lang)
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    query = update.callback_query
+    category_id = query.data.split("_")[-1]  # Extract the category ID from the callback data
+
+    # Store the category ID in context for final deletion
+    context.user_data['category_id_to_delete'] = category_id
+
+    # Ask for confirmation
+    confirm_keyboard = [
+        [
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['yes'], callback_data="confirm_delete_yes"),
+            InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['no'], callback_data="cancel")
+        ]
+    ]
+    confirm_reply_markup = InlineKeyboardMarkup(confirm_keyboard)
+
+    await query.answer()  # Acknowledge the callback
+    await query.message.reply_text(
+        MESSAGES[selected_lang]['confirm_delete_message'],
+        reply_markup=confirm_reply_markup
+    )
 
 async def show_address_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
@@ -3461,6 +3659,53 @@ async def start_creating_address(update: Update, context: ContextTypes.DEFAULT_T
     else:
         await update.message.reply_text(MESSAGES[selected_lang]['unexpected_input'])  # Handle unexpected input
 
+async def handle_new_category_name(update, context):
+    selected_lang = context.user_data.get('lang')
+    account = context.user_data.get('account')
+    
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    new_name = update.message.text  # Get the new name from the user's message
+    category_id = context.user_data.get('category_id_to_edit')
+
+    # Retrieve and update the category asynchronously
+    try:
+        category = await sync_to_async(Category.objects.get)(id=category_id)
+        category.name = new_name
+        await sync_to_async(category.save)()  # Save the updated category asynchronously
+
+        # Confirm the update
+        await update.message.reply_text(MESSAGES[selected_lang]['category_updated_successfully'])
+        await show_start_message(update, context, account)
+    except Category.DoesNotExist:
+        await update.message.reply_text(MESSAGES[selected_lang]['category_not_found'])
+
 
 async def show_delete_contact_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang')
@@ -3536,36 +3781,33 @@ async def show_address_list_for_deletion(update: Update, context: ContextTypes.D
 
 
 async def show_categories_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Get the user's selected language
     selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
-    
     chat_id = update.callback_query.message.chat.id
     account = context.user_data.get('account')
 
     if not account:
-        # Try to retrieve the account again in case it's not in user_data
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account
         except Account.DoesNotExist:
             await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
             return
+
     if not selected_lang and account:
-        # Assuming the account model has a language field
-        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+        selected_lang = account.language
 
     # Fetch categories related to the account asynchronously
-    categories = await sync_to_async(list)(Category.objects.filter(account=account))  # Ensure it's a list
+    categories = await sync_to_async(list)(Category.objects.filter(account=account))
 
     if not categories:
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_categories_available'])
         return
 
     # Create InlineKeyboard with category names as options
-    keyboard = []
-    for category in categories:
-        keyboard.append([InlineKeyboardButton(category.name, callback_data=f"delete_category_{category.id}")])
-
+    keyboard = [
+        [InlineKeyboardButton(category.name, callback_data=f"confirm_delete_category_{category.id}")]
+        for category in categories
+    ]
     keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")])  # Add a cancel button
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -3678,8 +3920,8 @@ async def delete_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    category_id = query.data.split("_")[2]  # Extract the category ID from the callback data
-
+    #category_id = query.data.split("_")[2]  # Extract the category ID from the callback data
+    category_id = context.user_data.get('category_id_to_delete')
     # Fetch the language from context or account
     selected_lang = context.user_data.get('lang')
     chat_id = update.callback_query.message.chat.id
@@ -3706,6 +3948,7 @@ async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             MESSAGES[selected_lang]['category_deleted'].format(category_name=category_name)
         )
+        await show_start_message(update, context, account)
     except Exception as e:
         # Send the error message with translation
         await query.message.reply_text(
@@ -4159,7 +4402,7 @@ async def no_more_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🎉 {MESSAGES[selected_lang]['product_added_successfully'].format(item=menuitem.item)}\n"
             f"{MESSAGES[selected_lang]['visit_product_page'].format(url=website_url)}"
         )
-    
+
     add_options_prompt = MESSAGES[selected_lang]['do_you_want_to_add_options']
 
     options_keyboard = [
@@ -4344,6 +4587,73 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif context.user_data.get('state') in ['awaiting_product_image', 'awaiting_image']:
         print("inside handle_product_image")
         await handle_product_image(update, context)
+
+    elif context.user_data.get('state') == 'awaiting_add_new_image':
+        # Get the menuitem_id from user_data
+        product_id = context.user_data.get('menuitem_id')
+        menu_item = await sync_to_async(MenuItem.objects.get)(id=product_id)
+        chat_id = update.message.chat.id
+        
+        # Set default language to English ('en') initially
+       
+
+        # Assuming context.user_data['account'] has the logged-in account details
+        account = context.user_data.get('account')
+        
+        if not account:
+            try:
+                account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+                context.user_data['account'] = account  # Cache the account in user_data
+            except Account.DoesNotExist:
+                keyboard = [
+                    [InlineKeyboardButton(MESSAGES['en']['buttons']['add_account'], callback_data="add_account")],
+                    [InlineKeyboardButton(MESSAGES['en']['buttons']['cancel'], callback_data="cancel")]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+
+                await update.callback_query.message.reply_text(
+                    MESSAGES['en']['no_account'],
+                    reply_markup=reply_markup
+                )
+                return
+
+        # Set the user's language if available in the account, otherwise use 'en' (English)
+        if account and account.language:
+            selected_lang = account.language
+
+        # Check if the user sent an image
+        await update.message.reply_text(MESSAGES[selected_lang]['downloading_image'])
+
+        try:
+            # Download the product image
+            product_image_file = await update.message.photo[-1].get_file()
+            product_image_path = f"static/img/items/{context.user_data.get('chat_id', update.message.chat.id)}_product_{int(time.time())}.jpg"
+            await product_image_file.download_to_drive(product_image_path)
+
+            # Save the photo in the MenuItemPhoto model
+            menuitem_id = context.user_data.get('menuitem_id')  # Get the menu item ID from user data
+
+            # Ensure that the MenuItem ID exists in the context
+            if menuitem_id:
+                # Create a new MenuItemPhoto instance
+                menu_item_photo = MenuItemPhoto(
+                    account=account,
+                    menuitem_id=menuitem_id,
+                    picture=product_image_path  # Save the image path here
+                )
+                await sync_to_async(menu_item_photo.save)()  # Save to the database asynchronously
+
+                await update.message.reply_text(MESSAGES[selected_lang]['image_downloaded_successfully'])
+
+                # Ask if they want to upload another photo
+                
+                await update.message.reply_text(MESSAGES[selected_lang]['image_added_success'])
+
+            else:
+                await update.message.reply_text(MESSAGES[selected_lang]['menuitem_id_missing'])
+
+        except Exception as e:
+            await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
 
     elif context.user_data.get('state') == 'awaiting_new_image':
         print("inside awaiting_new_image")
@@ -4659,19 +4969,26 @@ async def start_editing_contact(update: Update, context: ContextTypes.DEFAULT_TY
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['contact_not_found'])
 
 
-async def edit_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()  # Acknowledge the callback
+#async def edit_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+#    account = context.user_data.get('account')
+    
+    # If account language exists, use it
+#    if account and account.language:
+#        selected_lang = account.language
+#    product_id = int(query.data.split("_")[2])  # Extract the product ID
 
-    # Extract the product ID from the callback data
-    _, product_id = query.data.split('_')
-    context.user_data['editing_product_id'] = int(product_id)  # Store the product ID in user data
+    # Show options to Add or Remove the image
+#    keyboard = [
+#        [InlineKeyboardButton(MESSAGES[selected_lang]['add_image'], callback_data=f"add_image_{product_id}")],
+#        [InlineKeyboardButton(MESSAGES[selected_lang]['remove_image'], callback_data=f"remove_image_{product_id}")]
+#    ]
+#    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
-    account = context.user_data.get('account')
-    if account and account.language:
-        selected_lang = account.language
-    await query.edit_message_text(text=MESSAGES[selected_lang]['edit_product_image'])
+#    await update.callback_query.message.reply_text(
+#        MESSAGES[selected_lang]['choose_image_action'],
+#        reply_markup=reply_markup
+#    )
 
 async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id):
     selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
@@ -4685,6 +5002,8 @@ async def start_editing_image(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         print(e)
         await update.callback_query.message.reply_text(MESSAGES[selected_lang]['error_message'].format(str(e)))
+
+
 
 async def edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()  # Acknowledge the callback
@@ -4811,6 +5130,37 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['state'] = None
         await show_start_message(update, context, account)
 
+
+    elif query.data == "confirm_delete_yes":
+        
+        await delete_category(update, context)
+
+    elif query.data == "edit_category_menu":
+        category_keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['add_category'], callback_data="add_category"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['edit_category'], callback_data="edit_category")
+            ],
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['delete_category'], callback_data="delete_category")
+            ]
+        ]
+        category_reply_markup = InlineKeyboardMarkup(category_keyboard)
+        
+        # Send submenu options to the user
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['choose_category_action'],
+            reply_markup=category_reply_markup
+        )
+
+    elif query.data == "edit_category":
+        await handle_edit_category_menu(update, context, selected_lang)
+
+    elif query.data.startswith("confirm_delete_category_"):
+        await confirm_delete_category(update, context) 
+
+    elif query.data.startswith("edit_category_"):
+        await handle_category_selection(update, context)
 
     elif query.data == "edit_addresses":
         await show_address_list(update, context)
@@ -5036,8 +5386,112 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await start_editing_price(update, context, product_id)
 
     elif query.data.startswith("edit_image_"):
+        print("edit imageeeeeeeee")
         product_id = int(query.data.split("_")[2])  # Extract the product ID
-        await start_editing_image(update, context, product_id)
+        #await start_editing_image(update, context, product_id)
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['add_image'], callback_data=f"add_image_{product_id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['remove_image'], callback_data=f"remove_image_{product_id}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['choose_image_action'],
+            reply_markup=reply_markup
+        )
+    elif query.data.startswith("add_image_"):
+        product_id = int(query.data.split("_")[2])  # Extract the product ID
+        context.user_data['menuitem_id'] = product_id  # Store product ID in user_data
+        
+        context.user_data['state'] = 'awaiting_add_new_image'
+        await query.message.reply_text(MESSAGES[selected_lang]['awaiting_image'])
+
+    elif query.data.startswith("remove_image_"):
+        product_id = int(query.data.split("_")[2])  # Extract the product ID
+
+        # Get the MenuItem and its associated images
+        menu_item = await sync_to_async(MenuItem.objects.get)(id=product_id)
+        main_image = menu_item.picture
+        additional_images = await sync_to_async(list)(menu_item.menuitem_photos.all())
+        
+        images_sent = False  # Track if any images were sent
+
+        # If the main image exists, send it with a remove button
+        print("main_image")
+        print(main_image)
+        
+        if main_image:
+            main_image_path = main_image.path
+            with open(main_image_path, 'rb') as image_file:
+                keyboard = [
+                    [InlineKeyboardButton(
+                        text=MESSAGES[selected_lang]['remove_image'],
+                        callback_data=f"confirm_remove_image_{menu_item.id}_"  # Use empty string after product ID for main image
+                    )]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.callback_query.message.reply_photo(
+                    photo=InputFile(image_file),
+                    reply_markup=reply_markup
+                )
+            images_sent = True
+
+        # Send each additional image with a remove button
+        for image in additional_images:
+            image_path = image.picture.path
+            with open(image_path, 'rb') as image_file:
+                keyboard = [
+                    [InlineKeyboardButton(
+                        text=MESSAGES[selected_lang]['remove_image'],
+                        callback_data=f"confirm_remove_image_{product_id}_{image.id}"
+                    )]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.callback_query.message.reply_photo(
+                    photo=InputFile(image_file),
+                    reply_markup=reply_markup
+                )
+            images_sent = True
+
+        # If there are no images to show
+        if not images_sent:
+            await update.callback_query.message.reply_text(
+                text=MESSAGES[selected_lang]['no_images_to_remove']
+            )
+
+    elif query.data.startswith("confirm_remove_image_"):
+        image_id_str = query.data.split("_")[4]  # Extract the image ID or empty string
+        
+        print("image_id_str")
+        print(image_id_str)
+        print(query.data.split("_"))
+        if image_id_str == "":
+            # Handle main image removal
+            product_id = int(query.data.split("_")[3])  # Get the product ID from callback data
+            menu_item = await sync_to_async(MenuItem.objects.get)(id=product_id)
+            
+            # Delete the main image file
+            await sync_to_async(menu_item.picture.delete)(save=True)
+            
+            # Notify the user about successful main image removal
+            await update.callback_query.message.reply_text(
+                text=MESSAGES[selected_lang]['image_removed_success']
+            )
+        else:
+            image_id_str = query.data.split("_")[4]
+            # Handle additional image removal
+            image_id = int(image_id_str)  # Convert the ID from string to int
+            image = await sync_to_async(MenuItemPhoto.objects.get)(id=image_id)
+            
+            # Delete the image
+            await sync_to_async(image.delete)()
+            
+            # Notify the user about successful additional image removal
+            await update.callback_query.message.reply_text(
+                text=MESSAGES[selected_lang]['image_removed_success']
+            )
+
+
 
     elif query.data.startswith("edit_store_info"):
         await edit_store_info(update, context)
@@ -5100,7 +5554,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("edit_logo"):
         await edit_logo(update, context)
 
-    elif query.data.startswith("create_new_category"):
+    elif query.data.startswith("create_new_category") or query.data == "add_category":
         await query.message.reply_text(MESSAGES[selected_lang]['enter_new_category'])
         context.user_data['state'] = 'awaiting_category'
 
@@ -5229,17 +5683,19 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['category'] = new_category
 
         # Get the user's selected language
-        selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+        selected_lang = context.user_data.get('lang') or (account.language if account else 'en')
 
-        # If the language is not set, check the account for the preferred language
-        if not selected_lang and account:
-            selected_lang = account.language  # Replace with the actual field name for language in your Account model
+        # Create an inline keyboard with a "Cancel" button
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['buttons']['cancel'], callback_data="cancel")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
         await query.message.reply_text(
-            text=MESSAGES[selected_lang]['category_creation_success'].format(category_name=category_name)
+            text=MESSAGES[selected_lang]['category_creation_success'].format(category_name=category_name),
+            reply_markup=reply_markup
         )
         context.user_data['state'] = 'awaiting_item_name'
-
     elif query.data == "no":
         await query.message.reply_text(text='Category creation canceled. Please provide an existing category.')
         context.user_data['state'] = 'awaiting_category'

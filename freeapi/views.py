@@ -466,18 +466,20 @@ class MakeOrderView(APIView):
         if not isinstance(request.data, list):
             return Response({'error': 'Invalid data format. Please provide a list of orders.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        account = Account.objects.get(user=request.data[0]["account"])
-
+        account = Account.objects.get(id=request.data[0]["account"])
+        
         # Check for existing client based on phone number (consider username too)
         client, created = Clients.objects.get_or_create(
             account=account,
             phone=request.data[0]["phone"],
             defaults={'numberOfOrders': 0, 'email': request.data[0]["email"]},  # Set defaults for new clients
         )
+        
         if created:
             client.numberOfOrders = 0  # Initialize numberOfOrders if creating a new client
 
         orders = []
+        
         for order_data in request.data:
             serializer = ShopOrderSerializer(data=order_data)
 
@@ -488,10 +490,11 @@ class MakeOrderView(APIView):
             # Retrieve or create ShopOrder object
             print("client")
             print(client)
+            item = MenuItem.objects.get(id=order_data["Item"])
             order, created = ShopOrder.objects.get_or_create(
                 account=account,
-                client=client.id,
-                Item_id=order_data["Item"],  # Use foreign key field name (e.g., Item_id)
+                client=client,
+                item=item,  # Use foreign key field name (e.g., Item_id)
                 quantity=order_data["quantity"],
                 date=order_data.get("date", datetime.now()),  # Use default for missing date
             )
@@ -514,6 +517,10 @@ class MakeOrderView(APIView):
         # Update client's number of orders if necessary
         client.numberOfOrders += len(orders)
         client.save()
+        return Response({
+            "message": "Order(s) successfully created",
+            "orders": ShopOrderSerializer(orders, many=True).data
+        }, status=status.HTTP_201_CREATED)
 
     def put(self, request, pk, format=None):  
 
