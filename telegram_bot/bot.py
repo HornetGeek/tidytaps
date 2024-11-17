@@ -756,8 +756,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif user_state == 'awaiting_address_details':
         await start_creating_address(update, context)
-    elif 'category_id_to_edit' in context.user_data:
-        await handle_new_category_name(update, context)
+
     elif user_state == 'awaiting_option_title'  or user_state == "awaiting_new_option_name":
         print("we are in awaiting option title")
         await handle_option_title(update, context)
@@ -812,6 +811,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await edit_whatsapp_number(update, context)
     elif user_state == "awaiting_edit_description":
         await handle_edit_description(update, context)
+    elif 'category_id_to_edit' in context.user_data:
+        await handle_new_category_name(update, context)
     else:
         print("we are in else in message handle")
         if not account:
