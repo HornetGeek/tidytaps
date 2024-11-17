@@ -17,6 +17,9 @@ router4 = routers.DefaultRouter()
 router4.register(r'covers', views.CoverViewSet, basename='cover')
 
 
+router5 = routers.DefaultRouter()
+router5.register(r'order', views.ShopOrderViewSet, basename='order')
+
 urlpatterns = [
     path('accounts/', views.AccountCreateAPIView.as_view(), name='account-create'),
     path('accounts/username/<str:username>/', views.AccountRetrieveByUsernameAPIView.as_view(), name='account-retrieve-by-username'),
@@ -47,7 +50,6 @@ urlpatterns = [
     path('register', views.RegisterView.as_view(), name='register'),
     path('offers/<int:pk>', views.OfferDetailView.as_view(), name="offers"),
     path('offers', views.OfferDetailView.as_view(), name="Post offers"),
-    path('order',views.MakeOrderView.as_view()),
     path('items/<int:pk>', views.MenuItemDetailView.as_view(), name="menuItems"),
     path('items/<int:pk>/<int:itemId>', views.MenuItemDetailView.as_view(), name="items"),
     path('items', views.MenuItemDetailView.as_view(), name="PostMenuItems"),
@@ -55,6 +57,7 @@ urlpatterns = [
     path('', include(router2.urls)),
     path('', include(router3.urls)),
     path('', include(router4.urls)),
+    path('', include(router5.urls)),
     path('menuitem-photos/account/menuitem/<int:account_id>/<int:menuitem_id>', views.MenuItemPhotoListByAccountAndMenuItemView.as_view(), name='menuitem-photos-by-account-menuitem'),
     path('option/<int:account_id>/<int:menuitem_id>/', views.get_option_by_account_and_menuitem),
     path('choices/<int:account_id>/<int:menuitem_id>/<int:option_id>', views.get_items_by_account_and_menuitem),

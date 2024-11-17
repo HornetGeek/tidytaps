@@ -7,6 +7,8 @@ from datetime import datetime
 from django.utils.translation import gettext_lazy as _
 import uuid
 from django.conf import settings
+from django.utils.timezone import now
+
 # Create your models here.
 
 #class CustomUser(AbstractUser):
@@ -228,12 +230,26 @@ class MenuItemChoices(models.Model):
     Popular = models.BooleanField(default=False)
 
 class ShopOrder(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    client = models.ForeignKey(Clients, on_delete=models.CASCADE)
-    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    date = models.DateTimeField(default=datetime.now)
+    account = models.ForeignKey('Account', on_delete=models.CASCADE)
+    client = models.ForeignKey('Clients', on_delete=models.CASCADE)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Store the subtotal
+    shipping = models.CharField(max_length=50, default="Free")  # Store shipping details
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total including shipping
+    service_type = models.CharField(max_length=20, choices=[('self-pickup', 'Self-Pickup'), ('delivery', 'Delivery')], default='self-pickup')
+    address_street = models.CharField(max_length=255, blank=True, null=True)  # Optional, for delivery only
+    address_apartment = models.CharField(max_length=255, blank=True, null=True)
+    address_city = models.CharField(max_length=255, blank=True, null=True)
+    date = models.DateTimeField(default=now)
     order_status = models.CharField(max_length=30, default='pending')
-    options = models.ManyToManyField(Option, blank=True)
+    
+    def __str__(self):
+        return f"Order #{self.id} - {self.client} - {self.order_status}"
 
+class ShopOrderItem(models.Model):
+    order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name='items')
+    item = models.ForeignKey('MenuItem', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    options = models.ManyToManyField('Option', blank=True)
 
+    def __str__(self):
+        return f"{self.item} x {self.quantity} for Order #{self.order.id}"

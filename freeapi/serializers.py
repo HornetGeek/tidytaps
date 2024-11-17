@@ -183,13 +183,56 @@ class MenuItemChoicesSerializer(serializers.ModelSerializer):
 
 
 
+class ShopOrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShopOrderItem
+        fields = ['item', 'quantity', 'options']
+
+
+
 class ShopOrderSerializer(serializers.ModelSerializer):
-    
+    items = ShopOrderItemSerializer(many=True)
+    phone = serializers.CharField(write_only=True)  # Accept phone only for input
+    username = serializers.CharField(write_only=True, required=False)  # Accept username only for input
 
     class Meta:
         model = ShopOrder
-        fields = ('__all__')
+        fields = [
+            'account', 'subtotal', 'shipping', 'total_amount',
+            'service_type', 'address_street', 'address_apartment',
+            'address_city', 'order_status', 'items', 'phone', 'username'
+        ]
 
+    def create(self, validated_data):
+        # Extract phone and username from validated data
+        phone = validated_data.pop('phone', None)
+        username = validated_data.pop('username', None)
+        items_data = validated_data.pop('items')
+        account = validated_data['account']
+
+        # Find or create the client
+        client, created = Clients.objects.get_or_create(
+            phone=phone,
+            account=account,
+            defaults={'username': username or ""}
+        )
+        if not created and username:  # Update username if it was empty before
+            client.username = username
+            client.save()
+
+        # Add the client to the ShopOrder data
+        validated_data['client'] = client
+
+        # Create the ShopOrder instance
+        order = ShopOrder.objects.create(**validated_data)
+
+        # Create ShopOrderItem instances
+        for item_data in items_data:
+            options = item_data.pop('options', [])
+            order_item = ShopOrderItem.objects.create(order=order, **item_data)
+            order_item.options.set(options)
+
+        return order
 
 class ShopCategorySerializer(serializers.ModelSerializer):
 
