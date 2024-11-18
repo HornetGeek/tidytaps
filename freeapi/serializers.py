@@ -184,10 +184,11 @@ class MenuItemChoicesSerializer(serializers.ModelSerializer):
 
 
 class ShopOrderItemSerializer(serializers.ModelSerializer):
+    choices = serializers.PrimaryKeyRelatedField(many=True, queryset=MenuItemChoices.objects.all())
+
     class Meta:
         model = ShopOrderItem
-        fields = ['item', 'quantity', 'options']
-
+        fields = ['item', 'quantity', 'choices']
 
 
 class ShopOrderSerializer(serializers.ModelSerializer):
@@ -228,11 +229,13 @@ class ShopOrderSerializer(serializers.ModelSerializer):
 
         # Create ShopOrderItem instances
         for item_data in items_data:
-            options = item_data.pop('options', [])
+            choices = item_data.pop('choices', [])
             order_item = ShopOrderItem.objects.create(order=order, **item_data)
-            order_item.options.set(options)
+            order_item.choices.set(choices)
 
         return order
+
+
 
 class ShopCategorySerializer(serializers.ModelSerializer):
 

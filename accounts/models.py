@@ -249,7 +249,7 @@ class ShopOrderItem(models.Model):
     order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name='items')
     item = models.ForeignKey('MenuItem', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    options = models.ManyToManyField('Option', blank=True)
+    choices = models.ManyToManyField('MenuItemChoices', blank=True)
 
     def __str__(self):
         return f"{self.item} x {self.quantity} for Order #{self.order.id}"
