@@ -27,6 +27,32 @@ from django.utils.timezone import now
 
 
 class Account(models.Model):
+    CURRENCY_CHOICES = [
+        ("EGP", "Egyptian Pound"),
+        ("SAR", "Saudi Riyal"),
+        ("AED", "UAE Dirham"),
+        ("KWD", "Kuwaiti Dinar"),
+        ("QAR", "Qatari Riyal"),
+        ("BHD", "Bahraini Dinar"),
+        ("OMR", "Omani Rial"),
+        ("MAD", "Moroccan Dirham"),
+        ("TND", "Tunisian Dinar"),
+        ("LBP", "Lebanese Pound"),
+        ("SDG", "Sudanese Pound"),
+        ("DZD", "Algerian Dinar"),
+        ("YER", "Yemeni Rial"),
+        ("IQD", "Iraqi Dinar"),
+        ("USD", "US Dollar"),
+        ("EUR", "Euro"),
+        ("GBP", "British Pound"),
+        ("JPY", "Japanese Yen"),
+        ("AUD", "Australian Dollar"),
+        ("CAD", "Canadian Dollar"),
+        ("CHF", "Swiss Franc"),
+        ("CNY", "Chinese Yuan"),
+        ("SEK", "Swedish Krona"),
+        ("NZD", "New Zealand Dollar"),
+    ]
     accountId = models.CharField(max_length=255, default=str(uuid.uuid4))
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="account_data")
     username = models.CharField(max_length=150, unique=True)
@@ -41,6 +67,9 @@ class Account(models.Model):
     primary_color = models.CharField(max_length=7, default="#0E214B", blank=True)
     second_color = models.CharField(max_length=7, default="#3F68DE",blank=True)
     language = models.CharField(max_length=10, default='en', null=True, blank=True)
+    currency = models.CharField(
+        max_length=3, choices=CURRENCY_CHOICES, default="EGP", blank=True
+    )
     #objects = CustomUserManager()
 
     def __str__(self):

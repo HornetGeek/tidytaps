@@ -313,7 +313,7 @@ MESSAGES = {
         'edit_whatsapp_number': "Edit WhatsApp Number",
         'enter_new_phone_number': "Please enter your new phone number:",
         'whatsapp_number_updated': "Your WhatsApp number has been updated successfully.",
-        'invalid_phone_number': "The phone number you entered is invalid. Please enter a valid international phone number.",
+        'invalid_phone_number': "The phone number you entered is invalid. Please ensure it starts with '+' followed by the country code (e.g., +1 for USA, +44 for UK) and contains only numbers.",
         'enter_new_description': "Please enter the new description for the product:",
         'description_updated': "Product description updated successfully.",
         'edit_description': "Edit Description",
@@ -369,6 +369,12 @@ MESSAGES = {
         'offer_updated': "The offer for *{product_name}* has been successfully updated to {new_offer}.",
         'error_occurred': "An error occurred while updating the offer. Please try again later.",
         'unrecognized_message': "I didn't understand that. Please use the available options.",
+        'edit_currency': "Change Currency",
+        'select_currency': "Please select a currency:",
+        'currency_selected': "You have selected currency:",
+        'previous': "⬅️ Previous",
+        'next': "Next ➡️",
+        'currency_updated': "Your currency has been updated to: {currency}.",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -605,7 +611,7 @@ MESSAGES = {
         'edit_whatsapp_number': "تعديل رقم الواتساب",
         'enter_new_phone_number': "يرجى إدخال رقم الواتساب الجديد الخاص بك:",
         'whatsapp_number_updated': "تم تحديث رقم الواتساب الخاص بك بنجاح.",
-        'invalid_phone_number': "رقم الهاتف الذي أدخلته غير صالح. يرجى إدخال رقم هاتف دولي صالح.",
+        'invalid_phone_number': "رقم الهاتف الذي أدخلته غير صالح. يرجى التأكد من أنه يبدأ بعلامة '+' متبوعة برمز الدولة (مثل +1 للولايات المتحدة، +44 للمملكة المتحدة) وأن يحتوي على أرقام فقط.",
         'edit_description': "تعديل الوصف",
         'enter_new_description': "يرجى إدخال الوصف الجديد للمنتج:",
         'description_updated': "تم تحديث وصف المنتج بنجاح.",
@@ -659,6 +665,12 @@ MESSAGES = {
         'offer_updated': "تم تحديث العرض لـ *{product_name}* بنجاح إلى {new_offer}.",
         'error_occurred': "حدث خطأ أثناء تحديث العرض. حاول مرة أخرى لاحقًا.",
         'unrecognized_message': "لم أفهم ذلك. يرجى استخدام الخيارات المتاحة.",
+        'edit_currency': "تغيير العملة",
+        'select_currency': "يرجى اختيار العملة:",
+        'currency_selected': "لقد اخترت العملة:",
+        'previous': "⬅️ السابق",
+        'next': "التالي ➡️",
+        'currency_updated': "تم تحديث عملتك إلى: {currency}.",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -1332,6 +1344,9 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineKeyboardButton(f"🏠 {MESSAGES[selected_lang]['edit_addresses']}", callback_data="edit_addresses"),
         InlineKeyboardButton(f"📱 {MESSAGES[selected_lang]['edit_whatsapp_number']}", callback_data="edit_whatsapp_number"),
 
+    ],
+    [
+        InlineKeyboardButton(f"💱 {MESSAGES[selected_lang]['edit_currency']}", callback_data="change_currency"),
     ],
     [
         InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
@@ -2778,8 +2793,9 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang', 'en')
     phone_number = update.message.text
+    phone_number = phone_number.replace(" ", "")  # Remove spaces inside the number
 
-    phone_pattern = r'^(01\d{9}|(?:\+212|0)([5-7]\d{8}))$'  # Match 11 characters starting with 01
+    phone_pattern = r'^\+\d+$'
 
     if not re.match(phone_pattern, phone_number):
         await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone_number'])
@@ -3421,6 +3437,148 @@ async def show_social_media_options(update: Update, context: ContextTypes.DEFAUL
     await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_social_media'], reply_markup=reply_markup)
 
 
+CURRENCIES = [
+    ("Egyptian Pound", "EGP"),
+    ("Saudi Riyal", "SAR"),
+    ("UAE Dirham", "AED"),
+    ("Kuwaiti Dinar", "KWD"),
+    ("Qatari Riyal", "QAR"),
+    ("Bahraini Dinar", "BHD"),
+    ("Omani Rial", "OMR"),
+    ("Moroccan Dirham", "MAD"),
+    ("Tunisian Dinar", "TND"),
+    ("Lebanese Pound", "LBP"),
+    ("Sudanese Pound", "SDG"),
+    ("Algerian Dinar", "DZD"),
+    ("Yemeni Rial", "YER"),
+    ("Iraqi Dinar", "IQD"),
+    ("US Dollar", "USD"),
+    ("Euro", "EUR"),
+    ("British Pound", "GBP"),
+    ("Japanese Yen", "JPY"),
+    ("Australian Dollar", "AUD"),
+    ("Canadian Dollar", "CAD"),
+    ("Swiss Franc", "CHF"),
+    ("Chinese Yuan", "CNY"),
+    ("Swedish Krona", "SEK"),
+    ("New Zealand Dollar", "NZD"),
+]
+ITEMS_PER_PAGE = 5
+
+async def show_currency_page(update: Update, context: ContextTypes.DEFAULT_TYPE, page=0):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+    
+    start_index = page * ITEMS_PER_PAGE
+    end_index = start_index + ITEMS_PER_PAGE
+    currencies = CURRENCIES[start_index:end_index]
+
+    # Create buttons for the current page
+    keyboard = [
+        [InlineKeyboardButton(f"{name} ({code})", callback_data=f"currency_{code}")]
+        for name, code in currencies
+    ]
+
+    # Add navigation buttons
+    navigation_buttons = []
+    if start_index > 0:  # Add "Previous" button
+        navigation_buttons.append(InlineKeyboardButton(MESSAGES[selected_lang]['previous'], callback_data=f"currency_page_{page-1}"))
+    if end_index < len(CURRENCIES):  # Add "Next" button
+        navigation_buttons.append(InlineKeyboardButton(MESSAGES[selected_lang]['next'], callback_data=f"currency_page_{page+1}"))
+
+    if navigation_buttons:
+        keyboard.append(navigation_buttons)
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.edit_text(
+        text=MESSAGES[selected_lang]['select_currency'], reply_markup=reply_markup
+    )
+
+
+async def set_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang')
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id 
+
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+    
+
+    # Extract the selected currency code
+    currency_code = query.data.split("_")[1]
+
+    # Get the account from user data
+    account = context.user_data.get('account')
+    if not account:
+        chat_id = query.message.chat.id
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+
+    # Update the account currency
+    account.currency = currency_code
+    await sync_to_async(account.save)()
+
+    # Send a confirmation message
+    await query.answer()
+    await query.message.reply_text(
+        text=MESSAGES[selected_lang]['currency_updated'].format(currency=currency_code)
+    )
+    await show_start_message(update, context, account)
 async def edit_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
 
@@ -5243,6 +5401,17 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "edit_social_media":
         await show_social_media_options(update, context)
+
+    elif query.data.startswith("change_currency"):
+        # Navigate to another page
+        await show_currency_page(update, context)
+
+    elif query.data.startswith("currency_page_"):
+        page = int(query.data.split("_")[-1])
+        await show_currency_page(update, context, page)
+
+    elif query.data.startswith("currency_"):
+        await set_currency(update, context)
 
     elif query.data == "edit_facebook":
         await query.message.reply_text(MESSAGES[selected_lang]['enter_facebook_link'])
