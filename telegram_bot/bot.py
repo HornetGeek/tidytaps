@@ -654,7 +654,7 @@ MESSAGES = {
         'image_removed_success': "تمت إزالة الصورة بنجاح.",
         'image_added_success': "تمت إضافة الصورة بنجاح إلى المنتج!",
         'edit_offer': " تعديل العرض",
-        'enter_offer': "السعر الحالي لـ *{product_name}* هو {product_price}.\nيرجى إدخال تفاصيل العرض الجديد لهذا المنتج:",
+        'enter_offer': "السعر الحالي لـ *{product_name}* هو {product_price}.\nيرجى إدخال سعر العرض الجديد لهذا المنتج:",
         'invalid_offer': "قيمة العرض يجب أن تكون رقمًا صالحًا. حاول مرة أخرى.",
         'offer_updated': "تم تحديث العرض لـ *{product_name}* بنجاح إلى {new_offer}.",
         'error_occurred': "حدث خطأ أثناء تحديث العرض. حاول مرة أخرى لاحقًا.",
@@ -781,10 +781,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
                     return
 
-                # Update the product's offer and hasOffer fields
-                product.offer = new_offer
-                product.hasOffer = True
-                await sync_to_async(product.save)()
+                # Convert the offer to a numeric type (e.g., float)
+                new_offer = float(new_offer)
+
+                # Update the product's old_price, price, offer, and hasOffer fields
+                product.old_price = product.price  # Set the old_price to the current price
+                product.price = new_offer          # Set the new price to the offer
+                product.offer = new_offer          # Save the offer value
+                product.hasOffer = True            # Mark the product as having an offer
+                await sync_to_async(product.save)()  # Save changes asynchronously
 
                 # Notify the user of the successful update
                 await update.message.reply_text(
@@ -809,6 +814,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 MESSAGES[selected_lang]['unrecognized_message']
             )
+    
     elif user_state == 'awaiting_price':
         await handle_price(update, context)
     elif user_state == "awaiting_cover_upload":
