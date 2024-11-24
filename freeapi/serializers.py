@@ -185,7 +185,15 @@ class MenuItemChoicesSerializer(serializers.ModelSerializer):
 
 class ShopOrderItemSerializer(serializers.ModelSerializer):
     choices = serializers.PrimaryKeyRelatedField(many=True, queryset=MenuItemChoices.objects.all())
+    
+    class Meta:
+        model = ShopOrderItem
+        fields = ['item', 'quantity', 'choices']
 
+class ShopOrderGetItemSerializer(serializers.ModelSerializer):
+    item = MenuItemSerializer()
+    choices = MenuItemChoicesSerializer(many=True)
+    
     class Meta:
         model = ShopOrderItem
         fields = ['item', 'quantity', 'choices']
@@ -199,6 +207,7 @@ class ShopOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopOrder
         fields = [
+            'id',
             'account', 'subtotal', 'shipping', 'total_amount',
             'service_type', 'address_street', 'address_apartment',
             'address_city', 'order_status', 'items', 'phone', 'username'
@@ -235,6 +244,53 @@ class ShopOrderSerializer(serializers.ModelSerializer):
 
         return order
 
+
+
+class ShopOrderGetSerializer(serializers.ModelSerializer):
+    items = ShopOrderGetItemSerializer(many=True)
+    phone = serializers.CharField(write_only=True)  # Accept phone only for input
+    client = ClientSerializer(read_only=True)
+    username = serializers.CharField(write_only=True, required=False)  # Accept username only for input
+
+    class Meta:
+        model = ShopOrder
+        fields = [
+            'id','client',
+            'account', 'subtotal', 'shipping', 'total_amount',
+            'service_type', 'address_street', 'address_apartment',
+            'address_city', 'order_status', 'items', 'phone', 'username'
+        ]
+
+    def create(self, validated_data):
+        # Extract phone and username from validated data
+        phone = validated_data.pop('phone', None)
+        username = validated_data.pop('username', None)
+        items_data = validated_data.pop('items')
+        account = validated_data['account']
+
+        # Find or create the client
+        client, created = Clients.objects.get_or_create(
+            phone=phone,
+            account=account,
+            defaults={'username': username or ""}
+        )
+        if not created and username:  # Update username if it was empty before
+            client.username = username
+            client.save()
+
+        # Add the client to the ShopOrder data
+        validated_data['client'] = client
+
+        # Create the ShopOrder instance
+        order = ShopOrder.objects.create(**validated_data)
+
+        # Create ShopOrderItem instances
+        for item_data in items_data:
+            choices = item_data.pop('choices', [])
+            order_item = ShopOrderItem.objects.create(order=order, **item_data)
+            order_item.choices.set(choices)
+
+        return order
 
 
 class ShopCategorySerializer(serializers.ModelSerializer):

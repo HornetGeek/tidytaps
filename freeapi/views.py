@@ -13,13 +13,16 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework import generics
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 
 class ReadOnlyUserPermission(permissions.BasePermission):
     """
@@ -320,6 +323,51 @@ class LastClientView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class ClientsPagination(PageNumberPagination):
+    page_size = 10  # Default items per page
+    page_size_query_param = 'page_size'  # Allow clients to specify page size
+    max_page_size = 100  # Max limit for items per page
+
+
+class AllClientsByAccountView(APIView):
+    """
+    API view to retrieve all clients for a specific account ID.
+    """
+
+    def get(self, request, account_id):
+        try:
+            # Fetch the account by ID
+            account = Account.objects.get(id=account_id)
+
+            # Ensure the requesting user has permission to access this account's data
+            if account.user != request.user:
+                return Response(
+                    {"detail": "You do not have permission to view these clients."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Apply search filter if provided
+            search_query = request.GET.get('search', None)
+
+            # Fetch all clients for the given account, apply search if provided
+            clients = Clients.objects.filter(account=account)
+            if search_query:
+                clients = clients.filter(client_name__icontains=search_query)  # Example: searching by client_name
+
+            # Apply pagination
+            paginator = ClientsPagination()
+            paginated_clients = paginator.paginate_queryset(clients, request)
+            serializer = ClientSerializer(paginated_clients, many=True)
+
+            # Return paginated response
+            return paginator.get_paginated_response(serializer.data)
+
+        except Account.DoesNotExist:
+            return Response(
+                {"detail": "Account not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
 class OfferDetailView(APIView):
     permission_classes = [ReadOnlyUserPermission]
 
@@ -455,7 +503,26 @@ def get_option_by_account_and_menuitem(request, account_id, menuitem_id):
     return JsonResponse(serializer.data, safe=False)
 
 
+class ShopOrderPagination(PageNumberPagination):
+    page_size = 10  # Default items per page
+    page_size_query_param = 'page_size'  # Allow client to set custom page size
+    max_page_size = 100  # Maximum items per page
 
 class ShopOrderViewSet(viewsets.ModelViewSet):
     queryset = ShopOrder.objects.all()
     serializer_class = ShopOrderSerializer
+    pagination_class = ShopOrderPagination
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = [
+        'order_status',
+        'address_street',
+        'address_city',
+        'client__phone',       # Search by client's phone
+        'client__username',    # Search by client's name (username)
+    ]
+    def get_serializer_class(self):
+        # Use ShopOrderGetItemSerializer for GET requests (list/retrieve)
+        if self.action in ['list', 'retrieve']:
+            return ShopOrderGetSerializer
+        # Use ShopOrderItemSerializer for other actions like create, update, and delete
+        return ShopOrderSerializer

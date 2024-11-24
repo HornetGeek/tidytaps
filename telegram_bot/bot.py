@@ -363,6 +363,12 @@ MESSAGES = {
         'category_updated_successfully': "The category has been updated successfully.",
         'category_not_found': "The selected category could not be found.",
         'confirm_delete_message': "Are you sure you want to delete this category?",
+        'edit_offer': "Edit Offer",
+        'enter_offer': "The current price of *{product_name}* is {product_price}.\nPlease enter the new offer details for this product:",
+         'invalid_offer': "The offer value must be a valid number. Please try again.",
+        'offer_updated': "The offer for *{product_name}* has been successfully updated to {new_offer}.",
+        'error_occurred': "An error occurred while updating the offer. Please try again later.",
+        'unrecognized_message': "I didn't understand that. Please use the available options.",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -647,6 +653,12 @@ MESSAGES = {
         'no_images_to_remove': "لا توجد صور متاحة للإزالة.",
         'image_removed_success': "تمت إزالة الصورة بنجاح.",
         'image_added_success': "تمت إضافة الصورة بنجاح إلى المنتج!",
+        'edit_offer': " تعديل العرض",
+        'enter_offer': "السعر الحالي لـ *{product_name}* هو {product_price}.\nيرجى إدخال تفاصيل العرض الجديد لهذا المنتج:",
+        'invalid_offer': "قيمة العرض يجب أن تكون رقمًا صالحًا. حاول مرة أخرى.",
+        'offer_updated': "تم تحديث العرض لـ *{product_name}* بنجاح إلى {new_offer}.",
+        'error_occurred': "حدث خطأ أثناء تحديث العرض. حاول مرة أخرى لاحقًا.",
+        'unrecognized_message': "لم أفهم ذلك. يرجى استخدام الخيارات المتاحة.",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -743,7 +755,60 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif user_state == 'awaiting_tiktok_link':
         await edit_tiktok_link(update, context)
+    elif user_state == 'WAITING_FOR_OFFER':
+        user_message = update.message.text  # Get the user's message
+        chat_id = update.message.chat.id
+        account = context.user_data.get('account')
+        selected_lang = account.language if account else 'en'
 
+        # Check if the bot is waiting for an offer input
+        current_state = context.user_data.get('state')
+        if current_state == 'WAITING_FOR_OFFER':
+            # Retrieve the product from context
+            product = context.user_data.get('product')
+            if not product:
+                await update.message.reply_text(
+                    MESSAGES[selected_lang]['product_not_exist']
+                )
+                return
+
+            try:
+                # Validate and update the offer value
+                new_offer = user_message.strip()
+                if not new_offer.isnumeric() and not new_offer.replace('.', '', 1).isdigit():
+                    await update.message.reply_text(
+                        MESSAGES[selected_lang]['invalid_offer']
+                    )
+                    return
+
+                # Update the product's offer and hasOffer fields
+                product.offer = new_offer
+                product.hasOffer = True
+                await sync_to_async(product.save)()
+
+                # Notify the user of the successful update
+                await update.message.reply_text(
+                    MESSAGES[selected_lang]['offer_updated'].format(
+                        product_name=product.item,
+                        new_offer=new_offer
+                    )
+                )
+                await show_start_message(update, context, account)
+                
+                # Reset the state
+                context.user_data['state'] = None
+
+            except Exception as e:
+                # Handle any unexpected errors
+                await update.message.reply_text(
+                    MESSAGES[selected_lang]['error_occurred']
+                )
+                print(f"Error updating offer: {e}")
+        else:
+            # Handle other messages (if not in a specific state)
+            await update.message.reply_text(
+                MESSAGES[selected_lang]['unrecognized_message']
+            )
     elif user_state == 'awaiting_price':
         await handle_price(update, context)
     elif user_state == "awaiting_cover_upload":
@@ -4813,7 +4878,8 @@ async def edit_product(update: Update, context: ContextTypes.DEFAULT_TYPE, produ
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_price'], callback_data=f"edit_price_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_option'], callback_data=f"edit_options_{product.id}")],
             [InlineKeyboardButton(MESSAGES[selected_lang]['edit_description'], callback_data=f"edit_description_{product.id}")],
-            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_image'], callback_data=f"edit_image_{product.id}")]
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_image'], callback_data=f"edit_image_{product.id}")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['edit_offer'], callback_data=f"edit_offer_{product.id}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -5400,6 +5466,33 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             MESSAGES[selected_lang]['choose_image_action'],
             reply_markup=reply_markup
         )
+
+    elif query.data.startswith('edit_offer_'):
+        query = update.callback_query
+        chat_id = query.message.chat.id
+
+        # Extract product ID from the callback data
+        product_id = int(query.data.split('_')[-1])
+        
+        try:
+            product = await sync_to_async(MenuItem.objects.get)(id=product_id)
+            context.user_data['product'] = product
+
+            # Prompt the user to enter the new offer details, including the product price
+            message = MESSAGES[context.user_data.get('account').language]['enter_offer'].format(
+                product_name=product.item,
+                product_price=product.price
+            )
+            
+            await query.message.reply_text(message)
+            context.user_data['state'] = 'WAITING_FOR_OFFER'
+            return 'WAITING_FOR_OFFER'  # Set the state to wait for the user's input
+
+        except MenuItem.DoesNotExist:
+            await query.message.reply_text(
+                MESSAGES[context.user_data.get('account').language]['product_not_exist']
+            )
+
     elif query.data.startswith("add_image_"):
         product_id = int(query.data.split("_")[2])  # Extract the product ID
         context.user_data['menuitem_id'] = product_id  # Store product ID in user_data
