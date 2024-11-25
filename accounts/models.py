@@ -35,6 +35,7 @@ class Account(models.Model):
         ("KWD", "Kuwaiti Dinar"),
         ("QAR", "Qatari Riyal"),
         ("BHD", "Bahraini Dinar"),
+        ("LYD", "Libyan Dinar"),
         ("OMR", "Omani Rial"),
         ("MAD", "Moroccan Dirham"),
         ("TND", "Tunisian Dinar"),

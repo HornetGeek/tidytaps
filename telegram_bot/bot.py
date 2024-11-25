@@ -4,7 +4,7 @@ import os
 import sys
 import django
 from django.db import IntegrityError  # Import IntegrityError
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, KeyboardButton, WebAppInfo
 from telegram import error  # This is needed for error handling like telegram.error.TimedOut
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from asgiref.sync import sync_to_async
@@ -382,6 +382,7 @@ MESSAGES = {
             'delete_category': "🗑️ Delete Category",
             'edit_store_info': "🛠️ Edit Store Info",
             'get_website_qr': "🌐 Get Website & QR Code",
+            'open_webapp': "open_webapp",
             'get_analytics': "📊 View Analytics",
             'add_account': "Add Account",
             'choose_product': "Choose a product to edit:",
@@ -678,6 +679,7 @@ MESSAGES = {
             'edit_store_info': "🛠️ تعديل معلومات المتجر",
             'get_website_qr': "🌐 الحصول على الموقع ورمز QR",
             'get_analytics': "📊 عرض التحليلات",
+            'open_webapp': 'فتح الصفحه',
             'add_account': "إضافة حساب",
             'choose_product': "اختر منتجًا لتعديله:",
             'add_cover': "إضافة غلاف",
@@ -3446,6 +3448,7 @@ CURRENCIES = [
     ("Qatari Riyal", "QAR"),
     ("Bahraini Dinar", "BHD"),
     ("Omani Rial", "OMR"),
+    ("Libyan Dinar","LYD"),
     ("Moroccan Dirham", "MAD"),
     ("Tunisian Dinar", "TND"),
     ("Lebanese Pound", "LBP"),
