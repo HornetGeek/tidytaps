@@ -31,6 +31,7 @@ class Account(models.Model):
         ("EGP", "Egyptian Pound"),
         ("SAR", "Saudi Riyal"),
         ("AED", "UAE Dirham"),
+        ("SYP", "Syrian Pound"),
         ("KWD", "Kuwaiti Dinar"),
         ("QAR", "Qatari Riyal"),
         ("BHD", "Bahraini Dinar"),
@@ -74,6 +75,7 @@ class Account(models.Model):
 
     def __str__(self):
         return self.username
+
 
 class Cover(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="cover_account")
