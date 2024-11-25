@@ -3441,6 +3441,7 @@ CURRENCIES = [
     ("Egyptian Pound", "EGP"),
     ("Saudi Riyal", "SAR"),
     ("UAE Dirham", "AED"),
+    ("Syrian Pound", "SYP"),
     ("Kuwaiti Dinar", "KWD"),
     ("Qatari Riyal", "QAR"),
     ("Bahraini Dinar", "BHD"),
