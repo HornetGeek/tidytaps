@@ -3452,6 +3452,7 @@ CURRENCIES = [
     ("Moroccan Dirham", "MAD"),
     ("Tunisian Dinar", "TND"),
     ("Lebanese Pound", "LBP"),
+    ("Jordanian Dinar", "JOD"),  
     ("Sudanese Pound", "SDG"),
     ("Algerian Dinar", "DZD"),
     ("Yemeni Rial", "YER"),

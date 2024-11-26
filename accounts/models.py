@@ -37,6 +37,7 @@ class Account(models.Model):
         ("BHD", "Bahraini Dinar"),
         ("LYD", "Libyan Dinar"),
         ("OMR", "Omani Rial"),
+        ("JOD", "Jordanian Dinar"),  
         ("MAD", "Moroccan Dirham"),
         ("TND", "Tunisian Dinar"),
         ("LBP", "Lebanese Pound"),
