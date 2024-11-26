@@ -3001,23 +3001,27 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if the state is awaiting the user's input for contact phone
     if 'awaiting_contact' in context.user_data.get('state', ''):
         # User is expected to enter a phone number
-        if update.message and update.message.text.isdigit():
-            phone_number = int(update.message.text)
+        if update.message and update.message.text:
+            # Remove spaces and validate the phone number
+            phone_input = update.message.text.replace(" ", "").strip()
+            
+            # Regex to validate international phone number (e.g., +1234567890)
+            phone_pattern = r"^\+?\d+$"
+            
+            if re.match(phone_pattern, phone_input):
+                # Always create a new contact with the given phone number
+                await sync_to_async(Contacts.objects.create)(
+                    account=account,
+                    phone=phone_input
+                )
 
-            # Save or update the contact phone number to the database
-            contact, created = await sync_to_async(Contacts.objects.get_or_create)(
-                account=account
-            )
-            contact.phone = phone_number
-            await sync_to_async(contact.save)()  # Save the new phone number
-
-            # Clear the state and notify the user
-           
-            await update.message.reply_text(MESSAGES[selected_lang]['contact_added'])
-            await show_start_message(update, context, account)
+                # Clear the state and notify the user
+                await update.message.reply_text(MESSAGES[selected_lang]['contact_added'])
+                await show_start_message(update, context, account)
+            else:
+                await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone'])
         else:
             await update.message.reply_text(MESSAGES[selected_lang]['invalid_phone'])
-        
         return
 
     # If we're not awaiting a phone number, prompt the user to enter one
