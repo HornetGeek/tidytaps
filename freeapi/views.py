@@ -332,7 +332,8 @@ class ClientsPagination(PageNumberPagination):
 class AllClientsByAccountView(APIView):
     """
     API view to retrieve all clients for a specific account ID.
-    """
+    """ 
+    permission_classes = [ReadOnlyUserPermission]
 
     def get(self, request, account_id):
         try:
@@ -511,6 +512,7 @@ class ShopOrderPagination(PageNumberPagination):
 class ShopOrderViewSet(viewsets.ModelViewSet):
     queryset = ShopOrder.objects.all()
     serializer_class = ShopOrderSerializer
+    permission_classes = [ReadOnlyUserPermission]
     pagination_class = ShopOrderPagination
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_fields = ['account', 'order_status']
