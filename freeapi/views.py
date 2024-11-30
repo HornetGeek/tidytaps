@@ -330,9 +330,6 @@ class ClientsPagination(PageNumberPagination):
 
 
 class AllClientsByAccountView(APIView):
-    """
-    API view to retrieve all clients for a specific account ID.
-    """ 
     permission_classes = [ReadOnlyUserPermission]
 
     def get(self, request, account_id):
@@ -341,11 +338,12 @@ class AllClientsByAccountView(APIView):
             account = Account.objects.get(id=account_id)
 
             # Ensure the requesting user has permission to access this account's data
-            if account.user != request.user:
-                return Response(
-                    {"detail": "You do not have permission to view these clients."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+
+            #if account.user != request.user:
+            #    return Response(
+            #        {"detail": "You do not have permission to view these clients."},
+            #        status=status.HTTP_403_FORBIDDEN
+            #    )
 
             # Apply search filter if provided
             search_query = request.GET.get('search', None)
