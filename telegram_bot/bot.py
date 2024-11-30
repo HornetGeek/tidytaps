@@ -73,12 +73,13 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
             InlineKeyboardButton(buttons['edit_category'], callback_data="edit_category_menu"),
             InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
         ],
-        [
-            InlineKeyboardButton(
-                buttons['see_orders'],
-                web_app=WebAppInfo(url="https://yourwebapp.com/orders")  # Web App for orders
-            )
-        ],
+
+        #[
+        #    InlineKeyboardButton(
+        #        buttons['see_orders'],
+        #        web_app=WebAppInfo(url="https://google.com/orders")  # Web App for orders
+        #    )
+        #],
         [
             InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
         ],
@@ -388,7 +389,7 @@ MESSAGES = {
             'delete_category': "🗑️ Delete Category",
             'edit_store_info': "🛠️ Edit Store Info",
             'get_website_qr': "🌐 Get Website & QR Code",
-            'open_webapp': "open_webapp",
+            'see_orders': "see orders",
             'get_analytics': "📊 View Analytics",
             'add_account': "Add Account",
             'choose_product': "Choose a product to edit:",
@@ -685,7 +686,7 @@ MESSAGES = {
             'edit_store_info': "🛠️ تعديل معلومات المتجر",
             'get_website_qr': "🌐 الحصول على الموقع ورمز QR",
             'get_analytics': "📊 عرض التحليلات",
-            'open_webapp': 'فتح الصفحه',
+            'see_orders': "رؤيه الطلبات",
             'add_account': "إضافة حساب",
             'choose_product': "اختر منتجًا لتعديله:",
             'add_cover': "إضافة غلاف",
@@ -5991,8 +5992,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function to start the bot
 if __name__ == '__main__':
-    token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
-    #token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
+    #token = "7888485362:AAGYv9unTDpgW4X3_cVF-RFMqP194UADVwE"   #staging
+    token = "6977293897:AAE9OYhwEn75eI6mYyg9dK1_YY3hCB2M2T8"  # Replace with your bot token #production
     application = Application.builder().token(token).build()
     
     application.add_handler(CommandHandler("start", start))
