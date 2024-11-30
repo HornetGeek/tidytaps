@@ -513,6 +513,7 @@ class ShopOrderViewSet(viewsets.ModelViewSet):
     serializer_class = ShopOrderSerializer
     pagination_class = ShopOrderPagination
     filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['account', 'order_status']
     search_fields = [
         'order_status',
         'address_street',
@@ -520,6 +521,16 @@ class ShopOrderViewSet(viewsets.ModelViewSet):
         'client__phone',       # Search by client's phone
         'client__username',    # Search by client's name (username)
     ]
+    def get_queryset(self):
+        # Get the account_id from query parameters
+        account_id = self.request.query_params.get('account_id', None)
+        queryset = ShopOrder.objects.all()
+
+        # If account_id is provided, filter by it
+        if account_id is not None:
+            queryset = queryset.filter(account_id=account_id)
+
+        return queryset
     def get_serializer_class(self):
         # Use ShopOrderGetItemSerializer for GET requests (list/retrieve)
         if self.action in ['list', 'retrieve']:
