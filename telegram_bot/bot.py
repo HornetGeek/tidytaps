@@ -77,7 +77,7 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
         [
             InlineKeyboardButton(
                 buttons['see_orders'],
-                web_app=WebAppInfo(url="https://www.tidy-taps.com/orders/777")  # Web App for orders
+                web_app=WebAppInfo(url=f"https://www.tidy-taps.com/orders/{account.id}")  # Web App for orders
             )
         ],
         [
