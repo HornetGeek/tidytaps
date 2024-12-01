@@ -74,12 +74,12 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
             InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
         ],
 
-        #[
-        #    InlineKeyboardButton(
-        #        buttons['see_orders'],
-        #        web_app=WebAppInfo(url="https://google.com/orders")  # Web App for orders
-        #    )
-        #],
+        [
+            InlineKeyboardButton(
+                buttons['see_orders'],
+                web_app=WebAppInfo(url="https://www.tidy-taps.com/orders/777")  # Web App for orders
+            )
+        ],
         [
             InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
         ],
@@ -382,6 +382,12 @@ MESSAGES = {
         'previous': "⬅️ Previous",
         'next': "Next ➡️",
         'currency_updated': "Your currency has been updated to: {currency}.",
+        'upload_new_category_picture': "Please upload the new category picture.",
+        'category_picture_updated': "The category picture has been updated successfully!",
+        'invalid_picture_format': "Invalid format. Please upload a valid picture.",
+        'no_category_selected': "No category has been selected for editing.",
+        'downloading_category_image': "Downloading the category image, please wait...",
+        'category_image_downloaded_successfully': "The category image has been downloaded successfully!",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -679,6 +685,12 @@ MESSAGES = {
         'previous': "⬅️ السابق",
         'next': "التالي ➡️",
         'currency_updated': "تم تحديث عملتك إلى: {currency}.",
+        'upload_new_category_picture': "يرجى تحميل صورة الفئة الجديدة.",
+        'category_picture_updated': "تم تحديث صورة الفئة بنجاح!",
+        'invalid_picture_format': "تنسيق غير صالح. يرجى تحميل صورة صالحة.",
+        'no_category_selected': "لم يتم اختيار فئة للتعديل.",
+        'downloading_category_image': "جاري تنزيل صورة الفئة، يرجى الانتظار...",
+        'category_image_downloaded_successfully': "تم تنزيل صورة الفئة بنجاح!",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -3691,6 +3703,51 @@ async def handle_category_selection(update, context):
         MESSAGES[selected_lang]['enter_new_category_name']
     )
     
+
+async def handle_category_picture_edit(update, context):
+    query = update.callback_query
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang') 
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Extract category ID from the callback data
+    category_id = int(query.data.split("_")[-1])
+    context.user_data['category_id_to_edit'] = category_id  # Store the category ID to use later
+    context.user_data['state'] = "awaiting_new_category_picture"
+    # Prompt the user to upload a new picture
+    await query.message.reply_text(
+        MESSAGES[selected_lang]['upload_new_category_picture']
+    )
+
 async def handle_edit_category_menu(update, context, selected_lang):
     account = context.user_data.get('account')
 
@@ -4726,14 +4783,66 @@ async def handle_product_image(update: Update, context: ContextTypes.DEFAULT_TYP
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(MESSAGES[selected_lang]['ask_upload_another_photo'], reply_markup=reply_markup)
-
-
         
 
     except Exception as e:
         print(e)
         await update.message.reply_text(MESSAGES[selected_lang]['image_download_error'].format(error=str(e)))
 
+async def handle_uploaded_picture(update, context):
+    """
+    Handle uploaded category picture, download it, and update the category in the database.
+    """
+    selected_lang = context.user_data.get('lang')  # Default to 'en' if language is not set
+    account = context.user_data.get('account')
+    
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Validate the uploaded photo
+    if not update.message.photo:
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_image_type'])
+        return
+
+    await update.message.reply_text(MESSAGES[selected_lang]['downloading_category_image'])
+
+    try:
+        # Download the category image
+        category_image_file = await update.message.photo[-1].get_file()
+        category_image_path = f"static/img/category/{context.user_data.get('chat_id', update.message.chat.id)}_category_{int(time.time())}.jpg"
+        await category_image_file.download_to_drive(category_image_path)
+        await update.message.reply_text(MESSAGES[selected_lang]['category_image_downloaded_successfully'])
+
+        # Retrieve account information
+        account = context.user_data.get('account')
+        if not account:
+            try:
+                chat_id = context.user_data.get('chat_id', update.message.chat.id)
+                account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+                context.user_data['account'] = account  # Cache the account for future use
+            except Account.DoesNotExist:
+                await update.message.reply_text(MESSAGES[selected_lang]['create_account_first'])
+                return
+
+        # Get the category to update
+        category_id = context.user_data.get('category_id_to_edit')
+        if not category_id:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_category_selected'])
+            return
+
+        # Update the category's image field
+        category = await sync_to_async(Category.objects.get)(id=category_id)
+        await sync_to_async(setattr)(category, 'picture', category_image_path)
+        await sync_to_async(category.save)()
+
+        # Notify the user of successful update
+        await update.message.reply_text(MESSAGES[selected_lang]['category_picture_updated'])
+        await show_start_message(update, context, account)
+
+    except Exception as e:
+        # Log error for debugging (replace with proper logging in production)
+        print(f"Error in handle_uploaded_picture: {e}")
+        await update.message.reply_text(MESSAGES[selected_lang]['upload_failed'])
 
 async def show_products_for_deletion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_lang = context.user_data.get('lang',)  # Default to 'en' if language is not set
@@ -4833,7 +4942,8 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif context.user_data.get('state') in ['awaiting_product_image', 'awaiting_image']:
         print("inside handle_product_image")
         await handle_product_image(update, context)
-
+    elif context.user_data.get("state") == "awaiting_new_category_picture":
+        await handle_uploaded_picture(update, context)
     elif context.user_data.get('state') == 'awaiting_add_new_image':
         # Get the menuitem_id from user_data
         product_id = context.user_data.get('menuitem_id')
@@ -5406,9 +5516,28 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith("confirm_delete_category_"):
         await confirm_delete_category(update, context) 
 
-    elif query.data.startswith("edit_category_"):
+    elif query.data.startswith("edit_category_name_"):
         await handle_category_selection(update, context)
-
+    elif query.data.startswith("edit_catgetory_picture_"):
+        await handle_category_picture_edit(update, context)
+    elif query.data.startswith("edit_category_"):
+        category_id = int(query.data.split("_")[-1])
+        category_keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['edit_name'], callback_data=f"edit_category_name_{category_id}"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['edit_image'], callback_data=f"edit_catgetory_picture_{category_id}")
+            ],
+           
+        ]
+        category_reply_markup = InlineKeyboardMarkup(category_keyboard)
+        
+        # Send submenu options to the user
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['what_to_edit'],
+            reply_markup=category_reply_markup
+        )
+        #await handle_category_selection(update, context)
+    
     elif query.data == "edit_addresses":
         await show_address_list(update, context)
     

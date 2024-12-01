@@ -162,7 +162,7 @@ class CategoryWithItemsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'menuitem_categgory')
+        fields = ('id', 'name', 'picture', 'menuitem_categgory')
 
     def get_menuitem_categgory(self, obj):
         account_id = self.context['request'].parser_context['kwargs']['account_id']

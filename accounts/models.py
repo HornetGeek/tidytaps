@@ -185,7 +185,7 @@ class Menu(models.Model):
 class Category(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="Category_account", null=True)
     name = models.CharField(max_length=500)
-
+    picture = models.FileField(upload_to='static/img/category', default="")
     class Meta:
         unique_together = ('account', 'name')  # Enforce uniqueness per account
 

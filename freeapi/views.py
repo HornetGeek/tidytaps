@@ -313,7 +313,18 @@ class CategoryWithItemsAPIView(generics.ListAPIView):
         if account_id:
             return Category.objects.filter(account__id=account_id).prefetch_related('menuitem_categgory')  # Use the correct related name
         return Category.objects.none()
+    
+class CategoryUpdateAPIView(generics.RetrieveUpdateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [ReadOnlyUserPermission]
 
+    def get_queryset(self):
+        """
+        Optionally restricts the queryset by filtering against `id`.
+        """
+        return Category.objects.all()
+    
 class LastClientView(APIView):
     permission_classes = [ReadOnlyUserPermission]
     def get(self, request):
