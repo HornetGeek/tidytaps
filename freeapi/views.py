@@ -23,6 +23,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
+from rest_framework.decorators import action
 
 class ReadOnlyUserPermission(permissions.BasePermission):
     """
@@ -490,8 +491,42 @@ class MenuItemDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class CouponCodeViewSet(viewsets.ModelViewSet):
+    queryset = CouponCode.objects.all()
+    serializer_class = CouponCodeSerializer
+    permission_classes = [ReadOnlyUserPermission]
 
+    @action(detail=False, methods=['get'], url_path='by-account/(?P<account_id>\d+)')
+    def get_by_account(self, request, account_id=None):
+        coupons = CouponCode.objects.filter(account_id=account_id)
+        serializer = self.get_serializer(coupons, many=True)
+        return Response(serializer.data)
 
+class ValidateCouponView(APIView):
+    permission_classes = [BasePermission]
+    def post(self, request):
+        account_id = request.data.get('account_id')
+        coupon_code = request.data.get('coupon')
+
+        if not account_id or not coupon_code:
+            return Response(
+                {"error": "Both account_id and coupon code are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Retrieve the first coupon if multiple exist
+        coupon = CouponCode.objects.filter(account_id=account_id, code=coupon_code).first()
+        if coupon:
+            return Response(
+                {"amount": coupon.amount},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"error": "Coupon not found or invalid."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
 class MenuItemOptionsViewSet(viewsets.ModelViewSet):
     queryset = MenuItemChoices.objects.all()
     serializer_class = MenuItemChoicesSerializer

@@ -299,3 +299,8 @@ class ShopCategorySerializer(serializers.ModelSerializer):
         model = ShopCategory
         fields = ('__all__')
 
+
+class CouponCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CouponCode
+        fields = ['id', 'account', 'code', 'amount']

@@ -20,6 +20,9 @@ router4.register(r'covers', views.CoverViewSet, basename='cover')
 router5 = routers.DefaultRouter()
 router5.register(r'order', views.ShopOrderViewSet, basename='order')
 
+router6 = routers.DefaultRouter()
+router6.register(r'coupons', views.CouponCodeViewSet)  # Register the viewset
+
 urlpatterns = [
     path('accounts/', views.AccountCreateAPIView.as_view(), name='account-create'),
     path('accounts/username/<str:username>/', views.AccountRetrieveByUsernameAPIView.as_view(), name='account-retrieve-by-username'),
@@ -60,6 +63,8 @@ urlpatterns = [
     path('', include(router3.urls)),
     path('', include(router4.urls)),
     path('', include(router5.urls)),
+    path('', include(router6.urls)),
+    path('validate-coupon/', views.ValidateCouponView.as_view(), name='validate-coupon'),
     path('menuitem-photos/account/menuitem/<int:account_id>/<int:menuitem_id>', views.MenuItemPhotoListByAccountAndMenuItemView.as_view(), name='menuitem-photos-by-account-menuitem'),
     path('option/<int:account_id>/<int:menuitem_id>/', views.get_option_by_account_and_menuitem),
     path('choices/<int:account_id>/<int:menuitem_id>/<int:option_id>', views.get_items_by_account_and_menuitem),

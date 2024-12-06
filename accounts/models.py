@@ -78,7 +78,12 @@ class Account(models.Model):
     def __str__(self):
         return self.username
 
+class CouponCode(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="coupon_account")
+    code = models.CharField(max_length=500,default="")
+    amount = models.CharField(max_length=500,default="")
 
+    
 class Cover(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="cover_account")
     cover = models.FileField(upload_to='static/img/covers')
