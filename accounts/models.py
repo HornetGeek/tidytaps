@@ -86,11 +86,12 @@ class Account(models.Model):
     subscription_plan = models.CharField(
         max_length=10, choices=SUBSCRIPTION_CHOICES, default="free"
     )  # New field for subscription plan
-    selected_theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="light")  # New field for theme selection
+    selected_theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="f")  # New field for theme selection
     #objects = CustomUserManager()
 
     def __str__(self):
         return self.username
+
 
 class CouponCode(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="coupon_account")
