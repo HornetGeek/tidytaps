@@ -56,6 +56,16 @@ class Account(models.Model):
         ("SEK", "Swedish Krona"),
         ("NZD", "New Zealand Dollar"),
     ]
+    SUBSCRIPTION_CHOICES = [
+        ("free", "Free"),
+        ("basic", "Basic"),
+        ("premium", "Premium"),
+    ]
+    THEME_CHOICES = [
+        ("f", "f"),
+        ("p", "p"),
+    ]
+
     accountId = models.CharField(max_length=255, default=str(uuid.uuid4))
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="account_data")
     username = models.CharField(max_length=150, unique=True)
@@ -73,6 +83,10 @@ class Account(models.Model):
     currency = models.CharField(
         max_length=3, choices=CURRENCY_CHOICES, default="EGP", blank=True
     )
+    subscription_plan = models.CharField(
+        max_length=10, choices=SUBSCRIPTION_CHOICES, default="free"
+    )  # New field for subscription plan
+    selected_theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="light")  # New field for theme selection
     #objects = CustomUserManager()
 
     def __str__(self):
