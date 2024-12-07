@@ -88,7 +88,7 @@ class Account(models.Model):
     )  # New field for subscription plan
     selected_theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="f")  # New field for theme selection
     #objects = CustomUserManager()
-
+    promoter = models.CharField(max_length=150, default="")
     def __str__(self):
         return self.username
 

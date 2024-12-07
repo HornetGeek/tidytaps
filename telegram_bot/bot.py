@@ -41,6 +41,14 @@ LANGUAGES = {
 }
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("start")
+    args = context.args
+    if args:
+        # Get the first parameter (e.g., SudanPromoter)
+        parameter = args[0]
+        print(parameter)
+        context.user_data["promoter"] = str(parameter)
+        
     # Send a message asking the user to choose a language
     keyboard = [
         [InlineKeyboardButton(LANGUAGES['en'], callback_data='lang_en')],
@@ -767,8 +775,9 @@ def get_message(user, key):
 
 
 async def add_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("inside add_account")
     selected_lang = context.user_data.get('lang', 'en')  # Default to 'en' if no language is set
-
+    
     if update.message:
         await update.message.reply_text(
             MESSAGES[selected_lang]['send_username']
@@ -2887,10 +2896,14 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'title': context.user_data['title'],
         'phone_number': context.user_data['phone_number'],
         'telegramId': context.user_data['chat_id'],
+        
     }
 
     if selected_lang:
         account_data['language'] = selected_lang
+
+    if 'promoter' in context.user_data:
+        account_data['promoter'] = context.user_data['promoter']
 
     new_account = Account(**account_data)
     try:
