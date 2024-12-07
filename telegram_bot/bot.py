@@ -32,7 +32,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tidytap.settings')
 django.setup()
 
 # Now you can import your models
-from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia, Option, MenuItemChoices, Cover
+from accounts.models import Account, MenuItem, Category, Delivery,MenuItemPhoto , Contacts, Adresses, SocialMedia, Option, MenuItemChoices, Cover,CouponCode
 from django.contrib.auth.models import User
 
 LANGUAGES = {
@@ -73,12 +73,17 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
             InlineKeyboardButton(buttons['edit_category'], callback_data="edit_category_menu"),
             InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
         ],
-
         [
+            # "See Orders" button with conditional logic for subscription plan
             InlineKeyboardButton(
                 buttons['see_orders'],
-                web_app=WebAppInfo(url=f"https://www.tidy-taps.com/orders/{account.id}")  # Web App for orders
+                callback_data="upgrade_plan" if account.subscription_plan == "free" else None,
+                web_app=WebAppInfo(url=f"https://www.tidy-taps.com/orders/{account.id}")
+                if account.subscription_plan != "free" else None
             )
+        ],
+        [
+            InlineKeyboardButton(buttons['edit_style'], callback_data="edit_style")  # New Style button
         ],
         [
             InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
@@ -388,6 +393,23 @@ MESSAGES = {
         'no_category_selected': "No category has been selected for editing.",
         'downloading_category_image': "Downloading the category image, please wait...",
         'category_image_downloaded_successfully': "The category image has been downloaded successfully!",
+        "edit_coupons": "Discound Coupons",
+        "ask_for_edit_coupons":"What would you like to do with coupons?",
+        'enter_coupon_code': "Please enter the coupon code:",
+        'enter_coupon_amount': "Please enter the coupon amount:",
+        'invalid_amount': "Invalid amount. Please enter a valid number.",
+        'coupon_added': "Coupon added successfully! 🎉",
+        'select_coupon_to_remove': "Select the coupon you want to remove:",
+        'coupon_removed': "Coupon removed successfully! 🗑️",
+        'coupon_not_found': "Coupon not found. It might have already been removed.",
+        'no_coupons': "No coupons available to remove.",
+        "Add_Coupon" : "➕ Add Coupon",
+        "Remove_Coupon" :  "➖ Remove Coupon" ,
+        "upgrade_plan_message": "🔒 To unlock this feature, please upgrade your plan.\n📞 Contact us at [WhatsApp](https://wa.me/201554516636).",
+        "choose_theme": "Please choose a theme:",
+        "theme_selected_message": "✅ You have successfully selected {theme}. Enjoy your new look!",
+        "preview": "Preview",
+        "select": "Select",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -399,6 +421,7 @@ MESSAGES = {
             'get_analytics': "📊 View Analytics",
             'add_account': "Add Account",
             'choose_product': "Choose a product to edit:",
+            'edit_style' : "🎨 Edit Website Style",
             'edit_category': '✏️ Edit Category',
             'add_category': '➕ Add Category',
             'delete_category': '❌ Delete Category',
@@ -691,6 +714,23 @@ MESSAGES = {
         'no_category_selected': "لم يتم اختيار فئة للتعديل.",
         'downloading_category_image': "جاري تنزيل صورة الفئة، يرجى الانتظار...",
         'category_image_downloaded_successfully': "تم تنزيل صورة الفئة بنجاح!",
+        "edit_coupons": "كوبونات الخصم",
+        "ask_for_edit_coupons":"ماذا تريد ان تفعل فى كوبونات الخصم",
+        'enter_coupon_code': "يرجى إدخال رمز القسيمة: مثل (newYear2025)",
+        'enter_coupon_amount': "يرجى إدخال قيمة القسيمة:",
+        'invalid_amount': "قيمة غير صالحة. يرجى إدخال رقم صالح.",
+        'coupon_added': "تمت إضافة القسيمة بنجاح! 🎉",
+        'select_coupon_to_remove': "اختر القسيمة التي تريد إزالتها:",
+        'coupon_removed': "تمت إزالة القسيمة بنجاح! 🗑️",
+        'coupon_not_found': "لم يتم العثور على القسيمة. قد تكون تمت إزالتها بالفعل.",
+        'no_coupons': "لا توجد قسائم لإزالتها.",
+        "Add_Coupon" : "➕ اضافة كوبون",
+        "Remove_Coupon" :  "➖ حذف كوبون" ,
+        "upgrade_plan_message": "🔒 لفتح هذه الميزة، يرجى ترقية خطتك.\n📞 تواصل معنا على [واتساب](https://wa.me/201554516636).",
+        "choose_theme": "يرجى اختيار شكل:",
+        "theme_selected_message": "✅ لقد قمت باختيار {theme} بنجاح. استمتع بالمظهر الجديد!",
+        "preview": "مشاهدة",
+        "select": "اختيار",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -702,6 +742,7 @@ MESSAGES = {
             'add_account': "إضافة حساب",
             'choose_product': "اختر منتجًا لتعديله:",
             'add_cover': "إضافة غلاف",
+            'edit_style': "🎨 تعديل شكل الموقع",
             'edit_category': '✏️ تعديل الفئة',
             'add_category': '➕ إضافة فئة',
             'delete_category': '❌ حذف الفئة',
@@ -745,25 +786,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state = context.user_data.get('state')
     selected_lang = context.user_data.get('lang')
     account = context.user_data.get('account')
-
+    print("user_state")
+    print(user_state)
     if not account:
         chat_id = context.user_data.get('chat_id', update.message.chat.id)
         try:
             account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
             context.user_data['account'] = account
         except Account.DoesNotExist:
+            print("wewewe")
             pass
                 
     # Set the language based on the account if not already set
     if not selected_lang and account:
         selected_lang = account.language  # Replace with the actual field name for language in your Account model
-
+    print("we are hereee")
     # If language is still not found, show start message instead
     if selected_lang not in MESSAGES:
         await start(update, context)
         return
     if user_state == 'awaiting_username':
         await handle_username(update, context)
+
     elif user_state == 'awaiting_logo':
         await handle_logo(update, context)
     elif user_state == 'awaiting_title':
@@ -776,7 +820,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_contact(update, context)
     elif user_state == 'awaiting_item_name':
         await handle_item_name(update, context)
-
+    elif user_state == "enter_coupon_code":
+        await process_coupon_code(update, context)
+    elif user_state == 'enter_coupon_amount':
+        print("wewe")
+        await process_coupon_amount(update, context)
+    
     elif user_state == 'awaiting_facebook_link':
         await edit_facebook_link(update, context)
 
@@ -1368,6 +1417,7 @@ async def edit_store_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ],
     [
         InlineKeyboardButton(f"💱 {MESSAGES[selected_lang]['edit_currency']}", callback_data="change_currency"),
+        InlineKeyboardButton(f"🎟️ {MESSAGES[selected_lang]['edit_coupons']}", callback_data="edit_coupons"),
     ],
     [
         InlineKeyboardButton(f"🌐 {MESSAGES[selected_lang]['edit_social_media']}", callback_data="edit_social_media"),
@@ -3801,6 +3851,154 @@ async def handle_edit_category_menu(update, context, selected_lang):
         reply_markup=category_reply_markup
     )
 
+async def handle_add_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang') 
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+
+    context.user_data['adding_coupon'] = {"step": "code"}  # Start the coupon creation process
+    context.user_data['state'] = "enter_coupon_code"
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['enter_coupon_code'])
+
+
+async def handle_remove_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang') 
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    # Retrieve coupons associated with the account
+    coupons = await sync_to_async(list)(CouponCode.objects.filter(account=account))
+
+    if not coupons:
+        await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_coupons'])
+        return
+
+    # Create buttons for each coupon
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text=f"{coupon.code} - {coupon.amount}",
+                callback_data=f"remove_coupon_{coupon.id}"
+            )
+        ]
+        for coupon in coupons
+    ]
+
+    # Add a cancel button
+    keyboard.append([InlineKeyboardButton(MESSAGES[selected_lang]['cancel'], callback_data="cancel")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.message.reply_text(MESSAGES[selected_lang]['select_coupon_to_remove'], reply_markup=reply_markup)
+
+
+async def handle_coupon_removal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    account = context.user_data.get('account')
+
+    # Get the user's selected language, defaulting to 'en' if not set
+    selected_lang = context.user_data.get('lang') 
+
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id
+
+    if not account:
+        try:
+            # Use sync_to_async to fetch account from the database
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            no_account_msg = MESSAGES[selected_lang]['no_account']
+            if update.message:
+                await update.message.reply_text(no_account_msg)
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(no_account_msg)
+            return
+
+    if not selected_lang and account:
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    query = update.callback_query
+    await query.answer()  # Acknowledge the callback query
+
+    # Extract the coupon ID from the callback data
+    data = query.data
+    coupon_id = data.split("_")[-1]
+
+    try:
+        # Remove the coupon
+        coupon = await sync_to_async(CouponCode.objects.get)(id=coupon_id)
+        await sync_to_async(coupon.delete)()
+        await query.message.reply_text(MESSAGES[selected_lang]['coupon_removed'])
+    except CouponCode.DoesNotExist:
+        await query.message.reply_text(MESSAGES[selected_lang]['coupon_not_found'])
+
 
 async def confirm_delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     account = context.user_data.get('account')
@@ -4461,6 +4659,88 @@ async def edit_facebook_link(update: Update, context: ContextTypes.DEFAULT_TYPE)
     else:
         await update.message.reply_text(MESSAGES[selected_lang]['no_social_media'])
 
+
+
+async def process_coupon_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+            
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    user_data = context.user_data.get('adding_coupon', {})
+    if user_data.get('step') != "code":
+        return  # Not in the process of adding a coupon
+
+    coupon_code = update.message.text.strip()
+    user_data["code"] = coupon_code  # Save the coupon code
+    user_data["step"] = "amount"  # Move to the next step
+
+    print("inside process_coupon_code")
+    await update.message.reply_text(MESSAGES[selected_lang]['enter_coupon_amount'])
+    context.user_data['state'] = 'enter_coupon_amount'
+
+
+async def process_coupon_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+    chat_id = update.message.chat.id
+    account = context.user_data.get('account')
+
+    if not account:
+        # Try to retrieve the account again in case it's not in user_data
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)
+            context.user_data['account'] = account
+        except Account.DoesNotExist:
+            await update.message.reply_text(MESSAGES[selected_lang]['no_account_found'])
+            return
+            
+    if not selected_lang and account:
+        # Assuming the account model has a language field
+        selected_lang = account.language  # Replace with the actual field name for language in your Account model
+
+    user_data = context.user_data.get('adding_coupon', {})
+    print("wewewewewe")
+    if user_data.get('step') != "amount":
+        print("weweewewwwwww")
+        return  # Not in the process of adding a coupon
+
+    try:
+        coupon_amount = float(update.message.text.strip())  # Ensure the amount is valid
+    except ValueError:
+        await update.message.reply_text(MESSAGES[selected_lang]['invalid_amount'])
+        return
+
+    user_data["amount"] = coupon_amount
+
+    # Retrieve account and save the coupon
+    account = context.user_data.get('account')
+    if not account:
+        await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+        return
+
+    try:
+        await sync_to_async(CouponCode.objects.create)(
+            account=account,
+            code=user_data["code"],
+            amount=user_data["amount"]
+        )
+        await update.message.reply_text(MESSAGES[selected_lang]['coupon_added'])
+    except Exception as e:
+        await update.message.reply_text(f"Error saving coupon: {str(e)}")
+    finally:
+        context.user_data.pop('adding_coupon', None)  # Clear the process
 
 # Handle item name step
 async def handle_item_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -5487,6 +5767,72 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['state'] = None
         await show_start_message(update, context, account)
 
+    elif query.data == "upgrade_plan":
+        await query.message.reply_text(MESSAGES[selected_lang]["upgrade_plan_message"])
+
+    elif query.data == "edit_style":
+        await query.message.reply_text(MESSAGES[selected_lang]["choose_theme"])
+
+        # Theme 1
+        theme_1_photo_path = "static/img/theme1.jpeg"  # Replace with the actual file path
+        theme_1_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                MESSAGES[selected_lang]["preview"], 
+                web_app=WebAppInfo(url=f"https://www.tidy-taps.com/f/District")
+            ),
+                InlineKeyboardButton(MESSAGES[selected_lang]["select"], callback_data="select_theme1")
+            ]
+        ])
+        with open(theme_1_photo_path, "rb") as photo:
+            await query.message.reply_photo(
+                photo=InputFile(photo),
+                caption="✨ Theme 1 (Light): A clean and bright look!",
+                reply_markup=theme_1_keyboard
+            )
+
+        # Theme 2
+        theme_2_photo_path = "static/img/theme2.jpeg"  # Replace with the actual file path
+        theme_2_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                MESSAGES[selected_lang]["preview"], 
+                web_app=WebAppInfo(url=f"https://www.tidy-taps.com/p/District")
+            ),
+                InlineKeyboardButton(MESSAGES[selected_lang]["select"], callback_data="select_theme2")
+            ]
+        ])
+        with open(theme_2_photo_path, "rb") as photo:
+            await query.message.reply_photo(
+                photo=InputFile(photo),
+                caption="🌙 Theme 2 (Dark): A sleek and modern design!",
+                reply_markup=theme_2_keyboard
+            )
+    
+    
+    elif query.data == "select_theme1":
+        if account.subscription_plan == "free":
+            # Send upgrade plan message for free users
+            await query.message.reply_text(MESSAGES[account.language]["upgrade_plan_message"])
+        else:
+            # Update the selected theme safely
+            account.selected_theme = "f"  # Theme 1 identifier
+            await sync_to_async(account.save)()  # Use sync_to_async to save
+            await query.message.reply_text(
+                MESSAGES[account.language]["theme_selected_message"].format(theme="Theme 1")
+            )
+
+    elif query.data == "select_theme2":
+        if account.subscription_plan == "free":
+            # Send upgrade plan message for free users
+            await query.message.reply_text(MESSAGES[account.language]["upgrade_plan_message"])
+        else:
+            # Update the selected theme safely
+            account.selected_theme = "p"  # Theme 2 identifier
+            await sync_to_async(account.save)()  # Use sync_to_async to save
+            await query.message.reply_text(
+                MESSAGES[account.language]["theme_selected_message"].format(theme="Theme 2")
+            )
 
     elif query.data == "confirm_delete_yes":
         
@@ -5510,6 +5856,31 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=category_reply_markup
         )
 
+    elif query.data == "edit_coupons":
+        coupon_keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['Add_Coupon'], callback_data="add_coupon"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['Remove_Coupon'], callback_data="remove_coupon"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="cancel")]
+        ]
+        reply_markup = InlineKeyboardMarkup(coupon_keyboard)
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['ask_for_edit_coupons'],
+            reply_markup=reply_markup
+        )
+
+    elif query.data == "add_coupon":
+        if account.subscription_plan == "free":
+            await query.message.reply_text(MESSAGES[selected_lang]["upgrade_plan_message"])
+        else:
+            await handle_add_coupon(update, context)
+    elif query.data == "remove_coupon":
+        if account.subscription_plan == "free":
+            await query.message.reply_text(MESSAGES[selected_lang]["upgrade_plan_message"])
+        else:
+            await handle_remove_coupon(update, context)
+            
     elif query.data == "edit_category":
         await handle_edit_category_menu(update, context, selected_lang)
 
@@ -5755,7 +6126,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data.startswith("edit_description_"):
         product_id = query.data.split("_")[2]  # Extract product ID from the callback data
+
         await edit_product_description(update, context, product_id)
+
+    elif query.data.startswith('remove_coupon_'):
+        await handle_coupon_removal(update, context)
     elif query.data == 'edit_product':
         await query.message.reply_text(MESSAGES[selected_lang]['buttons']['edit_product'])
         await show_products(update, context)
