@@ -101,6 +101,9 @@ async def show_start_message(update: Update, context: ContextTypes.DEFAULT_TYPE,
         ],
         [
             InlineKeyboardButton(buttons['help'], callback_data="help")  # New Help button
+        ],
+        [
+            InlineKeyboardButton(buttons['settings'], callback_data="settings")  # Settings button added
         ]
     ]
 
@@ -418,6 +421,9 @@ MESSAGES = {
         "theme_selected_message": "✅ You have successfully selected {theme}. Enjoy your new look!",
         "preview": "Preview",
         "select": "Select",
+        "settings_prompt": "⚙️ Settings:\nChoose an option below:",
+        "add_another_account": "➕ Add Another Account",
+        'switch_account_success': "✅ You have successfully switched to the account: {account_name}.",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -440,6 +446,7 @@ MESSAGES = {
             'cancel': "Cancel",
             'add_cover': "Add Cover",
             'delete_cover': "Delete Cover",
+            "settings": "⚙️ Settings"
         }
     },
     'ar': {
@@ -739,6 +746,9 @@ MESSAGES = {
         "theme_selected_message": "✅ لقد قمت باختيار {theme} بنجاح. استمتع بالمظهر الجديد!",
         "preview": "مشاهدة",
         "select": "اختيار",
+        "settings_prompt": "⚙️ الإعدادات:\n\nاختر خيارًا أدناه:",
+        "add_another_account": "➕ إضافة حساب آخر",
+        'switch_account_success': "✅ لقد تم التبديل إلى الحساب: {account_name} بنجاح.",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -759,7 +769,8 @@ MESSAGES = {
             'yes': "نعم",
             'no': "لا",
             'help': "طلب المساعدة",
-            'cancel': "إلغاء"
+            'cancel': "إلغاء",
+            "settings": "⚙️ الإعدادات"
         }
     }
     # Add more languages as needed,
@@ -2905,45 +2916,49 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 'promoter' in context.user_data:
         account_data['promoter'] = context.user_data['promoter']
 
+    if context.user_data.get('add_another_account'):
+        account_data['owner'] = context.user_data.get('add_another_account')
+        account_data['telegramId'] = ''
     new_account = Account(**account_data)
     try:
         await sync_to_async(new_account.save)()
         await update.message.reply_text(MESSAGES[selected_lang]['account_added_success'])
 
-        welcome_message = MESSAGES[selected_lang]['welcome_message']
+        #welcome_message = MESSAGES[selected_lang]['welcome_message']
 
         # Define the keyboard for user actions
-        buttons = MESSAGES[selected_lang]['buttons']
-        keyboard = [
-            [
-                InlineKeyboardButton(buttons['add_product'], callback_data="add_product"),
-                InlineKeyboardButton(buttons['edit_product'], callback_data='edit_product')
-            ],
-            [
-                InlineKeyboardButton(buttons['delete_product'], callback_data='delete_product')
-            ],
-            [
+        #buttons = MESSAGES[selected_lang]['buttons']
+        #keyboard = [
+        #    [
+        #        InlineKeyboardButton(buttons['add_product'], callback_data="add_product"),
+        #        InlineKeyboardButton(buttons['edit_product'], callback_data='edit_product')
+        #    ],
+        #    [
+        #        InlineKeyboardButton(buttons['delete_product'], callback_data='delete_product')
+        #    ],
+        #    [
                 #InlineKeyboardButton(buttons['delete_category'], callback_data="delete_category"),
-                InlineKeyboardButton(buttons['edit_category'], callback_data="edit_category_menu"),
-                InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
-            ],
-            [
-                InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
-            ],
-            [
-                InlineKeyboardButton(buttons['get_website_qr'], callback_data="get_website_qr")
-            ],
-            [
-                InlineKeyboardButton(buttons['help'], callback_data="help")  # New Help button
-            ]
-        ]
+        #        InlineKeyboardButton(buttons['edit_category'], callback_data="edit_category_menu"),
+        #        InlineKeyboardButton(buttons['edit_store_info'], callback_data="edit_store_info")
+        #    ],
+        #    [
+        #        InlineKeyboardButton(buttons['get_analytics'], callback_data="get_analytics") 
+        #    ],
+        #    [
+        #        InlineKeyboardButton(buttons['get_website_qr'], callback_data="get_website_qr")
+        #    ],
+        #    [
+        #        InlineKeyboardButton(buttons['help'], callback_data="help")  # New Help button
+        #    ]
+        #]
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        #reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await update.message.reply_text(
-            welcome_message + MESSAGES[selected_lang]['commands_prompt'],
-            reply_markup=reply_markup
-        )
+        #await update.message.reply_text(
+        #    welcome_message + MESSAGES[selected_lang]['commands_prompt'],
+        #    reply_markup=reply_markup
+        #)
+        await show_start_message(update, context, new_account)
 
     except IntegrityError as e:
         print(e)
@@ -5758,8 +5773,69 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_start_message(update, context, account)
 
     elif query.data == "add_product":
+        
         await add_product(update, context)
+    
+    elif query.data == "settings":
+        
+        owned_accounts = await sync_to_async(list)(Account.objects.filter(owner=account.telegramId))
 
+        # Prepare buttons for owned accounts
+        account_buttons = [
+            InlineKeyboardButton(account.username, callback_data=f"switch_account_{account.id}")
+            for account in owned_accounts
+        ]
+
+        # Add the "Add Another Account" button
+        reply_keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['add_another_account'], callback_data="add_another_account")]
+        ]
+
+        # Add the account buttons
+        if account_buttons:
+            reply_keyboard.extend([[btn] for btn in account_buttons])
+
+        # Create the InlineKeyboardMarkup
+        reply_markup = InlineKeyboardMarkup(reply_keyboard)
+
+        # Send the reply message with the button
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['settings_prompt'],
+            reply_markup=reply_markup
+        )
+
+    elif query.data.startswith("switch_account_"):
+        target_account_id = int(query.data.split("_")[2])
+
+        # Update the current account and target account
+        current_account = await sync_to_async(Account.objects.get)(telegramId=account.telegramId)
+        target_account = await sync_to_async(Account.objects.get)(id=target_account_id)
+
+        # Clear the telegramId of the current account
+        current_account.telegramId = ""
+        await sync_to_async(current_account.save)()
+
+        # Assign the telegramId to the target account
+        target_account.telegramId = account.telegramId
+        await sync_to_async(target_account.save)()
+
+        context.user_data.clear()
+        # Confirm the switch to the user
+        await query.message.reply_text(
+            MESSAGES[selected_lang]['switch_account_success'].format(account_name=target_account.username)
+        )
+
+        await show_start_message(update, context,target_account )
+
+    elif query.data == "add_another_account":
+        if account.subscription_plan == "free":
+            # Send upgrade plan message for free users
+            await query.message.reply_text(MESSAGES[account.language]["upgrade_plan_message"])
+        else:
+            context.user_data['lang'] = selected_lang
+            context.user_data['add_another_account'] = account.telegramId
+            await add_account(update, context)
+        
     elif query.data.startswith("delete_city_"):
         city_to_delete = update.callback_query.data[len('delete_city_'):]
 
