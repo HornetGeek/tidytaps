@@ -5298,14 +5298,20 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
             menuitem_id = context.user_data.get('menuitem_id')  # Get the menu item ID from user data
 
             # Ensure that the MenuItem ID exists in the context
+            
             if menuitem_id:
-                # Create a new MenuItemPhoto instance
-                menu_item_photo = MenuItemPhoto(
-                    account=account,
-                    menuitem_id=menuitem_id,
-                    picture=product_image_path  # Save the image path here
-                )
-                await sync_to_async(menu_item_photo.save)()  # Save to the database asynchronously
+                if not menu_item.picture or menu_item.picture.strip() == "":
+                    # Set the picture as the main picture for the MenuItem
+                    menu_item.picture = product_image_path
+                    await sync_to_async(menu_item.save)()  # Save the updated menu item
+                else:
+                    # Create a new MenuItemPhoto instance
+                    menu_item_photo = MenuItemPhoto(
+                        account=account,
+                        menuitem_id=menuitem_id,
+                        picture=product_image_path  # Save the image path here
+                    )
+                    await sync_to_async(menu_item_photo.save)()  # Save to the database asynchronously
 
                 await update.message.reply_text(MESSAGES[selected_lang]['image_downloaded_successfully'])
 
