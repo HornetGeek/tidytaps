@@ -424,6 +424,17 @@ MESSAGES = {
         "settings_prompt": "⚙️ Settings:\nChoose an option below:",
         "add_another_account": "➕ Add Another Account",
         'switch_account_success': "✅ You have successfully switched to the account: {account_name}.",
+        'accounts': "Accounts",
+        'invite_friends': "Invite Friends",
+        'manage_accounts_prompt': "Here are your accounts:",
+        'add_another_account': "Add Another Account",
+        'invite_friends_message': (
+            "🎉 Invite your friends to TidyTaps! 🎉\n\n"
+            "📢 Share this link with your friends:\n"
+            "{invite_link}\n\n"
+            "💰 When your friends subscribe, you'll earn 30% of their all subscription !"
+        ),
+        'referred_accounts': "🌟 Accounts you referred:",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -749,6 +760,17 @@ MESSAGES = {
         "settings_prompt": "⚙️ الإعدادات:\n\nاختر خيارًا أدناه:",
         "add_another_account": "➕ إضافة حساب آخر",
         'switch_account_success': "✅ لقد تم التبديل إلى الحساب: {account_name} بنجاح.",
+        'accounts': "الحسابات",
+        'invite_friends': "دعوة الأصدقاء",
+        'manage_accounts_prompt': "هذه حساباتك:",
+        'add_another_account': "أضف حسابًا آخر",
+        'referred_accounts': "🌟 الحسابات التي قمت بإحالتها:",
+        'invite_friends_message': (
+            "🎉 ادعُ أصدقائك إلى TidyTaps! 🎉\n\n"
+            "📢 شارك هذا الرابط مع أصدقائك:\n"
+            "{invite_link}\n\n"
+            "💰 عندما يشترك أصدقاؤك، ستحصل على 30% من اشتراكتهم جميعا!"
+        ),
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -5783,6 +5805,46 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await add_product(update, context)
     
     elif query.data == "settings":
+        # Prepare the primary buttons: Accounts and Invite Friends
+        reply_keyboard = [
+            [InlineKeyboardButton(MESSAGES[selected_lang]['accounts'], callback_data="manage_accounts")],
+            [InlineKeyboardButton(MESSAGES[selected_lang]['invite_friends'], callback_data="invite_friends")]
+        ]
+
+        # Create the InlineKeyboardMarkup
+        reply_markup = InlineKeyboardMarkup(reply_keyboard)
+
+        # Send the reply message with the primary buttons
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['settings_prompt'],
+            reply_markup=reply_markup
+        )
+    elif query.data == "invite_friends":
+        # Get the current account's username
+        promoter_username = account.username
+
+        # Query accounts where the promoter is the current account's username
+        referred_accounts = await sync_to_async(list)(
+            Account.objects.filter(promoter=promoter_username)
+        )
+
+        # Generate the invite link
+        invite_link = f"t.me/TidyTaps_bot?start={promoter_username}"
+
+        # Format the invite message using the selected language
+        invite_message = MESSAGES[selected_lang]['invite_friends_message'].format(invite_link=invite_link)
+
+        # If there are referred accounts, append their usernames to the message
+        if referred_accounts:
+            referred_list = "\n".join(
+                [f"• {ref_account.username}" for ref_account in referred_accounts]
+            )
+            invite_message += f"\n\n{MESSAGES[selected_lang]['referred_accounts']}\n{referred_list}"
+
+        # Send the invite message
+        await update.callback_query.message.reply_text(invite_message)
+
+    elif query.data == "manage_accounts":
         
         owned_accounts = await sync_to_async(list)(Account.objects.filter(owner=account.telegramId))
 
