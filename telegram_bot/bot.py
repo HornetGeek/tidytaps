@@ -5300,7 +5300,7 @@ async def handle_image_upload(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Ensure that the MenuItem ID exists in the context
             
             if menuitem_id:
-                if not menu_item.picture or menu_item.picture.strip() == "":
+                if not menu_item.picture or menu_item.picture == "":
                     # Set the picture as the main picture for the MenuItem
                     menu_item.picture = product_image_path
                     await sync_to_async(menu_item.save)()  # Save the updated menu item
