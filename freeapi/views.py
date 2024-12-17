@@ -504,27 +504,55 @@ class CouponCodeViewSet(viewsets.ModelViewSet):
 
 class ValidateCouponView(APIView):
     permission_classes = [BasePermission]
+
     def post(self, request):
         account_id = request.data.get('account_id')
         coupon_code = request.data.get('coupon')
+        total_cart = request.data.get('total_cart')  # Get the cart total from the request
 
-        if not account_id or not coupon_code:
+        # Validate required fields
+        if not account_id or not coupon_code or total_cart is None:
             return Response(
-                {"error": "Both account_id and coupon code are required."},
+                {"error": "account_id, coupon code, and total_cart are required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Retrieve the first coupon if multiple exist
-        coupon = CouponCode.objects.filter(account_id=account_id, code=coupon_code).first()
-        if coupon:
+        try:
+            # Retrieve the first matching coupon
+            coupon = CouponCode.objects.filter(account_id=account_id, code=coupon_code).first()
+
+            if not coupon:
+                return Response(
+                    {"error": "Coupon not found or invalid."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Check if the coupon has expired
+            if coupon.expire_date and coupon.expire_date < timezone.now():
+                return Response(
+                    {"error": "This coupon has expired."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if total_cart meets the amount_condition
+            if coupon.amount_condition and float(total_cart) < float(coupon.amount_condition):
+                return Response(
+                    {
+                        "error": f"Cart total must be at least {coupon.amount_condition} to use this coupon."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # If all conditions are satisfied, return the discount amount
             return Response(
                 {"amount": coupon.amount},
                 status=status.HTTP_200_OK
             )
-        else:
+
+        except Exception as e:
             return Response(
-                {"error": "Coupon not found or invalid."},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
 class MenuItemOptionsViewSet(viewsets.ModelViewSet):
