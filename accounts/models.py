@@ -98,7 +98,14 @@ class CouponCode(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="coupon_account")
     code = models.CharField(max_length=500,default="")
     amount = models.CharField(max_length=500,default="")
-
+    expire_date = models.DateTimeField(null=True, blank=True, default=None)  # Default is no expiration date
+    amount_condition = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        default=None
+    )  
     
 class Cover(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="cover_account")

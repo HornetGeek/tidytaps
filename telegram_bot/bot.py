@@ -434,7 +434,23 @@ MESSAGES = {
             "{invite_link}\n\n"
             "💰 When your friends subscribe, you'll earn 30% of their all subscription !"
         ),
+        "no_coupons_found": "No coupons were found.",
+        "Edit_Coupon": "✏️ Edit Coupon",
+        "Edit_Amount_Condition": "✏️ Edit Amount Condition",
+        "Edit_Expire_Date": "📅 Edit Expire Date",
+        "ask_for_edit_coupons": "What would you like to do with coupons?",
+        "ask_for_edit_details": "What would you like to edit?",
         'referred_accounts': "🌟 Accounts you referred:",
+        "select_coupon_to_edit": "Please select a coupon to edit:",
+        "ask_for_amount_condition": "Please enter the new amount condition for the coupon:",
+        "ask_for_expire_date": "Please enter the new expire date (format: YYYY-MM-DD):",
+        "invalid_date_format": "Invalid date format! Please use YYYY-MM-DD.",
+        "edit_success": "Coupon updated successfully! ✅",
+        "edit_error": "An error occurred while updating the coupon. ❌",
+        "coupon_not_found": "The selected coupon was not found. ❌",
+        "ask_for_amount": "Please enter the new amount for the coupon:",
+        "invalid_amount": "Invalid amount! Please enter a numeric value.",
+        "Edit_Amount": "✏️ Edit Amount",
         'buttons': {
             'add_product': "➕ Add Product",
             'edit_product': "✏️ Edit Product",
@@ -771,6 +787,22 @@ MESSAGES = {
             "{invite_link}\n\n"
             "💰 عندما يشترك أصدقاؤك، ستحصل على 30% من اشتراكتهم جميعا!"
         ),
+        "Edit_Coupon": "✏️ تعديل كوبون",
+        "Edit_Amount_Condition": "✏️ تعديل شرط المبلغ",
+        "Edit_Expire_Date": "📅 تعديل تاريخ الانتهاء",
+        "ask_for_edit_coupons": "ماذا تريد أن تفعل بالكوبونات؟",
+        "ask_for_edit_details": "ماذا تريد أن تعدل؟",
+        "no_coupons_found": "لم يتم العثور على كوبونات.",
+        "select_coupon_to_edit": "الرجاء اختيار كوبون لتعديله:",
+        "ask_for_amount_condition": "الرجاء إدخال شرط المبلغ الجديد للكوبون:",
+        "ask_for_expire_date": "الرجاء إدخال تاريخ الانتهاء الجديد (بصيغة: YYYY-MM-DD):",
+        "invalid_date_format": "تنسيق التاريخ غير صالح! الرجاء استخدام YYYY-MM-DD.",
+        "edit_success": "تم تحديث الكوبون بنجاح! ✅",
+        "edit_error": "حدث خطأ أثناء تحديث الكوبون. ❌",
+        "coupon_not_found": "لم يتم العثور على الكوبون المحدد. ❌",
+        "ask_for_amount": "الرجاء إدخال المبلغ الجديد للكوبون:",
+        "invalid_amount": "المبلغ غير صالح! الرجاء إدخال قيمة رقمية.",
+        "Edit_Amount": "✏️ تعديل المبلغ",
         'buttons': {
             'add_product': "📦 إضافة منتج",
             'edit_product': "✏️ تعديل منتج",
@@ -852,6 +884,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif user_state == 'awaiting_logo':
         await handle_logo(update, context)
+    elif user_state == 'handle_coupon_edit':
+        await handle_coupon_edit(update, context)
+
     elif user_state == 'awaiting_title':
         await handle_title(update, context)
     elif user_state == 'awaiting_phone':
@@ -2901,6 +2936,94 @@ async def handle_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(MESSAGES[selected_lang]['ask_phone_number'])
     context.user_data['state'] = 'awaiting_phone'
 
+async def handle_coupon_edit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    selected_lang = context.user_data.get('lang')
+
+    # Check if the update is a message or a callback query
+    if update.message:
+        chat_id = update.message.chat.id
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat.id
+        # Acknowledge the callback query
+        await update.callback_query.answer()
+    else:
+        await update.message.reply_text(MESSAGES[selected_lang]['unable_to_determine_chat_id'])
+        return
+
+    context.user_data['chat_id'] = chat_id  # Store chat ID in user_data
+
+    # Fetch and cache account again to ensure it's available
+    account = context.user_data.get('account')
+    if not account:
+        try:
+            account = await sync_to_async(Account.objects.get)(telegramId=chat_id)  # Wrap ORM call with sync_to_async
+            context.user_data['account'] = account  # Cache the account for future use
+        except Account.DoesNotExist:
+            if update.message:
+                await update.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(MESSAGES[selected_lang]['no_account'])
+            return
+        
+    if account and account.language:
+        selected_lang = account.language
+
+
+    if 'edit_coupon_id' not in context.user_data:
+        return
+
+    coupon_id = context.user_data['edit_coupon_id']
+    edit_type = context.user_data['edit_type']
+    new_value = update.message.text.strip()
+
+    try:
+        # Fetch the coupon asynchronously
+        coupon = await sync_to_async(CouponCode.objects.get)(id=coupon_id)
+
+        # Validate and update fields
+        if edit_type == 'amount_condition':
+            coupon.amount_condition = new_value
+        elif edit_type == 'amount':
+            # Ensure amount is numeric
+            if not new_value.isdigit():
+                await update.message.reply_text(
+                    MESSAGES[selected_lang]['invalid_amount']
+                )
+                return
+            coupon.amount = new_value
+
+        elif edit_type == 'expire_date':
+            from datetime import datetime
+
+            try:
+                # Ensure the date is in a valid format (YYYY-MM-DD)
+                new_date = datetime.strptime(new_value, "%Y-%m-%d").date()
+                coupon.expire_date = new_date
+            except ValueError:
+                await update.message.reply_text(
+                    MESSAGES[selected_lang]['invalid_date_format']
+                )
+                return
+
+        # Save changes
+        await sync_to_async(coupon.save)()
+
+        await update.message.reply_text(
+            MESSAGES[selected_lang]['edit_success']
+        )
+
+    except CouponCode.DoesNotExist:
+        await update.message.reply_text(
+            MESSAGES[selected_lang]['coupon_not_found']
+        )
+    except Exception as e:
+        await update.message.reply_text(
+            MESSAGES[selected_lang]['edit_error']
+        )
+
+    # Clean up user_data
+    context.user_data.pop('edit_coupon_id', None)
+    context.user_data.pop('edit_type', None)
 
 # Handle account phone number step
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -6018,6 +6141,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [
                 InlineKeyboardButton(MESSAGES[selected_lang]['Add_Coupon'], callback_data="add_coupon"),
                 InlineKeyboardButton(MESSAGES[selected_lang]['Remove_Coupon'], callback_data="remove_coupon"),
+
+            ],
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['Edit_Coupon'], callback_data="edit_coupon"),
             ],
             [InlineKeyboardButton("❌ Cancel", callback_data="cancel")]
         ]
@@ -6032,6 +6159,91 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text(MESSAGES[selected_lang]["upgrade_plan_message"])
         else:
             await handle_add_coupon(update, context)
+
+    elif query.data == "edit_coupon":
+        # Fetch all coupons asynchronously for the current account
+        async def get_coupons(account_id):
+            return await sync_to_async(list)(
+                CouponCode.objects.filter(account__id=account_id)
+            )
+
+        coupons = await get_coupons(account.id)
+
+        if not coupons:
+            await update.callback_query.message.reply_text(
+                MESSAGES[selected_lang]['no_coupons_found']
+            )
+            return
+
+        # Generate buttons dynamically for each coupon
+        coupon_buttons = [
+            [InlineKeyboardButton(f"🧾 {coupon.code}", callback_data=f"select_coupon_{coupon.id}")]
+            for coupon in coupons
+        ]
+        coupon_buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="cancel")])
+
+        reply_markup = InlineKeyboardMarkup(coupon_buttons)
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['select_coupon_to_edit'],
+            reply_markup=reply_markup
+        )
+    elif query.data.startswith("select_coupon_"):
+        # Extract coupon ID from the callback data
+        coupon_id = int(query.data.split("_")[-1])
+        edit_keyboard = [
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['Edit_Amount_Condition'], callback_data=f"edit_amount_condition_{coupon_id}"),
+                InlineKeyboardButton(MESSAGES[selected_lang]['Edit_Expire_Date'], callback_data=f"edit_expire_date_{coupon_id}"),
+            ],
+            [
+                InlineKeyboardButton(MESSAGES[selected_lang]['Edit_Amount'], callback_data=f"edit_amount_{coupon_id}"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="cancel")]
+        ]
+        reply_markup = InlineKeyboardMarkup(edit_keyboard)
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['ask_for_edit_details'],
+            reply_markup=reply_markup
+        )
+
+    elif query.data.startswith("edit_amount_"):
+        # Extract coupon ID
+        coupon_id = int(query.data.split("_")[-1])
+
+        # Save coupon_id and edit type in context to track input
+        context.user_data['edit_coupon_id'] = coupon_id
+        context.user_data['edit_type'] = 'amount'
+        context.user_data['state'] = 'handle_coupon_edit'
+
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['ask_for_amount']
+        )
+    elif query.data.startswith("edit_amount_condition_"):
+        # Extract coupon ID
+        coupon_id = int(query.data.split("_")[-1])
+
+        # Save coupon_id and edit type in context to track input
+        context.user_data['edit_coupon_id'] = coupon_id
+        context.user_data['edit_type'] = 'amount_condition'
+        context.user_data['state'] = 'handle_coupon_edit'
+
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['ask_for_amount_condition']
+        )
+
+    elif query.data.startswith("edit_expire_date_"):
+        # Extract coupon ID
+        coupon_id = int(query.data.split("_")[-1])
+
+        # Save coupon_id and edit type in context to track input
+        context.user_data['edit_coupon_id'] = coupon_id
+        context.user_data['edit_type'] = 'expire_date'
+        context.user_data['state'] = 'handle_coupon_edit'
+        
+        await update.callback_query.message.reply_text(
+            MESSAGES[selected_lang]['ask_for_expire_date']
+        )
+
     elif query.data == "remove_coupon":
         if account.subscription_plan == "free":
             await query.message.reply_text(MESSAGES[selected_lang]["upgrade_plan_message"])
